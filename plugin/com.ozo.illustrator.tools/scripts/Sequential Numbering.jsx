@@ -401,6 +401,7 @@
     dialog.cancelElement = cancelButton;
 
     OZO.addLanguageSelector(dialog);
+    OZO.addDonateRow(dialog, SCRIPT_NAME);
 
     function updateLayoutControls() {
         var isGrid = layoutList.selection.index === 0;

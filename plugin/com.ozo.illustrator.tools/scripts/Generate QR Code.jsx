@@ -1810,6 +1810,7 @@
         styleList.onChange();
         updateQrSummary();
     });
+    OZO.addDonateRow(dialog, SCRIPT_NAME);
 
     OZO.restoreWindowState(dialog, "generate_qr_code_v3");
     previousUnit = unitList.selection ? unitList.selection.text : "mm";

@@ -889,6 +889,7 @@
     dialog.cancelElement = cancelButton;
 
     OZO.addLanguageSelector(dialog);
+    OZO.addDonateRow(dialog, SCRIPT_NAME);
 
     function readSettings() {
         var unit = (unitList.selection && unitList.selection.text) ? unitList.selection.text : "mm";

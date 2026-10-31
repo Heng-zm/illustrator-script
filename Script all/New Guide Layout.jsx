@@ -688,6 +688,7 @@
 
     // Modern Footer Bar with Donate Coffee, Credits, and Language
     OZO.addLanguageSelector(dialog);
+    OZO.addDonateRow(dialog, SCRIPT_NAME);
 
     // -------------------------------------------------------------
     // Event Handlers & State Management
