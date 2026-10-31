@@ -18,6 +18,83 @@ var __ozoPluginFolder = (function () {
 
 var __ozoExplicitPluginFolder = null;
 
+// Illustrator's ExtendScript has no native JSON object, so the panel bridge
+// cannot rely on JSON.stringify. Use the native implementation when a host
+// provides one and fall back to this minimal serializer otherwise.
+function ozoJsonStringify(value) {
+    if (typeof JSON !== "undefined" && JSON && typeof JSON.stringify === "function") {
+        return JSON.stringify(value);
+    }
+    var type = typeof value;
+    if (value === null || type === "undefined") {
+        return "null";
+    }
+    if (type === "number") {
+        return isFinite(value) ? String(value) : "null";
+    }
+    if (type === "boolean") {
+        return value ? "true" : "false";
+    }
+    if (type === "string") {
+        return ozoJsonQuote(value);
+    }
+    if (value instanceof Array) {
+        var items = [];
+        for (var i = 0; i < value.length; i++) {
+            items.push(ozoJsonStringify(value[i]));
+        }
+        return "[" + items.join(",") + "]";
+    }
+    if (type === "object") {
+        var pairs = [];
+        for (var key in value) {
+            if (!Object.prototype.hasOwnProperty.call(value, key)) {
+                continue;
+            }
+            var entry = value[key];
+            var entryType = typeof entry;
+            if (entryType === "undefined" || entryType === "function") {
+                continue;
+            }
+            pairs.push(ozoJsonQuote(key) + ":" + ozoJsonStringify(entry));
+        }
+        return "{" + pairs.join(",") + "}";
+    }
+    return "null";
+}
+
+function ozoJsonQuote(text) {
+    var result = '"';
+    for (var i = 0; i < text.length; i++) {
+        var character = text.charAt(i);
+        var code = text.charCodeAt(i);
+        if (character === '"') {
+            result += '\\"';
+        } else if (character === "\\") {
+            result += "\\\\";
+        } else if (character === "\b") {
+            result += "\\b";
+        } else if (character === "\f") {
+            result += "\\f";
+        } else if (character === "\n") {
+            result += "\\n";
+        } else if (character === "\r") {
+            result += "\\r";
+        } else if (character === "\t") {
+            result += "\\t";
+        } else if (code < 32) {
+            var hex = code.toString(16);
+            while (hex.length < 4) {
+                hex = "0" + hex;
+            }
+            result += "\\u" + hex;
+        } else {
+            result += character;
+        }
+    }
+    return result + '"';
+}
+
 function ozoInitExtensionPath(pathStr) {
     try {
         if (pathStr && typeof pathStr === "string") {
@@ -96,7 +173,7 @@ function ozoRunScript(scriptFileName) {
         }
 
         if (!scriptFile.exists) {
-            return JSON.stringify({
+            return ozoJsonStringify({
                 status: "error",
                 message: "Script not found: " + scriptFileName
             });
@@ -114,13 +191,13 @@ function ozoRunScript(scriptFileName) {
             try { Folder.current = savedFolder; } catch (e) {}
         }
 
-        return JSON.stringify({
+        return ozoJsonStringify({
             status: "success",
             message: "Finished: " + scriptFile.name
         });
     } catch (err) {
         var msg = err && err.message ? err.message : String(err);
-        return JSON.stringify({
+        return ozoJsonStringify({
             status: "error",
             message: msg
         });
@@ -143,16 +220,16 @@ function ozoOpenScriptsFolder() {
                     opened = true;
                 } catch (eSys) {}
             }
-            return JSON.stringify({ status: "success" });
+            return ozoJsonStringify({ status: "success" });
         }
     } catch (e) {}
-    return JSON.stringify({ status: "error", message: "Folder not found" });
+    return ozoJsonStringify({ status: "error", message: "Folder not found" });
 }
 
 function ozoGetDocumentStatus() {
     try {
         if (app.documents.length === 0) {
-            return JSON.stringify({
+            return ozoJsonStringify({
                 hasDoc: false,
                 name: "",
                 colorSpace: "",
@@ -160,14 +237,14 @@ function ozoGetDocumentStatus() {
             });
         }
         var doc = app.activeDocument;
-        return JSON.stringify({
+        return ozoJsonStringify({
             hasDoc: true,
             name: doc.name,
             colorSpace: String(doc.documentColorSpace).replace("DocumentColorSpace.", ""),
             itemCount: doc.pageItems.length
         });
     } catch (e) {
-        return JSON.stringify({
+        return ozoJsonStringify({
             hasDoc: false,
             error: String(e)
         });
@@ -182,7 +259,7 @@ function ozoOpenURL(url) {
                 localFile = new File(url);
                 if (localFile.exists) {
                     localFile.execute();
-                    return JSON.stringify({ status: "success" });
+                    return ozoJsonStringify({ status: "success" });
                 }
             } catch (ignoreLocalFile) {}
 
@@ -190,17 +267,17 @@ function ozoOpenURL(url) {
             // and backslashes are rejected so the URL cannot break out of the
             // quoted argument.
             if (!/^https?:\/\/[^\s"'`$\\]+$/i.test(url)) {
-                return JSON.stringify({ status: "error", message: "Only http and https links can be opened." });
+                return ozoJsonStringify({ status: "error", message: "Only http and https links can be opened." });
             }
             if (Folder.fs === "Windows") {
                 app.system('explorer.exe "' + url + '"');
             } else {
                 app.system('open "' + url + '"');
             }
-            return JSON.stringify({ status: "success" });
+            return ozoJsonStringify({ status: "success" });
         }
     } catch (e) {
-        return JSON.stringify({ status: "error", message: String(e) });
+        return ozoJsonStringify({ status: "error", message: String(e) });
     }
-    return JSON.stringify({ status: "error", message: "Invalid URL" });
+    return ozoJsonStringify({ status: "error", message: "Invalid URL" });
 }

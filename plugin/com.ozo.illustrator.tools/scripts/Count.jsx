@@ -191,7 +191,6 @@
     OZO.addLanguageSelector(dialog, function () {
         activeLayerText.text = OZO.tr("Active layer: ") + activeLayer.name;
     });
-    OZO.addDonateRow(dialog, SCRIPT_NAME);
 
     dialog.defaultElement = closeButton;
     dialog.cancelElement = closeButton;

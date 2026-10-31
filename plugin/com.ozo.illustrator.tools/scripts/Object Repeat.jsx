@@ -254,7 +254,6 @@
         updateDimensionUnit();
         statusText.text = OZO.tr("Ready.");
     });
-    OZO.addDonateRow(dialog, SCRIPT_NAME);
 
     function updateSourceSummary() {
         var items = sourceItemsFor(sourceList.selection ? sourceList.selection.index : 0);

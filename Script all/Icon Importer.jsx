@@ -750,7 +750,6 @@
             previewName.text = OZO.tr("Select an icon and click Preview.");
         }
     });
-    OZO.addDonateRow(dialog, SCRIPT_NAME);
 
     var chosenIconIds = [];
     var currentStart = 0;

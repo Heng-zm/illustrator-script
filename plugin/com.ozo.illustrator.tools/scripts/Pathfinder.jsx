@@ -787,7 +787,6 @@
         updateDescription();
         refreshOperationIcons();
     });
-    OZO.addDonateRow(dialog, SCRIPT_NAME);
 
     function selectedOperation() {
         return operations[selectedOperationIndex];
