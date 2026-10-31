@@ -1,0 +1,859 @@
+/* Ozo shared preferences and English/Khmer ScriptUI localization. */
+if (typeof OZO === "undefined" || !OZO || !OZO.version) {
+    var OZO = (function () {
+        var cache = null;
+        var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
+        var km = {
+            "Illustrator Script Launcher": "\u1780\u1798\u17d2\u1798\u179c\u17b7\u1792\u17b8\u1794\u17be\u1780\u179f\u17d2\u1782\u17d2\u179a\u17b8\u1794 Illustrator",
+            "All Scripts": "\u179f\u17d2\u1782\u17d2\u179a\u17b8\u1794\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb",
+            "Search:": "\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u17d6",
+            "Clear": "\u179f\u1798\u17d2\u17a2\u17b6\u178f", "Selected Script": "\u179f\u17d2\u1782\u17d2\u179a\u17b8\u1794\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f",
+            "All folders": "\u1790\u178f\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb",
+            "No script selected": "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179f\u17d2\u1782\u17d2\u179a\u17b8\u1794",
+            "Run": "\u178a\u17c6\u178e\u17be\u179a\u1780\u17b6\u179a", "Refresh": "\u1795\u17d2\u1791\u17bb\u1780\u17a1\u17be\u1784\u179c\u17b7\u1789",
+            "Open Script Folder": "\u1794\u17be\u1780\u1790\u178f\u179f\u17d2\u1782\u17d2\u179a\u17b8\u1794", "Close": "\u1794\u17b7\u1791",
+            "Favorites": "\u1785\u17c6\u178e\u17bc\u179b\u1785\u17b7\u178f\u17d2\u178f", "Recent": "\u1790\u17d2\u1798\u17b8\u17d7",
+            "Add Favorite": "\u1794\u1793\u17d2\u1790\u17c2\u1798\u1791\u17c5\u1785\u17c6\u178e\u17bc\u179b\u1785\u17b7\u178f\u17d2\u178f", "Remove Favorite": "\u178a\u1780\u1785\u17c1\u1789\u1796\u17b8\u1785\u17c6\u178e\u17bc\u179b\u1785\u17b7\u178f\u17d2\u178f",
+            "Apply": "\u17a2\u1793\u17bb\u179c\u178f\u17d2\u178f", "Cancel": "\u1794\u17c4\u17c7\u1794\u1784\u17cb", "Generate": "\u1794\u1784\u17d2\u1780\u17be\u178f",
+            "Update Preview": "\u1792\u17d2\u179c\u17be\u1794\u1785\u17d2\u1785\u17bb\u1794\u17d2\u1794\u1793\u17d2\u1793\u1797\u17b6\u1796\u1780\u17b6\u179a\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793",
+            "Settings save automatically.": "\u1780\u17b6\u179a\u1780\u17c6\u178e\u178f\u17cb\u178f\u17d2\u179a\u17bc\u179c\u1794\u17b6\u1793\u179a\u1780\u17d2\u179f\u17b6\u1791\u17bb\u1780\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u17d4",
+
+            "Count Items": "\u179a\u17b6\u1794\u17cb\u1792\u17b6\u178f\u17bb", "Document Summary": "\u179f\u17c1\u1785\u1780\u17d2\u178a\u17b8\u179f\u1784\u17d2\u1781\u17c1\u1794\u17af\u1780\u179f\u17b6\u179a",
+            "Overview": "\u1791\u17b7\u178a\u17d2\u178b\u1797\u17b6\u1796\u1791\u17bc\u1791\u17c5", "Selected items": "\u1792\u17b6\u178f\u17bb\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f",
+            "Items in active layer": "\u1792\u17b6\u178f\u17bb\u1780\u17d2\u1793\u17bb\u1784\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb\u179f\u1780\u1798\u17d2\u1798",
+            "Items in document": "\u1792\u17b6\u178f\u17bb\u1780\u17d2\u1793\u17bb\u1784\u17af\u1780\u179f\u17b6\u179a", "Document layers": "\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb\u17af\u1780\u179f\u17b6\u179a",
+            "Artboards": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a", "Item Types in Active Layer": "\u1794\u17d2\u179a\u1797\u17c1\u1791\u1792\u17b6\u178f\u17bb\u1780\u17d2\u1793\u17bb\u1784\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb\u179f\u1780\u1798\u17d2\u1798",
+            "Paths": "\u1795\u17d2\u179b\u17bc\u179c\u1782\u17c6\u1793\u17bc\u179a", "Groups": "\u1780\u17d2\u179a\u17bb\u1798", "Text": "\u17a2\u178f\u17d2\u1790\u1794\u1791",
+            "Images": "\u179a\u17bc\u1794\u1797\u17b6\u1796", "Compound paths": "\u1795\u17d2\u179b\u17bc\u179c\u1795\u17d2\u179f\u17c6", "Other": "\u1795\u17d2\u179f\u17c1\u1784\u17d7",
+            "Active layer: ": "\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb\u179f\u1780\u1798\u17d2\u1798\u17d6 ",
+
+            "Generate QR Code": "\u1794\u1784\u17d2\u1780\u17be\u178f\u1780\u17bc\u178a QR", "QR Content": "\u1798\u17b6\u178f\u17b7\u1780\u17b6\u1780\u17bc\u178a QR",
+            "Import Old QR Image...": "\u1793\u17b6\u17c6\u1785\u17bc\u179b\u179a\u17bc\u1794 QR \u1785\u17b6\u179f\u17cb...", "Settings": "\u1780\u17b6\u179a\u1780\u17c6\u178e\u178f\u17cb",
+            "Finished size:": "\u1791\u17c6\u17a0\u17c6\u1785\u17bb\u1784\u1780\u17d2\u179a\u17c4\u1799\u17d6", "QR style:": "\u179a\u1785\u1793\u17b6\u1794\u17d0\u1791\u17d2\u1798 QR\u17d6",
+            "Normal": "\u1792\u1798\u17d2\u1798\u178f\u17b6", "Error correction:": "\u1780\u1798\u17d2\u179a\u17b7\u178f\u1780\u17c2\u1780\u17c6\u17a0\u17bb\u179f\u17d6",
+            "Quiet zone:": "\u178f\u17c6\u1794\u1793\u17cb\u1791\u17c6\u1793\u17c1\u179a\u17d6", "modules (4 recommended)": "\u1798\u17c9\u17bc\u178c\u17bb\u179b (\u178e\u17c2\u1793\u17b6\u17c6 4)",
+            "Vector Output": "\u179b\u1791\u17d2\u1792\u1795\u179b\u179c\u17c9\u17b7\u1785\u1791\u17d0\u179a",
+            "Add white background / quiet zone": "\u1794\u1793\u17d2\u1790\u17c2\u1798\u1795\u17d2\u1791\u17c3\u179f / \u178f\u17c6\u1794\u1793\u17cb\u1791\u17c6\u1793\u17c1\u179a",
+            "Create on a new QR Code layer": "\u1794\u1784\u17d2\u1780\u17be\u178f\u179b\u17be\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb QR Code \u1790\u17d2\u1798\u17b8",
+            "Generate Editable Vector QR Code": "\u1794\u1784\u17d2\u1780\u17be\u178f\u1780\u17bc\u178a QR \u179c\u17c9\u17b7\u1785\u1791\u17d0\u179a\u178a\u17c2\u179b\u17a2\u17b6\u1785\u1780\u17c2\u179f\u1798\u17d2\u179a\u17bd\u179b\u1794\u17b6\u1793",
+            "Content template:": "\u1782\u17c6\u179a\u17bc\u1798\u17b6\u178f\u17b7\u1780\u17b6\u17d6", "Email": "\u17a2\u17ca\u17b8\u1798\u17c2\u179b", "Phone": "\u1791\u17bc\u179a\u179f\u17d0\u1796\u17d2\u1791",
+            "Contact card": "\u1780\u17b6\u178f\u1791\u17c6\u1793\u17b6\u1780\u17cb\u1791\u17c6\u1793\u1784", "Insert Template": "\u1794\u1789\u17d2\u1785\u17bc\u179b\u1782\u17c6\u179a\u17bc",
+            "Black": "\u1781\u17d2\u1798\u17c5", "White": "\u179f", "Blue": "\u1781\u17c0\u179c",
+            "No icons selected for import.": "\u1798\u17b7\u1793\u1798\u17b6\u1793\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb\u1793\u17b6\u17c6\u1785\u17bc\u179b\u1791\u17c1\u17d4",
+            "Search Iconify": "\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780 Iconify", "Search": "\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780", "Icon set:": "\u179f\u17c6\u178e\u17bb\u17c6\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u17d6",
+            "Results:": "\u179b\u1791\u17d2\u1792\u1795\u179b\u17d6", "Color:": "\u1796\u178e\u17cc\u17d6", "Icon Preview": "\u1798\u17be\u179b\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u1787\u17b6\u1798\u17bb\u1793",
+            "Select an icon and click Preview.": "\u1787\u17d2\u179a\u17be\u179f\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784 \u17a0\u17be\u1799\u1785\u17bb\u1785 \u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793\u17d4",
+            "Type a keyword to search hundreds of thousands of icons.": "\u179c\u17b6\u1799\u1796\u17b6\u1780\u17d2\u1799\u1782\u1793\u17d2\u179b\u17b9\u17c7\u178a\u17be\u1798\u17d2\u1794\u17b8\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u1787\u17b6\u1785\u17d2\u179a\u17be\u1793\u17d4",
+            "Previous": "\u1798\u17bb\u1793", "Next": "\u1794\u1793\u17d2\u1791\u17b6\u1794\u17cb", "Page 1": "\u1791\u17c6\u1796\u17d0\u179a 1", "Select All": "\u1787\u17d2\u179a\u17be\u179f\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb",
+            "Auto preview": "\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7", "Import Layout": "\u1794\u17d2\u179b\u1784\u17cb\u1793\u17b6\u17c6\u1785\u17bc\u179b",
+            "Size (mm):": "\u1791\u17c6\u17a0\u17c6 (mm)\u17d6", "Columns:": "\u1787\u17bd\u179a\u1788\u179a\u17d6", "Gap (mm):": "\u1782\u1798\u17d2\u179b\u17b6\u178f (mm)\u17d6",
+            "Preview": "\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793", "Download SVG...": "\u1791\u17b6\u1789\u1799\u1780 SVG...", "Import Selected": "\u1793\u17b6\u17c6\u1785\u17bc\u179b\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f",
+            "Downloading icons...": "\u1780\u17c6\u1796\u17bb\u1784\u1791\u17b6\u1789\u1799\u1780\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784...",
+            "Icons come from multiple open-source sets. Check the source set license before distribution.": "\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u1798\u1780\u1796\u17b8\u179f\u17c6\u178e\u17bb\u17c6\u1794\u17d2\u179a\u1797\u1796\u1794\u17be\u1780\u1785\u17c6\u17a0\u1787\u17b6\u1785\u17d2\u179a\u17be\u1793\u17d4 \u179f\u17bc\u1798\u1796\u17b7\u1793\u17b7\u178f\u17d2\u1799\u17a2\u17b6\u1787\u17d2\u1789\u17b6\u1794\u178e\u17d2\u178e\u1798\u17bb\u1793\u1785\u17c2\u1780\u1785\u17b6\u1799\u17d4",
+            "icon(s) selected": "\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f", "column(s)": "\u1787\u17bd\u179a\u1788\u179a", "row(s)": "\u1787\u17bd\u179a\u178a\u17c1\u1780",
+            "Icon Set": "\u179f\u17c6\u178e\u17bb\u17c6\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784", "Icon Name": "\u1788\u17d2\u1798\u17c4\u17c7\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784",
+            "Previewing": "\u1780\u17c6\u1796\u17bb\u1784\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793", "in this dialog.": "\u1780\u17d2\u1793\u17bb\u1784\u1794\u17d2\u179a\u17a2\u1794\u17cb\u1793\u17c1\u17c7\u17d4",
+            "Loading preview for": "\u1780\u17c6\u1796\u17bb\u1784\u1795\u17d2\u1791\u17bb\u1780\u1780\u17b6\u179a\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793\u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb", "Icon preview failed.": "\u1780\u17b6\u179a\u1798\u17be\u179b\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u1787\u17b6\u1798\u17bb\u1793\u1794\u179a\u17b6\u1787\u17d0\u1799\u17d4",
+            "Showing": "\u1780\u17c6\u1796\u17bb\u1784\u1794\u1784\u17d2\u17a0\u17b6\u1789", "of": "\u1780\u17d2\u1793\u17bb\u1784\u1785\u17c6\u178e\u17c4\u1798", "icons.": "\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u17d4", "Page": "\u1791\u17c6\u1796\u17d0\u179a",
+            "No icons found. Try a different keyword.": "\u179a\u1780\u1798\u17b7\u1793\u1783\u17be\u1789\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u1791\u17c1\u17d4 \u179f\u17b6\u1780\u179b\u17d2\u1794\u1784\u1796\u17b6\u1780\u17d2\u1799\u1782\u1793\u17d2\u179b\u17b9\u17c7\u1795\u17d2\u179f\u17c1\u1784\u17d4",
+            "Enter an icon search keyword.": "\u1794\u1789\u17d2\u1785\u17bc\u179b\u1796\u17b6\u1780\u17d2\u1799\u1782\u1793\u17d2\u179b\u17b9\u17c7\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u17d4",
+            "The icon-set prefix can contain only letters, numbers, and hyphens.": "\u1794\u17bb\u1796\u17d2\u179c\u1794\u1791\u179f\u17c6\u178e\u17bb\u17c6\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u17a2\u17b6\u1785\u1798\u17b6\u1793\u178f\u17c2\u17a2\u1780\u17d2\u179f\u179a \u179b\u17c1\u1781 \u1793\u17b7\u1784\u179f\u1789\u17d2\u1789\u17b6\u178a\u1780\u1794\u17c9\u17bb\u178e\u17d2\u178e\u17c4\u17c7\u17d4",
+            "Searching Iconify for": "\u1780\u17c6\u1796\u17bb\u1784\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u1780\u17d2\u1793\u17bb\u1784 Iconify \u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb", "Icon search failed.": "\u1780\u17b6\u179a\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u179a\u17bc\u1794\u178f\u17c6\u178e\u17b6\u1784\u1794\u179a\u17b6\u1787\u17d0\u1799\u17d4",
+            "Enter QR content to calculate the version and matrix size.": "\u1794\u1789\u17d2\u1785\u17bc\u179b\u1798\u17b6\u178f\u17b7\u1780\u17b6 QR \u178a\u17be\u1798\u17d2\u1794\u17b8\u1782\u178e\u1793\u17b6\u1787\u17c6\u1793\u17b6\u1793\u17cb \u1793\u17b7\u1784\u1791\u17c6\u17a0\u17c6\u1798\u17c9\u17b6\u1791\u17d2\u179a\u17b8\u179f\u17d4",
+            "Ready": "\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb", "Not ready": "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb", "character(s)": "\u178f\u17bd\u17a2\u1780\u17d2\u179f\u179a",
+            "Version": "\u1787\u17c6\u1793\u17b6\u1793\u17cb", "modules": "\u1798\u17c9\u17bc\u178c\u17bb\u179b", "Level": "\u1780\u1798\u17d2\u179a\u17b7\u178f",
+            "Enter a finished size greater than zero.": "\u1794\u1789\u17d2\u1785\u17bc\u179b\u1791\u17c6\u17a0\u17c6\u1785\u17bb\u1784\u1780\u17d2\u179a\u17c4\u1799\u1792\u17c6\u1787\u17b6\u1784\u179f\u17bc\u1793\u17d2\u1799\u17d4",
+            "Enter a whole-number quiet zone from 0 to 20 modules.": "\u1794\u1789\u17d2\u1785\u17bc\u179b\u178f\u17c6\u1794\u1793\u17cb\u1791\u17c6\u1793\u17c1\u179a\u1787\u17b6\u1785\u17c6\u1793\u17bd\u1793\u1782\u178f\u17cb\u1796\u17b8 0 \u178a\u179b\u17cb 20 \u1798\u17c9\u17bc\u178c\u17bb\u179b\u17d4",
+            "The content is too long. This generator supports QR versions 1-10.": "\u1798\u17b6\u178f\u17b7\u1780\u17b6\u179c\u17c2\u1784\u1796\u17c1\u1780\u17d4 \u1780\u1798\u17d2\u1798\u179c\u17b7\u1792\u17b8\u1793\u17c1\u17c7\u1782\u17b6\u17c6\u1791\u17d2\u179a QR \u1787\u17c6\u1793\u17b6\u1793\u17cb 1 \u178a\u179b\u17cb 10\u17d4",
+            "Import an old QR image or enter content manually, then create a fresh editable vector QR. No internet connection is used.": "\u1793\u17b6\u17c6\u1785\u17bc\u179b\u179a\u17bc\u1794 QR \u1785\u17b6\u179f\u17cb \u17ac\u1794\u1789\u17d2\u1785\u17bc\u179b\u1798\u17b6\u178f\u17b7\u1780\u17b6\u178a\u17c4\u1799\u178a\u17c3 \u1794\u1793\u17d2\u1791\u17b6\u1794\u17cb\u1798\u1780\u1794\u1784\u17d2\u1780\u17be\u178f QR \u179c\u17c9\u17b7\u1785\u1791\u17d0\u179a\u1790\u17d2\u1798\u17b8\u178a\u17c2\u179b\u17a2\u17b6\u1785\u1780\u17c2\u179f\u1798\u17d2\u179a\u17bd\u179b\u1794\u17b6\u1793\u17d4 \u1798\u17b7\u1793\u1794\u17d2\u179a\u17be\u17a2\u17ca\u17b8\u1793\u1792\u17ba\u178e\u17b7\u178f\u1791\u17c1\u17d4",
+            "Telegram 2026 uses connected black modules, source-matched rounded finders, the official blue paper-plane badge, and Telegram's M error correction.": "Telegram 2026 \u1794\u17d2\u179a\u17be\u1798\u17c9\u17bc\u178c\u17bb\u179b\u1781\u17d2\u1798\u17c5\u178f\u1797\u17d2\u1787\u17b6\u1794\u17cb \u1780\u17d2\u179a\u17a1\u17b6\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u1787\u17d2\u179a\u17bb\u1784\u1798\u17bc\u179b \u1795\u17d2\u179b\u17b6\u1780\u1799\u1793\u17d2\u178f\u17a0\u17c4\u17c7\u1780\u17d2\u179a\u178a\u17b6\u179f\u1796\u178e\u17cc\u1781\u17c0\u179c\u1795\u17d2\u179b\u17bc\u179c\u1780\u17b6\u179a \u1793\u17b7\u1784\u1780\u1798\u17d2\u179a\u17b7\u178f\u1780\u17c2\u1780\u17c6\u17a0\u17bb\u179f M\u17d4",
+            "Normal style creates editable square vector modules. No internet connection is used.": "\u179a\u1785\u1793\u17b6\u1794\u17d0\u1791\u17d2\u1798\u1792\u1798\u17d2\u1798\u178f\u17b6\u1794\u1784\u17d2\u1780\u17be\u178f\u1798\u17c9\u17bc\u178c\u17bb\u179b\u179c\u17c9\u17b7\u1785\u1791\u17d0\u179a\u179a\u17b6\u1784\u1780\u17b6\u179a\u17c9\u17c1\u178a\u17c2\u179b\u17a2\u17b6\u1785\u1780\u17c2\u179f\u1798\u17d2\u179a\u17bd\u179b\u1794\u17b6\u1793\u17d4 \u1798\u17b7\u1793\u1794\u17d2\u179a\u17be\u17a2\u17ca\u17b8\u1793\u1792\u17ba\u178e\u17b7\u178f\u1791\u17c1\u17d4",
+
+            "Nesting": "\u179a\u17c0\u1794\u1785\u17c6\u179f\u1798\u17d2\u1797\u17b6\u179a\u17c8", "Sheets / Containers": "\u179f\u1793\u17d2\u179b\u17b9\u1780 / \u1795\u17d2\u1791\u17c3\u178a\u17b6\u1780\u17cb",
+            "Active artboard": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u179f\u1780\u1798\u17d2\u1798", "All artboards": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb",
+            "Last selected object": "\u179c\u178f\u17d2\u1790\u17bb\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u1785\u17bb\u1784\u1780\u17d2\u179a\u17c4\u1799", "Units": "\u17af\u1780\u178f\u17b6",
+            "Use custom active sheet size": "\u1794\u17d2\u179a\u17be\u1791\u17c6\u17a0\u17c6\u179f\u1793\u17d2\u179b\u17b9\u1780\u179f\u1780\u1798\u17d2\u1798\u1795\u17d2\u1791\u17b6\u179b\u17cb\u1781\u17d2\u179b\u17bd\u1793",
+            "Width": "\u1791\u1791\u17b9\u1784", "Height": "\u1780\u1798\u17d2\u1796\u179f\u17cb", "Margins": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1782\u17c2\u1798",
+            "Left": "\u1786\u17d2\u179c\u17c1\u1784", "Right": "\u179f\u17d2\u178a\u17b6\u17c6", "Top": "\u179b\u17be", "Bottom": "\u1780\u17d2\u179a\u17c4\u1798",
+            "Placement": "\u1780\u17b6\u179a\u178a\u17b6\u1780\u17cb", "Min. distance": "\u1785\u1798\u17d2\u1784\u17b6\u1799\u17a2\u1794\u17d2\u1794\u1794\u179a\u1798\u17b6",
+            "Edge padding": "\u1785\u1793\u17d2\u179b\u17c4\u17c7\u1796\u17b8\u1782\u17c2\u1798", "Optimization": "\u1780\u17b6\u179a\u1794\u1784\u17d2\u1780\u17be\u1793\u1794\u17d2\u179a\u179f\u17b7\u1791\u17d2\u1792\u1797\u17b6\u1796",
+            "Approximation quality": "\u1782\u17bb\u178e\u1797\u17b6\u1796\u1794\u17d2\u179a\u17a0\u17b6\u1780\u17cb\u1794\u17d2\u179a\u17a0\u17c2\u179b", "Rotation": "\u1780\u17b6\u179a\u1794\u1784\u17d2\u179c\u17b7\u179b",
+            "Do not rotate": "\u1780\u17bb\u17c6\u1794\u1784\u17d2\u179c\u17b7\u179b", "Auto": "\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7", "High": "\u1781\u17d2\u1796\u179f\u17cb",
+            "Middle": "\u1798\u1792\u17d2\u1799\u1798", "Low": "\u1791\u17b6\u1794", "Search best result": "\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u179b\u1791\u17d2\u1792\u1795\u179b\u179b\u17d2\u17a2\u1794\u17c6\u1795\u17bb\u178f",
+            "Screen Preview": "\u1780\u17b6\u179a\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793\u179b\u17be\u17a2\u17c1\u1780\u17d2\u179a\u1784\u17cb", "Ready to preview.": "\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb\u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793\u17d4",
+
+            "Pathfinder": "\u1795\u17d2\u179f\u17c6\u179a\u17b6\u1784", "Operation": "\u1794\u17d2\u179a\u178f\u17b7\u1794\u178f\u17d2\u178f\u17b7\u1780\u17b6\u179a", "Result": "\u179b\u1791\u17d2\u1792\u1795\u179b",
+            "Unite": "\u1794\u1789\u17d2\u1785\u17bc\u179b\u1782\u17d2\u1793\u17b6", "Minus Front": "\u178a\u1780\u1795\u17d2\u1793\u17c2\u1780\u1781\u17b6\u1784\u1798\u17bb\u1781",
+            "Intersect": "\u1795\u17d2\u1793\u17c2\u1780\u1794\u17d2\u179a\u179f\u1796\u17d2\u179c", "Exclude": "\u178a\u1780\u1795\u17d2\u1793\u17c2\u1780\u1794\u17d2\u179a\u179f\u1796\u17d2\u179c\u1785\u17c1\u1789",
+            "Divide": "\u1794\u17c2\u1784\u1785\u17c2\u1780", "Trim": "\u1780\u17b6\u178f\u17cb\u178f\u1798\u17d2\u179a\u17b9\u1798", "Merge": "\u1794\u1789\u17d2\u1785\u17bc\u179b",
+            "Crop": "\u1785\u17d2\u179a\u17b9\u1794", "Outline": "\u1782\u17d2\u179a\u17c4\u1784\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb", "Minus Back": "\u178a\u1780\u1795\u17d2\u1793\u17c2\u1780\u1781\u17b6\u1784\u1780\u17d2\u179a\u17c4\u1799",
+            "[+] Expand the Pathfinder result": "[+] \u1796\u1784\u17d2\u179a\u17b8\u1780\u179b\u1791\u17d2\u1792\u1795\u179b Pathfinder",
+            "[#] Return individual result objects": "[#] \u1794\u1784\u17d2\u17a0\u17b6\u1789\u179c\u178f\u17d2\u1790\u17bb\u179b\u1791\u17d2\u1792\u1795\u179b\u178a\u17b6\u1785\u17cb\u178a\u17c4\u1799\u17a1\u17c2\u1780",
+            "[-] Remove empty result groups": "[-] \u179b\u17bb\u1794\u1780\u17d2\u179a\u17bb\u1798\u179b\u1791\u17d2\u1792\u1795\u179b\u1791\u1791\u17c1",
+            "[2] Process Minus operations in pairs": "[2] \u178a\u17c6\u178e\u17be\u179a\u1780\u17b6\u179a\u178a\u1780\u1787\u17b6\u1782\u17bc",
+            "[>] Update Preview": "[>] \u1792\u17d2\u179c\u17be\u1794\u1785\u17d2\u1785\u17bb\u1794\u17d2\u1794\u1793\u17d2\u1793\u1797\u17b6\u1796\u1780\u17b6\u179a\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793",
+            "[X] Cancel": "[X] \u1794\u17c4\u17c7\u1794\u1784\u17cb", "[OK] Apply": "[OK] \u17a2\u1793\u17bb\u179c\u178f\u17d2\u178f",
+
+            "Sequential Numbering": "\u179b\u17c1\u1781\u179a\u17c0\u1784", "Sequence": "\u179b\u17c6\u178a\u17b6\u1794\u17cb\u179b\u17c1\u1781",
+            "Start:": "\u1785\u17b6\u1794\u17cb\u1795\u17d2\u178a\u17be\u1798\u17d6", "End:": "\u1794\u1789\u17d2\u1785\u1794\u17cb\u17d6", "Padding:": "\u1781\u17d2\u1791\u1784\u17cb\u1794\u17c6\u1796\u17c1\u1789\u17d6",
+            "Prefix": "\u17a2\u1780\u17d2\u179f\u179a\u1781\u17b6\u1784\u1798\u17bb\u1781", "Suffix": "\u17a2\u1780\u17d2\u179f\u179a\u1781\u17b6\u1784\u1780\u17d2\u179a\u17c4\u1799", "Layout": "\u1794\u17d2\u179b\u1784\u17cb",
+            "Mode:": "\u179a\u1794\u17c0\u1794\u17d6", "N-up grid": "\u1780\u17d2\u179a\u17a1\u17b6\u1785\u17d2\u179a\u17be\u1793\u1787\u17bd\u179a",
+            "Matching position across artboards": "\u1791\u17b8\u178f\u17b6\u17c6\u1784\u178a\u17bc\u1785\u1782\u17d2\u1793\u17b6\u178f\u17b6\u1798\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a",
+            "Units:": "\u17af\u1780\u178f\u17b6\u17d6", "Columns": "\u1785\u17c6\u1793\u17bd\u1793\u1787\u17bd\u179a\u1788\u179a",
+            "Horizontal step": "\u1785\u1793\u17d2\u179b\u17c4\u17c7\u1795\u17d2\u178a\u17c1\u1780", "Vertical step": "\u1785\u1793\u17d2\u179b\u17c4\u17c7\u1794\u1789\u17d2\u1788\u179a",
+            "Start X": "\u1785\u17c6\u178e\u17bb\u1785\u1785\u17b6\u1794\u17cb\u1795\u17d2\u178a\u17be\u1798 X", "Start Y": "\u1785\u17c6\u178e\u17bb\u1785\u1785\u17b6\u1794\u17cb\u1795\u17d2\u178a\u17be\u1798 Y",
+            "Reference/start artboard:": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u1799\u17c4\u1784/\u1785\u17b6\u1794\u17cb\u1795\u17d2\u178a\u17be\u1798\u17d6",
+            "Template after Apply": "\u1796\u17bb\u1798\u17d2\u1796\u1794\u1793\u17d2\u1791\u17b6\u1794\u17cb\u1796\u17b8\u17a2\u1793\u17bb\u179c\u178f\u17d2\u178f", "Action:": "\u179f\u1780\u1798\u17d2\u1798\u1797\u17b6\u1796\u17d6",
+            "Hide source template": "\u179b\u17b6\u1780\u17cb\u1796\u17bb\u1798\u17d2\u1796\u178a\u17be\u1798", "Lock source template": "\u1785\u17b6\u1780\u17cb\u179f\u17c4\u1796\u17bb\u1798\u17d2\u1796\u178a\u17be\u1798",
+            "Keep source template": "\u179a\u1780\u17d2\u179f\u17b6\u1796\u17bb\u1798\u17d2\u1796\u178a\u17be\u1798",
+
+            "Smart Dimension": "\u179c\u17b6\u179f\u17cb\u1791\u17c6\u17a0\u17c6\u1786\u17d2\u179b\u17b6\u178f\u179c\u17c3", "Measurement": "\u1780\u17b6\u179a\u179c\u17b6\u179f\u17cb\u179c\u17c2\u1784",
+            "Dimension:": "\u1794\u17d2\u179a\u1797\u17c1\u1791\u1791\u17c6\u17a0\u17c6\u17d6", "Overall width": "\u1791\u1791\u17b9\u1784\u179f\u179a\u17bb\u1794",
+            "Overall height": "\u1780\u1798\u17d2\u1796\u179f\u17cb\u179f\u179a\u17bb\u1794", "Overall width + height": "\u1791\u1791\u17b9\u1784 + \u1780\u1798\u17d2\u1796\u179f\u17cb\u179f\u179a\u17bb\u1794",
+            "Use bounds:": "\u1794\u17d2\u179a\u17be\u1796\u17d2\u179a\u17c6\u178a\u17c2\u1793\u17d6", "Visible bounds (include strokes)": "\u1796\u17d2\u179a\u17c6\u178a\u17c2\u1793\u1798\u17be\u179b\u1783\u17be\u1789 (\u179a\u17bd\u1798\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb)",
+            "Geometric bounds": "\u1796\u17d2\u179a\u17c6\u178a\u17c2\u1793\u1792\u179a\u178e\u17b8\u1798\u17b6\u178f\u17d2\u179a", "Units and Scale": "\u17af\u1780\u178f\u17b6 \u1793\u17b7\u1784 \u1798\u17b6\u178f\u17d2\u179a\u178a\u17d2\u178b\u17b6\u1793",
+            "Precision:": "\u1781\u17d2\u1791\u1784\u17cb\u1791\u179f\u1797\u17b6\u1782\u17d6", "Show unit": "\u1794\u1784\u17d2\u17a0\u17b6\u1789\u17af\u1780\u178f\u17b6",
+            "Dimension Style": "\u179a\u1785\u1793\u17b6\u1794\u17d0\u1791\u17d2\u1798\u1791\u17c6\u17a0\u17c6", "Offset": "\u1785\u1798\u17d2\u1784\u17b6\u1799\u1796\u17b8\u179c\u178f\u17d2\u1790\u17bb",
+            "Text size": "\u1791\u17c6\u17a0\u17c6\u17a2\u1780\u17d2\u179f\u179a", "Arrow size": "\u1791\u17c6\u17a0\u17c6\u1796\u17d2\u179a\u17bd\u1789",
+            "Line weight": "\u1780\u1798\u17d2\u179a\u17b6\u179f\u17cb\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb", "selected unit": "\u17af\u1780\u178f\u17b6\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f",
+            "White background behind labels": "\u1795\u17d2\u1791\u17c3\u179f\u1781\u17b6\u1784\u1780\u17d2\u179a\u17c4\u1799\u179f\u17d2\u179b\u17b6\u1780",
+
+            "Object Repeat": "\u1792\u17d2\u179c\u17be\u179c\u178f\u17d2\u1790\u17bb\u178a\u178a\u17c2\u179b\u17d7",
+            "Repeat Artwork Across an Artboard": "\u1792\u17d2\u179c\u17be\u179f\u17d2\u1793\u17b6\u178a\u17c3\u178a\u178a\u17c2\u179b\u17d7\u179b\u17be\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a",
+            "Dimension unit:": "\u17af\u1780\u178f\u17b6\u1791\u17c6\u17a0\u17c6\u17d6",
+            "Millimeters (mm)": "\u1798\u17b8\u179b\u17b8\u1798\u17c9\u17c2\u178f\u17d2\u179a (mm)", "Centimeters (cm)": "\u179f\u1784\u17cb\u1791\u17b8\u1798\u17c9\u17c2\u178f\u17d2\u179a (cm)",
+            "Inches (in)": "\u17a2\u17ca\u17b8\u1789 (in)", "Points (pt)": "\u1796\u17b7\u1793\u17d2\u1791\u17bb (pt)", "Pixels (px)": "\u1797\u17b8\u1780\u179f\u17c2\u179b (px)",
+            "Illustrator treats 1 px as 1 pt in scripts.": "Illustrator \u1785\u17b6\u178f\u17cb\u1791\u17bb\u1780 1 px \u179f\u17d2\u1798\u17be 1 pt \u1780\u17d2\u1793\u17bb\u1784\u179f\u17d2\u1782\u17d2\u179a\u17b8\u1794\u17d4",
+            "Dimension values convert automatically.": "\u178f\u1798\u17d2\u179b\u17c3\u1791\u17c6\u17a0\u17c6\u1794\u1798\u17d2\u179b\u17c2\u1784\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u17d4",
+            "Quick preset:": "\u1780\u17b6\u179a\u1780\u17c6\u178e\u178f\u17cb\u179a\u17a0\u17d0\u179f\u17d6", "Simple Grid": "\u1780\u17d2\u179a\u17a1\u17b6\u1785\u178f\u17d2\u179a\u1784\u17d2\u1782\u1792\u1798\u17d2\u1798\u178f\u17b6",
+            "Sticker Sheet": "\u179f\u1793\u17d2\u179b\u17b9\u1780\u179f\u17d2\u1791\u17b8\u1782\u17d0\u179a", "Brick Pattern": "\u179b\u17c6\u1793\u17b6\u17c6\u17a5\u178a\u17d2\u178b",
+            "Random Scatter": "\u179a\u17b6\u1799\u1794\u17c9\u17b6\u1799\u1785\u17c3\u178a\u1793\u17d2\u1799", "Apply Preset": "\u17a2\u1793\u17bb\u179c\u178f\u17d2\u178f\u1780\u17b6\u179a\u1780\u17c6\u178e\u178f\u17cb",
+            "Source Artwork": "\u179f\u17d2\u1793\u17b6\u178a\u17c3\u178a\u17be\u1798", "Repeat:": "\u1792\u17d2\u179c\u17be\u178a\u178a\u17c2\u179b\u17d6",
+            "Selected objects": "\u179c\u178f\u17d2\u1790\u17bb\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f",
+            "Top-level objects in active layer": "\u179c\u178f\u17d2\u1790\u17bb\u1780\u1798\u17d2\u179a\u17b7\u178f\u179b\u17be\u1780\u17d2\u1793\u17bb\u1784\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb\u179f\u1780\u1798\u17d2\u1798",
+            "Scale (%):": "\u1798\u17b6\u178f\u17d2\u179a\u178a\u17d2\u178b\u17b6\u1793 (%)\u17d6", "Tile width (0 = off):": "\u1791\u1791\u17b9\u1784\u1780\u17d2\u179a\u17a1\u17b6 (0 = \u1794\u17b7\u1791)\u17d6",
+            "Height:": "\u1780\u1798\u17d2\u1796\u179f\u17cb\u17d6", "Sizing mode:": "\u179a\u1794\u17c0\u1794\u1780\u17c6\u178e\u178f\u17cb\u1791\u17c6\u17a0\u17c6\u17d6",
+            "Fit proportionally": "\u1794\u17d2\u178f\u17bc\u179a\u1791\u17c6\u17a0\u17c6\u179a\u1780\u17d2\u179f\u17b6\u179f\u1798\u17b6\u1798\u17b6\u178f\u17d2\u179a",
+            "Exact width and height": "\u1791\u1791\u17b9\u1784 \u1793\u17b7\u1784\u1780\u1798\u17d2\u1796\u179f\u17cb\u1787\u17b6\u1780\u17cb\u179b\u17b6\u1780\u17cb",
+            "Target Artboard": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u1782\u17c4\u179b\u178a\u17c5", "Create a new artboard": "\u1794\u1784\u17d2\u1780\u17be\u178f\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u1790\u17d2\u1798\u17b8",
+            "Use active artboard": "\u1794\u17d2\u179a\u17be\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u179f\u1780\u1798\u17d2\u1798",
+            "Resize active artboard": "\u1794\u17d2\u178f\u17bc\u179a\u1791\u17c6\u17a0\u17c6\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u179f\u1780\u1798\u17d2\u1798", "Width:": "\u1791\u1791\u17b9\u1784\u17d6",
+            "Swap": "\u1794\u17d2\u178f\u17bc\u179a\u1782\u17d2\u1793\u17b6", "New artboard position:": "\u1791\u17b8\u178f\u17b6\u17c6\u1784\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u1790\u17d2\u1798\u17b8\u17d6",
+            "Right of active": "\u1781\u17b6\u1784\u179f\u17d2\u178f\u17b6\u17c6\u1793\u17c3\u1795\u17d2\u1791\u17b6\u17c6\u1784\u179f\u1780\u1798\u17d2\u1798", "Below active": "\u1781\u17b6\u1784\u1780\u17d2\u179a\u17c4\u1798\u1795\u17d2\u1791\u17b6\u17c6\u1784\u179f\u1780\u1798\u17d2\u1798",
+            "Gap:": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u17d6", "Basic Layout": "\u1794\u17d2\u179b\u1784\u17cb\u1798\u17bc\u179b\u178a\u17d2\u178b\u17b6\u1793", "Advanced": "\u1780\u1798\u17d2\u179a\u17b7\u178f\u1781\u17d2\u1796\u179f\u17cb",
+            "Repeat Layout": "\u1794\u17d2\u179b\u1784\u17cb\u1792\u17d2\u179c\u17be\u178a\u178a\u17c2\u179b", "Horizontal space:": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1795\u17d2\u178a\u17c1\u1780\u17d6",
+            "Vertical space:": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1794\u1789\u17d2\u1788\u179a\u17d6", "Columns (0 = Auto):": "\u1787\u17bd\u179a\u1788\u179a (0 = \u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7)\u17d6",
+            "Rows (0 = Auto):": "\u1787\u17bd\u179a\u178a\u17c1\u1780 (0 = \u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7)\u17d6", "Margin X:": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1782\u17c2\u1798 X\u17d6",
+            "Margin Y:": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1782\u17c2\u1798 Y\u17d6", "Pattern:": "\u179b\u17c6\u1793\u17b6\u17c6\u17d6", "Grid": "\u1780\u17d2\u179a\u17a1\u17b6\u1785\u178f\u17d2\u179a\u1784\u17d2\u1782",
+            "Brick rows": "\u1787\u17bd\u179a\u17a5\u178a\u17d2\u178b", "Brick columns": "\u1787\u17bd\u179a\u1788\u179a\u17a5\u178a\u17d2\u178b", "Alternating:": "\u1786\u17d2\u179b\u17b6\u179f\u17cb\u1782\u17d2\u1793\u17b6\u17d6",
+            "None": "\u1782\u17d2\u1798\u17b6\u1793", "Rotate 180": "\u1794\u1784\u17d2\u179c\u17b7\u179b 180", "Flip horizontal": "\u178f\u17d2\u179a\u17a1\u1794\u17cb\u1795\u17d2\u178a\u17c1\u1780",
+            "Flip vertical": "\u178f\u17d2\u179a\u17a1\u1794\u17cb\u1794\u1789\u17d2\u1788\u179a", "Stagger (%):": "\u1780\u17b6\u179a\u179a\u17c6\u1780\u17b7\u179b (%)\u17d6",
+            "Center complete pattern": "\u178a\u17b6\u1780\u17cb\u179b\u17c6\u1793\u17b6\u17c6\u1791\u17b6\u17c6\u1784\u1798\u17bc\u179b\u1780\u178e\u17d2\u178a\u17b6\u179b",
+            "Keep copies inside margins": "\u179a\u1780\u17d2\u179f\u17b6\u1785\u17d2\u1794\u17b6\u1794\u17cb\u1785\u1798\u17d2\u179b\u1784\u1780\u17d2\u1793\u17bb\u1784\u1782\u1798\u17d2\u179b\u17b6\u178f\u1782\u17c2\u1798",
+            "Auto-fit oversized artwork to the available area": "\u1794\u1784\u17d2\u179a\u17bd\u1798\u179f\u17d2\u1793\u17b6\u178a\u17c3\u1792\u17c6\u1796\u17c1\u1780\u17b1\u17d2\u1799\u179f\u1798\u1793\u17b9\u1784\u1795\u17d2\u1791\u17c3\u178a\u17c2\u179b\u17a2\u17b6\u1785\u1794\u17d2\u179a\u17be\u1794\u17b6\u1793\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7",
+            "Rotation and Random Variation": "\u1780\u17b6\u179a\u1794\u1784\u17d2\u179c\u17b7\u179b \u1793\u17b7\u1784\u1794\u1798\u17d2\u179a\u17c2\u1794\u1798\u17d2\u179a\u17bd\u179b\u1785\u17c3\u178a\u1793\u17d2\u1799",
+            "Base rotation (deg):": "\u1798\u17bb\u17c6\u1794\u1784\u17d2\u179c\u17b7\u179b\u1782\u17c4\u179b (\u178a\u17ba\u1780\u17d2\u179a\u17c1)\u17d6", "Random +/-:": "\u1785\u17c3\u178a\u1793\u17d2\u1799 +/-\u17d6",
+            "Scale +/- (%):": "\u1798\u17b6\u178f\u17d2\u179a\u178a\u17d2\u178b\u17b6\u1793 +/- (%)\u17d6", "Position jitter:": "\u179a\u17c6\u1780\u17b7\u179b\u1791\u17b8\u178f\u17b6\u17c6\u1784\u17d6",
+            "Minimum opacity (%):": "\u1797\u17b6\u1796\u179f\u17d2\u179a\u17a2\u17b6\u1794\u17cb\u17a2\u1794\u17d2\u1794\u1794\u179a\u1798\u17b6 (%)\u17d6", "Seed:": "\u1782\u17d2\u179a\u17b6\u1794\u17cb\u179b\u17c1\u1781\u17d6",
+            "Output and Safety": "\u179b\u1791\u17d2\u1792\u1795\u179b \u1793\u17b7\u1784\u179f\u17bb\u179c\u178f\u17d2\u1790\u17b7\u1797\u17b6\u1796", "Layer name:": "\u1788\u17d2\u1798\u17c4\u17c7\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb\u17d6",
+            "Select repeated artwork": "\u1787\u17d2\u179a\u17be\u179f\u179f\u17d2\u1793\u17b6\u178a\u17c3\u178a\u17c2\u179b\u1794\u17b6\u1793\u1792\u17d2\u179c\u17be\u178a\u178a\u17c2\u179b",
+            "Clip output to artboard bounds": "\u1780\u17b6\u178f\u17cb\u179b\u1791\u17d2\u1792\u1795\u179b\u178f\u17b6\u1798\u1796\u17d2\u179a\u17c6\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a",
+            "Ready.": "\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb\u17d4", "Create Repeat": "\u1794\u1784\u17d2\u1780\u17be\u178f\u1780\u17b6\u179a\u1792\u17d2\u179c\u17be\u178a\u178a\u17c2\u179b",
+            "Preset applied. Review settings, then click Create Repeat.": "\u1794\u17b6\u1793\u17a2\u1793\u17bb\u179c\u178f\u17d2\u178f\u1780\u17b6\u179a\u1780\u17c6\u178e\u178f\u17cb\u17d4 \u1796\u17b7\u1793\u17b7\u178f\u17d2\u1799\u1780\u17b6\u179a\u1780\u17c6\u178e\u178f\u17cb \u179a\u17bd\u1785\u1785\u17bb\u1785 \u1794\u1784\u17d2\u1780\u17be\u178f\u1780\u17b6\u179a\u1792\u17d2\u179c\u17be\u178a\u178a\u17c2\u179b\u17d4",
+            "source object(s). Active layer:": "\u179c\u178f\u17d2\u1790\u17bb\u178a\u17be\u1798\u17d4 \u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb\u179f\u1780\u1798\u17d2\u1798\u17d6",
+            "must be between": "\u178f\u17d2\u179a\u17bc\u179c\u179f\u17d2\u1790\u17b7\u178f\u1793\u17c5\u1785\u1793\u17d2\u179b\u17c4\u17c7", "and": "\u1793\u17b7\u1784",
+            "must be a whole number.": "\u178f\u17d2\u179a\u17bc\u179c\u1787\u17b6\u1785\u17c6\u1793\u17bd\u1793\u1782\u178f\u17cb\u17d4",
+            "No usable source artwork was found.": "\u179a\u1780\u1798\u17b7\u1793\u1783\u17be\u1789\u179f\u17d2\u1793\u17b6\u178a\u17c3\u178a\u17be\u1798\u178a\u17c2\u179b\u17a2\u17b6\u1785\u1794\u17d2\u179a\u17be\u1794\u17b6\u1793\u17d4",
+            "The margins leave no usable area on the target artboard.": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1782\u17c2\u1798\u1798\u17b7\u1793\u1791\u17bb\u1780\u1795\u17d2\u1791\u17c3\u1794\u17d2\u179a\u17be\u1794\u17d2\u179a\u17b6\u179f\u17cb\u179b\u17be\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u1782\u17c4\u179b\u178a\u17c5\u1791\u17c1\u17d4",
+            "The source artwork could not be duplicated.": "\u1798\u17b7\u1793\u17a2\u17b6\u1785\u1785\u1798\u17d2\u179b\u1784\u179f\u17d2\u1793\u17b6\u178a\u17c3\u178a\u17be\u1798\u1794\u17b6\u1793\u17d4",
+            "The source artwork has invalid dimensions.": "\u179f\u17d2\u1793\u17b6\u178a\u17c3\u178a\u17be\u1798\u1798\u17b6\u1793\u1791\u17c6\u17a0\u17c6\u1798\u17b7\u1793\u178f\u17d2\u179a\u17b9\u1798\u178f\u17d2\u179a\u17bc\u179c\u17d4",
+            "The scaled artwork does not fit inside the artboard margins.": "\u179f\u17d2\u1793\u17b6\u178a\u17c3\u178a\u17c2\u179b\u1794\u17b6\u1793\u1794\u17d2\u178f\u17bc\u179a\u1791\u17c6\u17a0\u17c6\u1798\u17b7\u1793\u179f\u1798\u1780\u17d2\u1793\u17bb\u1784\u1782\u1798\u17d2\u179b\u17b6\u178f\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u17d4",
+            "The scaled artwork does not fit inside the artboard bounds.": "\u179f\u17d2\u1793\u17b6\u178a\u17c3\u178a\u17c2\u179b\u1794\u17b6\u1793\u1794\u17d2\u178f\u17bc\u179a\u1791\u17c6\u17a0\u17c6\u1798\u17b7\u1793\u179f\u1798\u1780\u17d2\u1793\u17bb\u1784\u1796\u17d2\u179a\u17c6\u178a\u17c2\u1793\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u17d4",
+            "The target artboard has invalid dimensions.": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u1782\u17c4\u179b\u178a\u17c5\u1798\u17b6\u1793\u1791\u17c6\u17a0\u17c6\u1798\u17b7\u1793\u178f\u17d2\u179a\u17b9\u1798\u178f\u17d2\u179a\u17bc\u179c\u17d4",
+            "No copies fit within the selected layout.": "\u1782\u17d2\u1798\u17b6\u1793\u1785\u17d2\u1794\u17b6\u1794\u17cb\u1785\u1798\u17d2\u179b\u1784\u178e\u17b6\u179f\u1798\u1780\u17d2\u1793\u17bb\u1784\u1794\u17d2\u179b\u1784\u17cb\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u1791\u17c1\u17d4",
+            "Creating repeat pattern...": "\u1780\u17c6\u1796\u17bb\u1784\u1794\u1784\u17d2\u1780\u17be\u178f\u179b\u17c6\u1793\u17b6\u17c6\u178a\u178a\u17c2\u179b\u17d7...",
+            "Created": "\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f",
+            "repeated object(s) on layer": "\u179c\u178f\u17d2\u1790\u17bb\u178a\u178a\u17c2\u179b\u17d7\u179b\u17be\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb",
+            "failed.": "\u1794\u17b6\u1793\u1794\u179a\u17b6\u1787\u17d0\u1799\u17d4",
+            "Creating copy": "\u1780\u17c6\u1796\u17bb\u1784\u1794\u1784\u17d2\u1780\u17be\u178f\u1785\u17d2\u1794\u17b6\u1794\u17cb\u1785\u1798\u17d2\u179b\u1784", "of up to": "\u1780\u17d2\u1793\u17bb\u1784\u1785\u17c6\u178e\u17c4\u1798\u17a2\u178f\u17b7\u1794\u179a\u1798\u17b6",
+            "Scale": "\u1798\u17b6\u178f\u17d2\u179a\u178a\u17d2\u178b\u17b6\u1793", "Tile width": "\u1791\u1791\u17b9\u1784\u1780\u17d2\u179a\u17a1\u17b6", "Tile height": "\u1780\u1798\u17d2\u1796\u179f\u17cb\u1780\u17d2\u179a\u17a1\u17b6",
+            "Artboard gap": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a", "Artboard width": "\u1791\u1791\u17b9\u1784\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a",
+            "Artboard height": "\u1780\u1798\u17d2\u1796\u179f\u17cb\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a", "Horizontal spacing": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1795\u17d2\u178a\u17c1\u1780",
+            "Vertical spacing": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1794\u1789\u17d2\u1788\u179a", "Rows": "\u1787\u17bd\u179a\u178a\u17c1\u1780",
+            "Horizontal margin": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1782\u17c2\u1798\u1795\u17d2\u178a\u17c1\u1780", "Vertical margin": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1782\u17c2\u1798\u1794\u1789\u17d2\u1788\u179a",
+            "Stagger": "\u1780\u17b6\u179a\u179a\u17c6\u1780\u17b7\u179b", "Base rotation": "\u1798\u17bb\u17c6\u1794\u1784\u17d2\u179c\u17b7\u179b\u1782\u17c4\u179b",
+            "Random rotation": "\u1780\u17b6\u179a\u1794\u1784\u17d2\u179c\u17b7\u179b\u1785\u17c3\u178a\u1793\u17d2\u1799", "Random scale": "\u1798\u17b6\u178f\u17d2\u179a\u178a\u17d2\u178b\u17b6\u1793\u1785\u17c3\u178a\u1793\u17d2\u1799",
+            "Position jitter": "\u179a\u17c6\u1780\u17b7\u179b\u1791\u17b8\u178f\u17b6\u17c6\u1784", "Minimum opacity": "\u1797\u17b6\u1796\u179f\u17d2\u179a\u17a2\u17b6\u1794\u17cb\u17a2\u1794\u17d2\u1794\u1794\u179a\u1798\u17b6",
+            "Random seed": "\u1782\u17d2\u179a\u17b6\u1794\u17cb\u179b\u17c1\u1781\u1785\u17c3\u178a\u1793\u17d2\u1799",
+
+            "No Illustrator document is open.": "\u1798\u17b7\u1793\u1798\u17b6\u1793\u17af\u1780\u179f\u17b6\u179a Illustrator \u1780\u17c6\u1796\u17bb\u1784\u1794\u17be\u1780\u1791\u17c1\u17d4",
+            "Open an Illustrator document before generating a QR code.": "\u179f\u17bc\u1798\u1794\u17be\u1780\u17af\u1780\u179f\u17b6\u179a Illustrator \u1798\u17bb\u1793\u1794\u1784\u17d2\u1780\u17be\u178f\u1780\u17bc\u178a QR\u17d4",
+            "Open a document and select the artwork to nest.": "\u179f\u17bc\u1798\u1794\u17be\u1780\u17af\u1780\u179f\u17b6\u179a \u17a0\u17be\u1799\u1787\u17d2\u179a\u17be\u179f\u1782\u17c6\u1793\u17bc\u179a\u178a\u17c2\u179b\u178f\u17d2\u179a\u17bc\u179c\u179a\u17c0\u1794\u1785\u17c6\u17d4",
+            "Select one or more objects to nest.": "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u17bb\u1798\u17bd\u1799 \u17ac\u1785\u17d2\u179a\u17be\u1793\u178a\u17be\u1798\u17d2\u1794\u17b8\u179a\u17c0\u1794\u1785\u17c6\u17d4",
+            "Open a document and select artwork before running Pathfinder.": "\u179f\u17bc\u1798\u1794\u17be\u1780\u17af\u1780\u179f\u17b6\u179a \u1793\u17b7\u1784\u1787\u17d2\u179a\u17be\u179f\u1782\u17c6\u1793\u17bc\u179a\u1798\u17bb\u1793\u178a\u17c6\u178e\u17be\u179a\u1780\u17b6\u179a Pathfinder\u17d4",
+            "Select at least two objects before running Pathfinder.": "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u17bb\u1799\u17c9\u17b6\u1784\u178f\u17b7\u1785\u1796\u17b8\u179a\u1798\u17bb\u1793\u178a\u17c6\u178e\u17be\u179a\u1780\u17b6\u179a Pathfinder\u17d4",
+            "Open a document and select one template text frame.": "\u179f\u17bc\u1798\u1794\u17be\u1780\u17af\u1780\u179f\u17b6\u179a \u1793\u17b7\u1784\u1787\u17d2\u179a\u17be\u179f\u1794\u17d2\u179a\u17a2\u1794\u17cb\u17a2\u178f\u17d2\u1790\u1794\u1791\u1796\u17bb\u1798\u17d2\u1796\u1798\u17bd\u1799\u17d4",
+            "Select one template text frame before running Sequential Numbering.": "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u1794\u17d2\u179a\u17a2\u1794\u17cb\u17a2\u178f\u17d2\u1790\u1794\u1791\u1796\u17bb\u1798\u17d2\u1796\u1798\u17bd\u1799\u1798\u17bb\u1793\u178a\u17c6\u178e\u17be\u179a\u1780\u17b6\u179a\u179b\u17c1\u1781\u179a\u17c0\u1784\u17d4",
+            "Open a document and select artwork to dimension.": "\u179f\u17bc\u1798\u1794\u17be\u1780\u17af\u1780\u179f\u17b6\u179a \u1793\u17b7\u1784\u1787\u17d2\u179a\u17be\u179f\u1782\u17c6\u1793\u17bc\u179a\u178a\u17be\u1798\u17d2\u1794\u17b8\u179c\u17b6\u179f\u17cb\u1791\u17c6\u17a0\u17c6\u17d4",
+            "Select one or more artwork objects to dimension.": "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u17bb\u1782\u17c6\u1793\u17bc\u179a\u1798\u17bd\u1799 \u17ac\u1785\u17d2\u179a\u17be\u1793\u178a\u17be\u1798\u17d2\u1794\u17b8\u179c\u17b6\u179f\u17cb\u1791\u17c6\u17a0\u17c6\u17d4",
+            "Auto-create additional sheets for unplaced items": "\u1794\u1784\u17d2\u1780\u17be\u178f\u179f\u1793\u17d2\u179b\u17b9\u1780\u1794\u1793\u17d2\u1790\u17c2\u1798\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb\u179c\u178f\u17d2\u1790\u17bb\u1793\u17c5\u179f\u179b\u17cb",
+            "Multi-sheet nesting": "\u1780\u17b6\u179a\u179a\u17c0\u1794\u1785\u17c6\u1785\u17d2\u179a\u17be\u1793\u179f\u1793\u17d2\u179b\u17b9\u1780",
+            "Compound Path": "\u1795\u17d2\u179b\u17bc\u179c\u1795\u17d2\u179f\u17c6",
+            "CutContour / Die-Line Generator": "\u1780\u1798\u17d2\u1798\u179c\u17b7\u1792\u17b8\u1794\u1784\u17d2\u1780\u17be\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb CutContour / DieLine",
+            "CutContour": "\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb CutContour",
+            "PerfCutContour": "\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb\u178a\u17b6\u1785\u17cb PerfCut",
+            "Die-Line": "\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1796\u17bb\u1798\u17d2\u1796 DieLine",
+            "Kiss-Cut": "\u1780\u17b6\u178f\u17cb\u1780\u17d2\u179a\u178a\u17b6\u179f\u179b\u17be (Kiss-Cut)",
+            "Die-Cut": "\u1780\u17b6\u178f\u17cb\u178a\u17b6\u1785\u17cb\u1780\u17d2\u179a\u17c5 (Die-Cut)",
+            "Cutline Shape": "\u1791\u1798\u17d2\u179a\u1784\u17cb\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb",
+            "Tight Contour (Silhouette)": "\u178f\u17b6\u1798\u179a\u17b6\u1784\u1782\u17c2\u1798\u179f\u17d2\u1793\u17b6\u178a\u17c3 (Silhouette)",
+            "Rounded Rectangle": "\u1785\u178f\u17bb\u1780\u17c4\u178e\u1780\u17c2\u1784\u1787\u17d2\u179a\u17bb\u1784\u1798\u17bc\u179b",
+            "Rectangle": "\u1785\u178f\u17bb\u1780\u17c4\u178e\u1780\u17c2\u1784",
+            "Circle / Ellipse": "\u179a\u1784\u17d2\u179c\u1784\u17cb\u1798\u17bc\u179b / \u1796\u1784\u1780\u17d2\u179a\u1796\u17be",
+            "Capsule / Stadium": "\u1785\u178f\u17bb\u1780\u17c4\u178e\u1780\u17d2\u1794\u17b6\u179b\u1798\u17bc\u179b (Capsule)",
+            "Custom Shape (Hexagon/Polygon)": "\u1796\u17a0\u17bb\u1780\u17c4\u178e (Polygon)",
+            "Offset / Bleed": "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb (Offset)",
+            "Corner Radius": "\u1780\u17b6\u17c6\u1787\u17d2\u179a\u17bb\u1784\u1798\u17bc\u179b",
+            "Spot Color Name:": "\u1788\u17d2\u1798\u17c4\u17c7\u1796\u178e\u17cc Spot Color:",
+            "Stroke Weight:": "\u1780\u1798\u17d2\u179a\u17b6\u179f\u17cb\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb:",
+            "Overprint Stroke": "Overprint \u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb (\u1780\u17bb\u17c6\u1787\u17c2\u17c8\u1786\u17d2\u179c\u17c0\u179b\u1796\u178e\u17cc)",
+            "Keep Holes": "\u179a\u1780\u17d2\u179f\u17b6\u179a\u1793\u17d2\u1792\u17c4\u17c7\u1781\u17b6\u1784\u1780\u17d2\u1793\u17bb\u1784",
+            "Remove Small Holes": "\u179b\u17bb\u1794\u179a\u1793\u17d2\u1792\u17c4\u17c7\u178f\u17bc\u1785\u17d7",
+            "Remove All Holes": "\u179b\u17bb\u1794\u179a\u1793\u17d2\u1792\u17c4\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb",
+            "Optimize Cut Path": "\u179f\u1798\u17d2\u17a2\u17b6\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb (Optimize)",
+            "Registration Marks": "\u179f\u1789\u17d2\u1789\u17b6\u179f\u1798\u17d2\u1782\u17b6\u179b\u17cb\u1780\u17b6\u178f\u17cb (Registration Marks)",
+            "Simple Mode": "\u1798\u17c9\u17bc\u178a\u1792\u1798\u17d2\u1798\u178f\u17b6 (Simple)",
+            "Pro Mode": "\u1798\u17c9\u17bc\u178a\u1787\u17c6\u1793\u17b6\u1789 (Pro)",
+            "Ready for Production": "\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb\u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb\u1780\u17b6\u179a\u1795\u179b\u17b7\u178f",
+            "Generate CutContour": "\u1794\u1784\u17d2\u1780\u17be\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb",
+            "Select artwork before running CutContour Generator.": "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u1782\u17c6\u1793\u17bc\u179a\u179f\u17d2\u1793\u17b6\u178a\u17c3\u1798\u17bb\u1793\u1794\u1784\u17d2\u1780\u17be\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb\u17d4",
+            "CutContour generated successfully.": "\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb\u178a\u17c4\u1799\u1787\u17c4\u1782\u1787\u17d0\u1799\u17d4",
+            "New guide layout": "\u1794\u17d2\u179b\u1784\u17cb\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u178e\u17c2\u1793\u17b6\u17c6\u1790\u17d2\u1798\u17b8 (New Guide Layout)",
+            "Preset:": "\u1782\u17c6\u179a\u17bc\u1780\u17c6\u178e\u178f\u17cb\u17d6",
+            "Target:": "\u1782\u17c4\u179b\u178a\u17c5\u17d6",
+            "Canvas": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1780\u17b6\u179a\u1784\u17b6\u179a (Canvas)",
+            "Active Artboard": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u179f\u1780\u1798\u17d2\u1798",
+            "All Artboards": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb",
+            "Selected Artwork": "\u1782\u17c6\u1793\u17bc\u179a\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f",
+            "Color": "\u1796\u178e\u17cc",
+            "Columns": "\u1787\u17bd\u179a\u1788\u179a",
+            "Rows": "\u1787\u17bd\u179a\u178a\u17c1\u1780",
+            "Margin": "\u1785\u1793\u17d2\u179b\u17c4\u17c7\u1781\u17b6\u1784 (Margin)",
+            "Number": "\u1785\u17c6\u1793\u17bd\u1793",
+            "Width": "\u1794\u178e\u17d2\u178a\u17c4\u1799",
+            "Height": "\u1780\u1798\u17d2\u1796\u179f\u17cb",
+            "Gutter": "\u1782\u1798\u17d2\u179b\u17b6\u178f (Gutter)",
+            "Top:": "\u1781\u17b6\u1784\u179b\u17be\u17d6",
+            "Left:": "\u1781\u17b6\u1784\u1787\u17c4\u1784\u17d6",
+            "Bottom:": "\u1781\u17b6\u1784\u1780\u17d2\u179a\u17c4\u1798\u17d6",
+            "Right:": "\u1781\u17b6\u1784\u179f\u17d2\u178a\u17b6\u17c6\u17d6",
+            "Center Columns": "\u178a\u17b6\u1780\u17cb\u1787\u17bd\u179a\u1788\u179a\u1785\u17c6\u1780\u178e\u17d2\u178a\u17b6\u179b",
+            "Clear Existing Guides": "\u179b\u17bb\u1794\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u178e\u17c2\u1793\u17b6\u17c6\u1785\u17b6\u179f\u17cb\u1785\u17c1\u1789",
+            "Guides created successfully.": "\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u178e\u17c2\u1793\u17b6\u17c6\u178a\u17c4\u1799\u1787\u17c4\u1782\u1787\u17d0\u1799\u17d4",
+            "☕ Donate Coffee": "\u2615 \u17a7\u1794\u178f\u17d2\u1790\u1798\u17d2\u1797\u1780\u17b6\u17a0\u17d2\u179c\u17c1 (Donate)",
+            "Donate Coffee": "\u17a7\u1794\u178f\u17d2\u1790\u1798\u17d2\u1797\u1780\u17b6\u17a0\u17d2\u179c\u17c1 (Donate)",
+            "Support development via ABA Pay": "\u17a7\u1794\u178f\u17d2\u1790\u1798\u17d2\u1797\u1780\u17b6\u179a\u17a2\u1797\u17b7\u179c\u178c\u17d2\u178c\u1793\u17cd\u178f\u17b6\u1798 ABA Pay",
+
+            "Print Job Info": "\u1791\u17c6\u179b\u17b6\u1780\u17cb File Print (Job Info)",
+            "Print Job Header": "\u1794\u1784\u17d2\u1780\u17be\u178f\u1780\u17d2\u1794\u17b6\u179b File Print",
+            "Job Information": "\u1796\u17d0\u178f\u17cc\u1798\u17b6\u1793\u1780\u17b6\u179a\u1784\u17b6\u179a",
+            "Material:": "\u1794\u17d2\u179a\u1797\u17c1\u1791\u179f\u1798\u17d2\u1797\u17b6\u179a\u17c8\u17d6",
+            "Date:": "\u1780\u17b6\u179b\u1794\u179a\u17b7\u1785\u17d2\u1786\u17c1\u1791\u17d6",
+            "Quantity (pcs):": "\u1785\u17c6\u1793\u17bd\u1793 (pcs)\u17d6",
+            "Dimensions:": "\u1791\u17c6\u17a0\u17c6\u17d6",
+            "Header Layout & Styling": "\u1794\u17d2\u179b\u1784\u17cb \u1793\u17b7\u1784\u179a\u1785\u1793\u17b6\u1794\u17d0\u1791\u17d2\u1798\u1780\u17d2\u1794\u17b6\u179b",
+            "Expand artboard at top to fit header": "\u1796\u1784\u17d2\u179a\u17b8\u1780 Artboard \u1781\u17b6\u1784\u179b\u17be\u178a\u17be\u1798\u17d2\u1794\u17b8\u178a\u17b6\u1780\u17cb\u1780\u17d2\u1794\u17b6\u179b",
+            "Dark background box behind text": "\u1794\u17d2\u179a\u17a2\u1794\u17cb\u1795\u17d2\u1791\u17c3\u1781\u17d2\u1798\u17c5\u1781\u17b6\u1784\u1780\u17d2\u179a\u17c4\u1799\u17a2\u1780\u17d2\u179f\u179a",
+            "Text color:": "\u1796\u178e\u17cc\u17a2\u1780\u17d2\u179f\u179a\u17d6",
+            "Alignment:": "\u178f\u1798\u17d2\u179a\u17b9\u1798\u17d6",
+            "Customer / Note (optional):": "\u17a2\u178f\u17b7\u1790\u17b7\u1787\u1793 / \u1780\u17c6\u178e\u178f\u17cb\u179f\u1798\u17d2\u1782\u17b6\u179b\u17cb\u17d6",
+            "Font:": "\u1796\u17bb\u1798\u17d2\u1796\u17a2\u1780\u17d2\u179f\u179a\u17d6",
+            "Use Active Illustrator Font": "\u1796\u17bb\u1798\u17d2\u1796\u17a2\u1780\u17d2\u179f\u179a\u1780\u17c6\u1796\u17bb\u1784\u1794\u17d2\u179a\u17be\u1780\u17d2\u1793\u17bb\u1784 AI (Active Font)",
+            "Text Size:": "\u1791\u17c6\u17a0\u17c6\u17a2\u1780\u17d2\u179f\u179a\u17d6",
+            "Fix Khmer (+)": "\u1780\u17c2\u17a2\u1780\u17d2\u179f\u179a (+)",
+            "Auto (Proportional ~5%)": "\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7 (~5%)",
+            "Small": "\u178f\u17bc\u1785",
+            "Medium": "\u1798\u1788\u17d2\u1788\u17b8\u1798",
+            "Large": "\u1792\u17c6",
+            "Extra Large": "\u1792\u17c6\u178e\u17b6\u179f\u17cb",
+            "Generate Header": "\u1794\u1784\u17d2\u1780\u17be\u178f\u1780\u17d2\u1794\u17b6\u179b File Print",
+            "Print Job Ticket & Header": "\u179f\u17c6\u1794\u17bb\u178f\u17d2\u179a & \u1780\u17d2\u1794\u17b6\u179b File Print",
+            "Live Header Preview": "\u1780\u17b6\u178f\u1798\u17be\u179b\u1782\u17c6\u179a\u17bc\u1780\u17d2\u1794\u17b6\u179b Print (Live Preview)",
+            "Live Preview": "\u1780\u17b6\u179a\u1798\u17be\u179b\u1782\u17c6\u179a\u17bc\u1787\u17b6\u1780\u17cb\u179f\u17d2\u178f\u17c2\u1784",
+            "Selection": "\u1782\u17c6\u1793\u17bc\u179a\u1787\u17d2\u179a\u17be\u179f",
+            "Artboard": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a",
+            "Cyan": "\u1781\u17c0\u179c Cyan",
+            "Yellow": "\u179b\u17bf\u1784",
+            "Smart auto (overall or gaps)": "\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7 (\u179f\u179a\u17bb\u1794 \u17ac \u1785\u1793\u17d2\u179b\u17c4\u17c7)",
+            "Horizontal edge gap (2 objects)": "\u1785\u1793\u17d2\u179b\u17c4\u17c7\u1782\u17c2\u1798\u1795\u17d2\u178a\u17c1\u1780 (\u179c\u178f\u17d2\u1790\u17bb \u17e2)",
+            "Vertical edge gap (2 objects)": "\u1785\u1793\u17d2\u179b\u17c4\u17c7\u1782\u17c2\u1798\u1794\u1789\u17d2\u1788\u179a (\u179c\u178f\u17d2\u1790\u17bb \u17e2)",
+            "Both edge gaps (2 objects)": "\u1785\u1793\u17d2\u179b\u17c4\u17c7\u1782\u17c2\u1798\u1791\u17b6\u17c6\u1784\u1796\u17b8\u179a (\u179c\u178f\u17d2\u1790\u17bb \u17e2)",
+            "Close": "\u1794\u17b7\u1791",
+            "Apply": "\u17a2\u1793\u17bb\u179c\u178f\u17d2\u178f",
+            "Cancel": "\u1794\u17c4\u17c7\u1794\u1784\u17cb",
+            "Update Preview": "\u1792\u17d2\u179c\u17be\u1794\u1785\u17d2\u1785\u17bb\u1794\u17d2\u1794\u1793\u17d2\u1793\u1797\u17b6\u1796\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793",
+            "Selection Dimensions": "\u1791\u17c6\u17a0\u17c6\u1782\u17c6\u1793\u17bc\u179a\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f",
+            "Area": "\u1795\u17d2\u1791\u17c3\u1780\u17d2\u17a1\u17b6",
+            "Total Objects": "\u179c\u178f\u17d2\u1790\u17bb\u179f\u179a\u17bb\u1794",
+            "Drawing scale  1 :": "\u1798\u17b6\u178f\u17d2\u179a\u178a\u17d2\u178b\u17b6\u1793\u1782\u17c6\u1793\u17bc\u179a  1 :",
+            "(use 10 for a 1:10 drawing)": "(\u178a\u17b6\u1780\u17cb 10 \u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb\u1782\u17c6\u1793\u17bc\u179a 1:10)",
+            "Prefix:": "\u17a2\u1780\u17d2\u179f\u179a\u1781\u17b6\u1784\u1798\u17bb\u1781\u17d6",
+            "Suffix:": "\u17a2\u1780\u17d2\u179f\u179a\u1781\u17b6\u1784\u1780\u17d2\u179a\u17c4\u1799\u17d6"
+        };
+
+        function prefFile() {
+            var folder = new Folder(Folder.userData.fsName + "/Ozo Illustrator Scripts");
+            if (!folder.exists) try { folder.create(); } catch (ignore) {}
+            if (!folder.exists) {
+                folder = new Folder(Folder.temp.fsName + "/Ozo Illustrator Scripts");
+                if (!folder.exists) try { folder.create(); } catch (ignore) {}
+            }
+            return new File(folder.fsName + "/preferences.ini");
+        }
+
+        function readAll() {
+            if (cache !== null) return cache;
+            cache = {};
+            var file = prefFile();
+            if (!file.exists) return cache;
+            try {
+                file.encoding = "UTF-8";
+                if (!file.open("r")) return cache;
+                var content = file.read();
+                file.close();
+                var lines = content.split(/\r?\n/);
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    var split = line.indexOf("\t");
+                    if (split < 1) continue;
+                    try {
+                        cache[decodeURIComponent(line.substring(0, split))] =
+                            decodeURIComponent(line.substring(split + 1));
+                    } catch (ignoreLine) {}
+                }
+            } catch (ignoreRead) { try { file.close(); } catch (ignoreClose) {} }
+            return cache;
+        }
+
+        function writeAll() {
+            var data = readAll(), keys = [], key, file = prefFile();
+            for (key in data) if (data.hasOwnProperty(key)) keys.push(key);
+            keys.sort();
+            try {
+                file.encoding = "UTF-8";
+                file.lineFeed = "Unix";
+                if (!file.open("w")) return false;
+                var buffer = [];
+                for (var i = 0; i < keys.length; i++) {
+                    buffer.push(encodeURIComponent(keys[i]) + "\t" +
+                        encodeURIComponent(String(data[keys[i]])));
+                }
+                file.write(buffer.join("\n") + "\n");
+                file.close();
+                return true;
+            } catch (ignoreWrite) { try { file.close(); } catch (ignoreClose) {} }
+            return false;
+        }
+
+        function getValue(namespace, key, fallback) {
+            var data = readAll(), full = namespace + "." + key;
+            return data.hasOwnProperty(full) ? data[full] : fallback;
+        }
+
+        function setValue(namespace, key, value) {
+            readAll()[namespace + "." + key] = String(value);
+            return writeAll();
+        }
+
+        function visit(parent, callback, path) {
+            path = path || "";
+            if (!parent || !parent.children) return;
+            for (var i = 0; i < parent.children.length; i++) {
+                var child = parent.children[i], childPath = path ? path + "." + i : String(i);
+                callback(child, childPath);
+                visit(child, callback, childPath);
+            }
+        }
+
+        function saveWindowState(windowObject, namespace, extraValues) {
+            var data = readAll();
+            visit(windowObject, function (control, path) {
+                if (control._ozoNoSave) return;
+                var value;
+                if (control.type === "edittext") value = control.text;
+                else if (control.type === "checkbox" || control.type === "radiobutton") value = control.value ? "1" : "0";
+                else if (control.type === "dropdownlist" && control.selection) value = String(control.selection.index);
+                else return;
+                data[namespace + ".control." + path + "." + control.type] = value;
+            });
+            if (extraValues) {
+                for (var key in extraValues) {
+                    if (extraValues.hasOwnProperty(key)) {
+                        data[namespace + "." + key] = String(extraValues[key]);
+                    }
+                }
+            }
+            return writeAll();
+        }
+
+        function restoreWindowState(windowObject, namespace) {
+            var data = readAll();
+            visit(windowObject, function (control, path) {
+                if (control._ozoNoSave) return;
+                var key = namespace + ".control." + path + "." + control.type;
+                if (!data.hasOwnProperty(key)) return;
+                try {
+                    if (control.type === "edittext") control.text = data[key];
+                    else if (control.type === "checkbox" || control.type === "radiobutton") control.value = data[key] === "1";
+                    else if (control.type === "dropdownlist") {
+                        var index = Number(data[key]);
+                        if (index >= 0 && index < control.items.length) control.selection = index;
+                    }
+                } catch (ignoreRestore) {}
+            });
+        }
+
+        function language() { return getValue("global", "language", "en") === "km" ? "km" : "en"; }
+        function tr(text) { return language() === "km" && km.hasOwnProperty(text) ? km[text] : text; }
+
+        function localize(control) {
+            if (!control || control._ozoSkipTranslate) return;
+            try {
+                if (typeof control.text === "string" && control.type !== "edittext" && control.type !== "listbox") {
+                    if (typeof control._ozoEnglishText === "undefined") control._ozoEnglishText = control.text;
+                    control.text = language() === "km" && km.hasOwnProperty(control._ozoEnglishText) ?
+                        km[control._ozoEnglishText] : control._ozoEnglishText;
+                }
+                if (control.type === "dropdownlist") {
+                    if (!control._ozoEnglishItems) {
+                        control._ozoEnglishItems = [];
+                        for (var i = 0; i < control.items.length; i++) control._ozoEnglishItems.push(control.items[i].text);
+                    }
+                    for (i = 0; i < control.items.length && i < control._ozoEnglishItems.length; i++) {
+                        control.items[i].text = language() === "km" && km.hasOwnProperty(control._ozoEnglishItems[i]) ?
+                            km[control._ozoEnglishItems[i]] : control._ozoEnglishItems[i];
+                    }
+                }
+            } catch (ignoreTranslation) {}
+        }
+
+        function translateWindow(windowObject) {
+            localize(windowObject);
+            visit(windowObject, function (control) { localize(control); });
+            try { windowObject.layout.layout(true); } catch (ignoreLayout) {}
+        }
+
+        function rootWindow(control) {
+            while (control && control.parent) control = control.parent;
+            return control;
+        }
+
+        function addLanguageSelector(parent, onChanged, options) {
+            if (parent) parent._hasOzoFooter = true;
+            options = options || {};
+            var row = parent.add("group");
+            row.orientation = "row";
+            row.alignment = ["fill", "bottom"];
+            row.alignChildren = ["fill", "center"];
+            row.spacing = 8;
+            row.margins = [0, 6, 0, 0];
+
+            // Left: Donate Coffee button
+            var donateBtn = null;
+            if (options.noDonate !== true) {
+                donateBtn = row.add("button", undefined, language() === "km" ? "\u2615 \u17a7\u1794\u178f\u17d2\u1790\u1798\u17d2\u1797\u1780\u17b6\u17a0\u17d2\u179c\u17c1 (Donate)" : "\u2615 Donate Coffee");
+                donateBtn.preferredSize.height = 24;
+                donateBtn.helpTip = tr("Support development via ABA Pay") + ": " + DONATE_URL;
+                donateBtn._ozoSkipTranslate = true;
+                donateBtn.onClick = function () {
+                    openURL(DONATE_URL);
+                };
+            }
+
+            var spacerLeft = row.add("group");
+            spacerLeft.alignment = ["fill", "fill"];
+
+            // Center: Developer credit badge
+            var credit = row.add("statictext", undefined, protectedCredit());
+            credit.alignment = ["center", "center"];
+            credit._ozoSkipTranslate = true;
+
+            var spacerRight = row.add("group");
+            spacerRight.alignment = ["fill", "fill"];
+
+            // Right: Language selector
+            var langGroup = row.add("group");
+            langGroup.alignment = ["right", "center"];
+            langGroup.spacing = 4;
+            var label = langGroup.add("statictext", undefined, "Language / \u1797\u17b6\u179f\u17b6:");
+            label._ozoSkipTranslate = true;
+            var list = langGroup.add("dropdownlist", undefined, ["English", "\u1781\u17d2\u1798\u17c2\u179a"]);
+            list.selection = language() === "km" ? 1 : 0;
+            list._ozoNoSave = true;
+            list._ozoSkipTranslate = true;
+            list.onChange = function () {
+                setValue("global", "language", list.selection && list.selection.index === 1 ? "km" : "en");
+                if (donateBtn) {
+                    donateBtn.text = language() === "km" ? "\u2615 \u17a7\u1794\u178f\u17d2\u1790\u1798\u17d2\u1797\u1780\u17b6\u17a0\u17d2\u179c\u17c1 (Donate)" : "\u2615 Donate Coffee";
+                }
+                translateWindow(rootWindow(row));
+                if (onChanged) onChanged(language());
+            };
+            return list;
+        }
+
+        function getTheme() {
+            var raw = 1;
+            try {
+                if (app && app.preferences) {
+                    try { raw = app.preferences.getIntegerPreference("UI/Brightness"); }
+                    catch (e1) {
+                        try { raw = app.preferences.getRealPreference("uiBrightness"); }
+                        catch (e2) {}
+                    }
+                }
+            } catch (ignore) {}
+            if (raw > 0 && raw < 1) {
+                return raw >= 0.5 ? "light" : "dark";
+            }
+            return (raw === 2 || raw === 3) ? "light" : "dark";
+        }
+
+        function getThemeColors() {
+            var isLight = getTheme() === "light";
+            if (isLight) {
+                return {
+                    mode: "light",
+                    bg: [0.93, 0.93, 0.93],
+                    panelBg: [0.97, 0.97, 0.97],
+                    text: [0.12, 0.12, 0.12],
+                    subtext: [0.38, 0.38, 0.38],
+                    headerBg: [0.88, 0.88, 0.88],
+                    border: [0.75, 0.75, 0.75],
+                    accent: [0.08, 0.45, 0.82]
+                };
+            }
+            return {
+                mode: "dark",
+                bg: [0.21, 0.21, 0.21],
+                panelBg: [0.26, 0.26, 0.26],
+                text: [0.92, 0.92, 0.92],
+                subtext: [0.70, 0.70, 0.70],
+                headerBg: [0.16, 0.16, 0.16],
+                border: [0.35, 0.35, 0.35],
+                accent: [0.24, 0.60, 0.96]
+            };
+        }
+
+        function applyTheme(windowObject) {
+            if (!windowObject || !windowObject.graphics) return;
+            try {
+                var colors = getThemeColors();
+                if (windowObject.type === "palette" || windowObject.type === "dialog") {
+                    try {
+                        windowObject.graphics.backgroundColor = windowObject.graphics.newBrush(
+                            windowObject.graphics.BrushType.SOLID_COLOR,
+                            colors.bg, 1
+                        );
+                    } catch (ignoreWinBg) {}
+                }
+                visit(windowObject, function (control) {
+                    try {
+                        if (!control || !control.graphics) return;
+                        if (control.type === "statictext") {
+                            control.graphics.foregroundColor = control.graphics.newPen(
+                                control.graphics.PenType.SOLID_COLOR,
+                                colors.text, 1
+                            );
+                        }
+                    } catch (ignoreControlTheme) {}
+                });
+            } catch (ignoreTheme) {}
+        }
+
+        function protectedCredit() {
+            var encoded = [
+                25, 40, 63, 59, 46, 63, 122, 24, 35, 122,
+                21, 32, 53, 116, 122, 30, 63, 41, 51, 61,
+                52, 63, 40, 122, 38, 122, 25, 18, 15, 21,
+                122, 17, 51, 55, 50, 63, 52, 61
+            ];
+            var value = "";
+            var checksum = 0;
+            for (var i = 0; i < encoded.length; i++) {
+                var character = String.fromCharCode(encoded[i] ^ 90);
+                value += character;
+                checksum = (checksum * 131 + character.charCodeAt(0)) % 2147483647;
+            }
+            if (encoded.length !== 38 || checksum !== 593071396) {
+                throw new Error("Credit integrity verification failed.");
+            }
+            return value;
+        }
+
+        function openURL(url) {
+            url = url || "https://link.payway.com.kh/ABAPAYiR4667130";
+            var isWin = ($.os.indexOf("Windows") !== -1 || File.fs === "Windows");
+            try {
+                if (isWin) {
+                    var token = new Date().getTime() + "_" + Math.floor(Math.random() * 10000);
+                    var f = new File(Folder.temp.fsName + "/open_link_" + token + ".url");
+                    f.open("w");
+                    f.writeln("[InternetShortcut]");
+                    f.writeln("URL=" + url);
+                    f.close();
+                    if (!f.execute()) {
+                        app.system('cmd.exe /c start "" "' + url + '"');
+                    }
+                    try { f.remove(); } catch (ignoreRem) {}
+                } else {
+                    app.system('open "' + url.replace(/"/g, '\\"') + '"');
+                }
+            } catch (e1) {
+                try {
+                    if (isWin) {
+                        app.system('cmd.exe /c start "" "' + url + '"');
+                    } else {
+                        app.system('open "' + url.replace(/"/g, '\\"') + '"');
+                    }
+                } catch (e2) {}
+            }
+        }
+
+        function addDonateButton(parent, customLabel) {
+            var btn = parent.add("button", undefined, customLabel || tr("☕ Donate Coffee"));
+            btn.helpTip = tr("Support development via ABA Pay") + ": " + DONATE_URL;
+            btn._ozoSkipTranslate = true;
+            btn.onClick = function () {
+                openURL(DONATE_URL);
+            };
+            return btn;
+        }
+
+        var ozoMath = {
+            PT_PER_INCH: 72,
+            MM_PER_INCH: 25.4,
+            PT_PER_MM: 72 / 25.4,
+            MM_PER_PT: 25.4 / 72,
+            PT_PER_CM: 72 / 2.54,
+            CM_PER_PT: 2.54 / 72,
+            EPSILON: 1e-6,
+
+            round: function (num, decimals) {
+                if (typeof decimals !== "number") decimals = 4;
+                var factor = Math.pow(10, decimals);
+                var rounded = Math.round(num * factor) / factor;
+                return Math.abs(rounded) < 1e-12 ? 0 : rounded;
+            },
+
+            isEqual: function (a, b, epsilon) {
+                return Math.abs(a - b) <= (typeof epsilon === "number" ? epsilon : 1e-6);
+            },
+
+            clamp: function (val, min, max) {
+                return Math.max(min, Math.min(max, val));
+            },
+
+            toPoints: function (val, unit) {
+                unit = (unit || "pt").toLowerCase();
+                if (unit === "mm" || unit === "mms") return val * (72 / 25.4);
+                if (unit === "cm" || unit === "cms") return val * (72 / 2.54);
+                if (unit === "in" || unit === "inch" || unit === "inches" || unit === '"') return val * 72;
+                if (unit === "m" || unit === "meter" || unit === "meters") return val * (72000 / 25.4);
+                return val;
+            },
+
+            fromPoints: function (pt, unit) {
+                unit = (unit || "pt").toLowerCase();
+                if (unit === "mm" || unit === "mms") return pt * (25.4 / 72);
+                if (unit === "cm" || unit === "cms") return pt * (2.54 / 72);
+                if (unit === "in" || unit === "inch" || unit === "inches" || unit === '"') return pt / 72;
+                if (unit === "m" || unit === "meter" || unit === "meters") return pt * (25.4 / 72000);
+                return pt;
+            },
+
+            circumscribedPolygonRadius: function (width, height, sides) {
+                var halfW = Math.max(0, width) / 2;
+                var halfH = Math.max(0, height) / 2;
+                var cornerDist = Math.sqrt(halfW * halfW + halfH * halfH);
+                var anglePerSide = Math.PI / Math.max(3, sides);
+                return cornerDist / Math.cos(anglePerSide);
+            }
+        };
+
+        function makeNumericSmooth(edittext, options) {
+            if (!edittext) return;
+            options = options || {};
+
+            try {
+                if (typeof edittext.addEventListener === "function") {
+                    edittext.addEventListener("keydown", function (event) {
+                        try {
+                            if (!event) return;
+                            var key = event.keyName;
+                            if (key !== "Up" && key !== "Down") return;
+
+                            var step = typeof options.step === "number" ? options.step : 1;
+                            var min = typeof options.min === "number" ? options.min : 0;
+                            var max = typeof options.max === "number" ? options.max : 999999;
+                            var unit = options.unit || "";
+                            var onChanged = options.onChange;
+
+                            var textStr = String(edittext.text || "").replace(/,/g, ".");
+                            var numMatch = textStr.match(/^([+-]?\d*(?:\.\d+)?)/);
+                            var currentVal = numMatch && numMatch[1] ? parseFloat(numMatch[1]) : 0;
+                            if (isNaN(currentVal)) currentVal = 0;
+
+                            var mult = event.shiftKey ? 10 : (event.altKey ? 0.1 : 1);
+                            var effectiveStep = step * mult;
+                            var nextVal;
+
+                            if (key === "Up") {
+                                nextVal = Math.min(max, currentVal + effectiveStep);
+                            } else {
+                                nextVal = Math.max(min, currentVal - effectiveStep);
+                            }
+
+                            nextVal = Math.round(nextVal * 1000) / 1000;
+
+                            var unitSuffix = unit;
+                            if (!unitSuffix) {
+                                var suffixMatch = textStr.match(/[a-zA-Z%]+$/);
+                                if (suffixMatch) unitSuffix = suffixMatch[0];
+                            }
+
+                            edittext.text = unitSuffix ? (nextVal + " " + unitSuffix) : String(nextVal);
+                            if (typeof edittext.onChanging === "function") {
+                                edittext.onChanging();
+                            }
+                            if (onChanged) onChanged(nextVal);
+                            event.preventDefault();
+                        } catch (ignoreKey) {}
+                    });
+                }
+            } catch (ignoreAdd) {}
+        }
+
+        function parseNumber(value, fallback) {
+            if (value === null || value === undefined) return isNaN(fallback) ? NaN : fallback;
+            var str = String(value).replace(/,/g, ".").replace(/^\s+|\s+$/g, "");
+            str = str.replace(/[a-zA-Z%"']+\s*$/, "").replace(/^\s+|\s+$/g, "");
+            if (!/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(str)) {
+                return isNaN(fallback) ? NaN : fallback;
+            }
+            var num = Number(str);
+            return isFinite(num) ? num : (isNaN(fallback) ? NaN : fallback);
+        }
+
+        function getDocDefaultUnit(doc) {
+            if (!doc) {
+                try { doc = app.activeDocument; } catch (e) { return "cm"; }
+            }
+            try {
+                var ru = doc.rulerUnits;
+                if (ru === RulerUnits.Centimeters) return "cm";
+                if (ru === RulerUnits.Millimeters) return "mm";
+                if (ru === RulerUnits.Inches) return "in";
+                if (ru === RulerUnits.Points) return "pt";
+                if (ru === RulerUnits.Pixels) return "px";
+            } catch (e) {}
+            return "cm";
+        }
+
+        function findDonorTextFrame(doc) {
+            if (!doc) {
+                try { doc = app.activeDocument; } catch (e) { return null; }
+            }
+            try {
+                for (var l = 0; l < doc.layers.length; l++) {
+                    var layer = doc.layers[l];
+                    if (layer.visible && !layer.locked) {
+                        for (var t = 0; t < layer.textFrames.length; t++) {
+                            var tf = layer.textFrames[t];
+                            if (tf.visible && !tf.locked) {
+                                return tf;
+                            }
+                        }
+                    }
+                }
+            } catch (eDonor) {}
+            return null;
+        }
+
+        function addDialogHeader(dialog, titleText, subtitleText) {
+            var topBanner = dialog.add("group");
+            topBanner.orientation = "row";
+            topBanner.alignment = ["fill", "top"];
+            topBanner.alignChildren = ["fill", "center"];
+
+            var titleLbl = topBanner.add("statictext", undefined, titleText || "Ozo Tool");
+            try {
+                titleLbl.graphics.font = ScriptUI.newFont(
+                    titleLbl.graphics.font ? titleLbl.graphics.font.name : "dialog",
+                    "BOLD",
+                    15
+                );
+            } catch (eTitleFont) {}
+
+            if (subtitleText) {
+                var verBadge = topBanner.add("statictext", undefined, subtitleText);
+                verBadge.alignment = ["right", "center"];
+                try {
+                    verBadge.graphics.foregroundColor = verBadge.graphics.newPen(
+                        verBadge.graphics.PenType.SOLID_COLOR, [0.55, 0.55, 0.55], 1
+                    );
+                } catch (eBadge) {}
+            }
+            return topBanner;
+        }
+
+        function addDonateRow(dialog, scriptName) {
+            if (dialog && dialog._hasOzoFooter) {
+                return null;
+            }
+            if (dialog) dialog._hasOzoFooter = true;
+            var footerGroup = dialog.add("group");
+            footerGroup.alignment = ["fill", "bottom"];
+            footerGroup.orientation = "row";
+            footerGroup.alignChildren = ["fill", "center"];
+
+            var donateLabel = "\u2615 " + (language() === "km" ? "\u17a7\u1794\u178f\u17d2\u1790\u1798\u17d2\u1797\u1780\u17b6\u17a0\u17d2\u179c\u17c1 (Donate)" : "Donate Coffee");
+            var donateBtn = addDonateButton(footerGroup, donateLabel);
+            if (donateBtn) donateBtn.preferredSize.height = 24;
+
+            var authorLabel = footerGroup.add("statictext", undefined, protectedCredit());
+            authorLabel.alignment = ["right", "center"];
+            try {
+                authorLabel.graphics.foregroundColor = authorLabel.graphics.newPen(
+                    authorLabel.graphics.PenType.SOLID_COLOR, [0.5, 0.5, 0.5], 1
+                );
+            } catch (ePen) {}
+            return footerGroup;
+        }
+
+        return {
+            version: "2.1",
+            addLanguageSelector: addLanguageSelector,
+            addDonateButton: addDonateButton,
+            addDialogHeader: addDialogHeader,
+            addDonateRow: addDonateRow,
+            getDocDefaultUnit: getDocDefaultUnit,
+            findDonorTextFrame: findDonorTextFrame,
+            openURL: openURL,
+            donateURL: DONATE_URL,
+            math: ozoMath,
+            toPoints: ozoMath.toPoints,
+            fromPoints: ozoMath.fromPoints,
+            circumscribedPolygonRadius: ozoMath.circumscribedPolygonRadius,
+            parseNumber: parseNumber,
+            makeNumericSmooth: makeNumericSmooth,
+            applyTheme: applyTheme,
+            credit: protectedCredit,
+            getLanguage: language, isKhmer: function () { return language() === "km"; },
+            getTheme: getTheme, getThemeColors: getThemeColors,
+            getValue: getValue, setValue: setValue, tr: tr,
+            saveWindowState: saveWindowState, restoreWindowState: restoreWindowState,
+            translateWindow: translateWindow
+        };
+    })();
+}

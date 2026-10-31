@@ -1,0 +1,625 @@
+/* Adobe Illustrator Ozo Tools Panel Theme */
+:root {
+    --bg-main: #262626;
+    --bg-surface: #323232;
+    --bg-surface-hover: #3d3d3d;
+    --bg-surface-active: #484848;
+    --border-color: #404040;
+    --text-primary: #e6e6e6;
+    --text-secondary: #9e9e9e;
+    --text-muted: #737373;
+    --accent: #2e7afb;
+    --accent-hover: #488eff;
+    --accent-active: #1d64e0;
+    --accent-text: #ffffff;
+    --badge-prepress: #10b981;
+    --badge-layout: #8b5cf6;
+    --badge-util: #f59e0b;
+    --star-active: #fbbf24;
+    --star-inactive: #666666;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Leelawadee UI", "Khmer UI", "Kantumruy Pro", "Battambang", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: var(--font-stack);
+    font-size: 12px;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Header */
+.panel-header {
+    background-color: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.brand-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, #2e7afb, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: bold;
+    font-size: 11px;
+    letter-spacing: -0.5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+}
+
+.brand-title {
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.brand-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    background-color: rgba(46, 122, 251, 0.2);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 10px;
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.icon-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.icon-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
+}
+
+.lang-btn {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    width: auto;
+    height: 24px;
+    background: var(--bg-surface-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.lang-btn:hover {
+    background: var(--bg-surface-active);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* Search Bar */
+.search-container {
+    padding: 8px 12px 6px;
+    background-color: var(--bg-main);
+    display: flex;
+    align-items: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.search-input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.search-icon {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    fill: var(--text-muted);
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    padding: 6px 26px 6px 28px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 11px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.search-input:focus {
+    border-color: var(--accent);
+    background-color: var(--bg-surface-hover);
+}
+
+.search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 15px;
+    display: none;
+    padding: 2px 4px;
+    line-height: 1;
+}
+
+.search-clear:hover {
+    color: var(--text-primary);
+}
+
+/* Category Tabs */
+.tabs-container {
+    padding: 0 12px 8px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.tabs-container::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-btn {
+    background: var(--bg-surface);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 4px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-family: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tab-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.tab-star {
+    color: var(--star-active);
+    font-size: 12px;
+}
+
+.tab-count {
+    font-size: 9.5px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    min-width: 14px;
+    text-align: center;
+    display: none;
+}
+
+.tab-count.has-count {
+    display: inline-block;
+}
+
+/* Tool List */
+.tool-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tool-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tool-list::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 3px;
+}
+
+.tool-list::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-muted);
+}
+
+/* Tool Card */
+.tool-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.1s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    position: relative;
+    outline: none;
+}
+
+.tool-card:hover {
+    border-color: #555555;
+    background-color: var(--bg-surface-hover);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.tool-card:active {
+    transform: scale(0.985);
+}
+
+.tool-card:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(46, 122, 251, 0.3);
+}
+
+/* Category Accent Strip on Cards */
+.tool-card.cat-prepress { border-left-color: var(--badge-prepress); }
+.tool-card.cat-layout { border-left-color: var(--badge-layout); }
+.tool-card.cat-utilities { border-left-color: var(--badge-util); }
+
+.tool-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.tool-card:hover .tool-icon-wrap {
+    transform: scale(1.06);
+}
+
+.cat-prepress .tool-icon-wrap { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.cat-layout .tool-icon-wrap { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+.cat-utilities .tool-icon-wrap { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+.tool-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tool-header-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.tool-name {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tool-badge {
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 1px 4px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.badge-prepress { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.badge-layout { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
+.badge-utilities { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+
+.tool-desc {
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tool-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.fav-btn {
+    background: none;
+    border: none;
+    color: var(--star-inactive);
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, transform 0.15s;
+    border-radius: var(--radius-sm);
+}
+
+.fav-btn:hover {
+    color: var(--star-active);
+    transform: scale(1.15);
+}
+
+.fav-btn.active {
+    color: var(--star-active);
+}
+
+.run-btn {
+    background-color: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.05s, opacity 0.15s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.run-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.run-btn:active {
+    background-color: var(--accent-active);
+    transform: scale(0.96);
+}
+
+.run-btn.running {
+    background-color: #f59e0b;
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 36px 12px;
+    color: var(--text-muted);
+    display: none;
+}
+
+.empty-state svg {
+    margin-bottom: 8px;
+    stroke: var(--text-muted);
+}
+
+/* Footer Status Bar */
+.panel-footer {
+    background-color: var(--bg-surface);
+    border-top: 1px solid var(--border-color);
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #10b981;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease;
+}
+
+.status-dot.running {
+    background-color: #f59e0b;
+    animation: pulse 0.9s infinite alternate;
+}
+
+.status-dot.error {
+    background-color: #ef4444;
+}
+
+.status-dot.success {
+    background-color: #10b981;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.35; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1.1); }
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.donate-link {
+    color: #f59e0b;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.donate-link:hover {
+    text-decoration: underline;
+    opacity: 0.9;
+}
+
+/* Responsive Narrow Dock Well Support */
+@media (max-width: 260px) {
+    .panel-header { padding: 6px 8px; }
+    .search-container { padding: 6px 8px 4px; }
+    .tabs-container { padding: 0 8px 6px; }
+    .tool-list { padding: 4px 8px 6px; gap: 5px; }
+    .panel-footer { padding: 5px 8px; }
+
+    .tool-card {
+        padding: 6px 8px;
+        gap: 7px;
+    }
+    .tool-icon-wrap {
+        width: 26px;
+        height: 26px;
+    }
+    .tool-icon-wrap svg {
+        width: 15px;
+        height: 15px;
+    }
+    .tool-name { font-size: 11.5px; }
+    .tool-desc { font-size: 9.5px; }
+    .tool-badge { display: none; }
+    .run-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+}
+
+/* Theme 1: Dark (Illustrator Darkest - Default) */
+body.theme-dark {
+    --bg-main: #1e1e1e;
+    --bg-surface: #2b2b2b;
+    --bg-surface-hover: #353535;
+    --bg-surface-active: #404040;
+    --border-color: #383838;
+    --text-primary: #f0f0f0;
+    --text-secondary: #9e9e9e;
+    --text-muted: #6b6b6b;
+}
+
+/* Theme 2: Medium Dark */
+body.theme-medium-dark {
+    --bg-main: #2b2b2b;
+    --bg-surface: #363636;
+    --bg-surface-hover: #424242;
+    --bg-surface-active: #4c4c4c;
+    --border-color: #484848;
+    --text-primary: #e6e6e6;
+    --text-secondary: #999999;
+    --text-muted: #737373;
+}
+
+/* Theme 3: Medium Light */
+body.theme-medium-light {
+    --bg-main: #d0d0d0;
+    --bg-surface: #dfdfdf;
+    --bg-surface-hover: #e8e8e8;
+    --bg-surface-active: #f0f0f0;
+    --border-color: #bbbbbb;
+    --text-primary: #1c1c1c;
+    --text-secondary: #4a4a4a;
+    --text-muted: #707070;
+    --accent: #0265dc;
+    --accent-hover: #0353b4;
+    --star-inactive: #888888;
+}
+
+/* Theme 4: Light (Illustrator Lightest) */
+body.theme-light {
+    --bg-main: #f0f0f0;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #e8e8e8;
+    --bg-surface-active: #dcdcdc;
+    --border-color: #d0d0d0;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #0265dc;
+    --accent-hover: #0353b4;
+    --star-inactive: #b0b0b0;
+}

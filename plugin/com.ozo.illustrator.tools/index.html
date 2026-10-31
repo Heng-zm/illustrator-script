@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ozo Tools</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Top Header -->
+    <header class="panel-header">
+        <div class="brand">
+            <div class="brand-icon">OZ</div>
+            <span class="brand-title">OZO TOOLS</span>
+            <span class="brand-badge">v2.1</span>
+        </div>
+        <div class="header-actions">
+            <button id="langToggleBtn" class="lang-btn" title="Toggle Language (English / ភាសាខ្មែរ)">EN</button>
+            <button id="openFolderBtn" class="icon-btn" title="Open Scripts Directory">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </button>
+            <button id="refreshBtn" class="icon-btn" title="Refresh Panel">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Search Input -->
+    <div class="search-container">
+        <div class="search-input-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24">
+                <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search scripts... / ស្វែងរក...">
+            <button id="searchClearBtn" class="search-clear">&times;</button>
+        </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="tabs-container" role="tablist">
+        <button id="tabAll" class="tab-btn active" data-category="all">All</button>
+        <button id="tabFavs" class="tab-btn" data-category="favorites"><span class="tab-star">&#9733;</span> <span id="tabFavsText">Favorites</span> <span id="favsCount" class="tab-count"></span></button>
+        <button id="tabPrepress" class="tab-btn" data-category="prepress">Prepress</button>
+        <button id="tabLayout" class="tab-btn" data-category="layout">Layout</button>
+        <button id="tabUtilities" class="tab-btn" data-category="utilities">Utilities</button>
+    </div>
+
+    <!-- Tool Card List -->
+    <main id="toolList" class="tool-list">
+        <!-- Rendered dynamically by js/main.js -->
+    </main>
+
+    <!-- Empty Search State -->
+    <div id="emptyState" class="empty-state">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <p id="emptyText">No scripts match your search.</p>
+    </div>
+
+    <!-- Bottom Footer -->
+    <footer class="panel-footer">
+        <div class="status-indicator">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="statusMessage">Ready • 12 tools available</span>
+        </div>
+        <div class="footer-links">
+            <span id="donateBtn" class="donate-link" title="Support developer">
+                &#10084;&#65039; <span id="donateText">Donate</span>
+            </span>
+        </div>
+    </footer>
+
+    <script src="js/CSInterface.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
