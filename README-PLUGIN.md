@@ -1,4 +1,4 @@
-# Ozo Tools - Adobe Illustrator Plugin Suite (v2.1)
+# Ozo Tools - Adobe Illustrator Plugin Suite (v2.2)
 
 Transform all your Illustrator scripts into an official, native Illustrator plugin with:
 1. **Dockable CEP Panel Plugin**: An HTML5/CEP panel accessible from `Window > Extensions > Ozo Tools` that docks directly into your Illustrator workspace alongside Layers, Pathfinder, and Properties (supports narrow docks down to 200px width).
