@@ -9,7 +9,7 @@ Transform all your Illustrator scripts into an official, native Illustrator plug
 
 ---
 
-## Included Tools (12 Tools)
+## Included Tools (13 Tools)
 
 | Tool | Category | Description |
 | :--- | :--- | :--- |
@@ -17,6 +17,7 @@ Transform all your Illustrator scripts into an official, native Illustrator plug
 | **CutContour Generator** | Prepress | Automated die-cut paths, bleed offset & spot color registration. |
 | **Print Job Info** | Prepress | Production metadata banner, dimensions, active ink separations & color slugs. |
 | **Nesting** | Prepress | High-efficiency shape packing to minimize sheet and vinyl material waste. |
+| **Batch Production Exporter** | Prepress | Batch export artboards to PDF, TIFF (CMYK/LZW 300DPI), PNG & JPEG with dynamic naming. |
 | **Smart Dimension** | Layout | Automatic linear, radial, and bounding box technical dimensioning. |
 | **Pathfinder Pro** | Layout | Advanced vector boolean operations, shape merging & path cleanup. |
 | **New Guide Layout** | Layout | Precision grid guide system with columns, rows, margins & gutting. |

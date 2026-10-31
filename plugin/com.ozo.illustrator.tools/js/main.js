@@ -6,7 +6,7 @@
         }
     } catch (e) {}
 
-    // Tool Definitions (12 tools)
+    // Tool Definitions (13 tools)
     var TOOLS = [
         {
             id: "qr",
@@ -47,6 +47,16 @@
             descEn: "Shape packing & material waste optimization",
             descKm: "តម្រៀបប្លង់សន្សំសំចៃផ្ទៃក្រដាស/សម្ភារៈ",
             icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="5" height="5"/><rect x="13" y="6" width="5" height="8"/><rect x="6" y="13" width="5" height="5"/></svg>'
+        },
+        {
+            id: "exporter",
+            file: "Batch Production Exporter.jsx",
+            category: "prepress",
+            nameEn: "Batch Production Exporter",
+            nameKm: "នាំចេញឯកសារជាកញ្ចប់",
+            descEn: "Batch export artboards to PDF, TIFF, PNG & JPEG",
+            descKm: "នាំចេញផ្ទាំងគំនូរជា PDF, TIFF, PNG, JPG តាមឈ្មោះកំណត់",
+            icon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
         },
         {
             id: "dimension",
@@ -177,7 +187,7 @@
 
         if (duration && duration > 0) {
             statusResetTimer = setTimeout(function () {
-                var defaultText = isKhmer() ? "រួចរាល់ • មាន ១២ ឧបករណ៍" : "Ready • 12 tools available";
+                var defaultText = isKhmer() ? ("រួចរាល់ • មាន " + TOOLS.length + " ឧបករណ៍") : ("Ready • " + TOOLS.length + " tools available");
                 statusMessage.textContent = defaultText;
                 statusDot.className = "status-dot";
             }, duration);
@@ -208,7 +218,7 @@
         // Header tooltips & search placeholder
         openFolderBtn.title = khmer ? "បើកថតផ្ទុកស្គ្រីប (Open Scripts Directory)" : "Open Scripts Directory";
         refreshBtn.title = khmer ? "ផ្ទុកផ្ទាំងឡើងវិញ (Refresh Panel)" : "Refresh Panel";
-        searchInput.placeholder = khmer ? "ស្វែងរកឧបករណ៍ទាំង ១២ (QR, កាត់, រៀបប្លង់)..." : "Search 12 tools (e.g. QR, Cut, Nest)...";
+        searchInput.placeholder = khmer ? ("ស្វែងរកឧបករណ៍ទាំង " + TOOLS.length + " (QR, កាត់, Export)...") : ("Search " + TOOLS.length + " tools (e.g. QR, Export, Cut)...");
         if (donateText) donateText.textContent = khmer ? "ឧបត្ថម្ភ" : "Donate";
         donateBtn.title = khmer ? "ឧបត្ថម្ភអ្នកអភិវឌ្ឍន៍ (Support developer via ABA Pay)" : "Support developer via ABA Pay";
     }
@@ -495,5 +505,5 @@
 
     // Initial Render
     renderTools();
-    setStatus(isKhmer() ? "រួចរាល់ • មាន ១២ ឧបករណ៍" : "Ready • 12 tools available", "ready");
+    setStatus(isKhmer() ? ("រួចរាល់ • មាន " + TOOLS.length + " ឧបករណ៍") : ("Ready • " + TOOLS.length + " tools available"), "ready");
 })();
