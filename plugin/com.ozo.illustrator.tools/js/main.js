@@ -147,11 +147,16 @@
     var favorites = JSON.parse(localStorage.getItem("ozo_favorites") || "[]");
     var isExecuting = false;
     var statusResetTimer = null;
+    var viewMode = localStorage.getItem("ozo_view_mode") || "list";
 
     // Elements
     var toolList = document.getElementById("toolList");
     var searchInput = document.getElementById("searchInput");
     var searchClearBtn = document.getElementById("searchClearBtn");
+    var searchKbdHint = document.getElementById("searchKbdHint");
+    var viewToggleBtn = document.getElementById("viewToggleBtn");
+    var viewIconGrid = document.getElementById("viewIconGrid");
+    var viewIconList = document.getElementById("viewIconList");
     var langToggleBtn = document.getElementById("langToggleBtn");
     var openFolderBtn = document.getElementById("openFolderBtn");
     var refreshBtn = document.getElementById("refreshBtn");
@@ -163,14 +168,34 @@
     var emptyText = document.getElementById("emptyText");
     var tabBtns = document.querySelectorAll(".tab-btn");
     var tabAll = document.getElementById("tabAll");
+    var tabAllText = document.getElementById("tabAllText");
+    var allCount = document.getElementById("allCount");
     var tabFavsText = document.getElementById("tabFavsText");
-    var tabPrepress = document.getElementById("tabPrepress");
-    var tabLayout = document.getElementById("tabLayout");
-    var tabUtilities = document.getElementById("tabUtilities");
     var favsCount = document.getElementById("favsCount");
+    var tabPrepress = document.getElementById("tabPrepress");
+    var tabPrepressText = document.getElementById("tabPrepressText");
+    var prepressCount = document.getElementById("prepressCount");
+    var tabLayout = document.getElementById("tabLayout");
+    var tabLayoutText = document.getElementById("tabLayoutText");
+    var layoutCount = document.getElementById("layoutCount");
+    var tabUtilities = document.getElementById("tabUtilities");
+    var tabUtilitiesText = document.getElementById("tabUtilitiesText");
+    var utilCount = document.getElementById("utilCount");
 
     function isKhmer() {
         return currentLang === "km";
+    }
+
+    function updateViewMode() {
+        if (viewMode === "grid") {
+            toolList.classList.add("view-grid");
+            if (viewIconGrid) viewIconGrid.style.display = "none";
+            if (viewIconList) viewIconList.style.display = "block";
+        } else {
+            toolList.classList.remove("view-grid");
+            if (viewIconGrid) viewIconGrid.style.display = "block";
+            if (viewIconList) viewIconList.style.display = "none";
+        }
     }
 
     function setStatus(msg, type, duration) {
@@ -198,13 +223,29 @@
         var khmer = isKhmer();
         langToggleBtn.textContent = khmer ? "KM" : "EN";
         langToggleBtn.title = khmer ? "ប្តូរទៅជាភាសាអង់គ្លេស (Switch to English)" : "Switch to Khmer (ប្តូរទៅជាភាសាខ្មែរ)";
+        if (viewToggleBtn) {
+            viewToggleBtn.title = khmer ? "ប្តូររវាងទិដ្ឋភាព Grid / បញ្ជី (Toggle Grid/List)" : "Toggle Grid / List View";
+        }
+
+        // Category count numbers
+        var prepressTotal = TOOLS.filter(function (t) { return t.category === "prepress"; }).length;
+        var layoutTotal = TOOLS.filter(function (t) { return t.category === "layout"; }).length;
+        var utilTotal = TOOLS.filter(function (t) { return t.category === "utilities"; }).length;
 
         // Tabs
-        tabAll.textContent = khmer ? "ទាំងអស់" : "All";
-        tabFavsText.textContent = khmer ? "សំណព្វ" : "Favorites";
-        tabPrepress.textContent = khmer ? "មុនបោះពុម្ព" : "Prepress";
-        tabLayout.textContent = khmer ? "ប្លង់រចនា" : "Layout";
-        tabUtilities.textContent = khmer ? "ឧបករណ៍ជំនួយ" : "Utilities";
+        if (tabAllText) tabAllText.textContent = khmer ? "ទាំងអស់" : "All";
+        if (allCount) allCount.textContent = TOOLS.length;
+
+        if (tabFavsText) tabFavsText.textContent = khmer ? "សំណព្វ" : "Favorites";
+
+        if (tabPrepressText) tabPrepressText.textContent = khmer ? "មុនបោះពុម្ព" : "Prepress";
+        if (prepressCount) prepressCount.textContent = prepressTotal;
+
+        if (tabLayoutText) tabLayoutText.textContent = khmer ? "ប្លង់រចនា" : "Layout";
+        if (layoutCount) layoutCount.textContent = layoutTotal;
+
+        if (tabUtilitiesText) tabUtilitiesText.textContent = khmer ? "ឧបករណ៍ជំនួយ" : "Utilities";
+        if (utilCount) utilCount.textContent = utilTotal;
 
         // Favorite badge
         if (favorites.length > 0) {
@@ -382,7 +423,24 @@
     searchInput.addEventListener("input", function () {
         searchQuery = searchInput.value.trim();
         searchClearBtn.style.display = searchQuery ? "block" : "none";
+        if (searchKbdHint) searchKbdHint.style.display = searchQuery ? "none" : "block";
         renderTools();
+    });
+
+    searchInput.addEventListener("focus", function () {
+        if (searchKbdHint) searchKbdHint.style.opacity = "0";
+    });
+
+    searchInput.addEventListener("blur", function () {
+        if (searchKbdHint && !searchInput.value) searchKbdHint.style.opacity = "1";
+    });
+
+    window.addEventListener("keydown", function (e) {
+        if (e.key === "/" && document.activeElement !== searchInput) {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
     });
 
     searchInput.addEventListener("keydown", function (e) {
@@ -396,7 +454,9 @@
             searchInput.value = "";
             searchQuery = "";
             searchClearBtn.style.display = "none";
+            if (searchKbdHint) searchKbdHint.style.display = "block";
             renderTools();
+            searchInput.blur();
         }
     });
 
@@ -404,9 +464,23 @@
         searchInput.value = "";
         searchQuery = "";
         searchClearBtn.style.display = "none";
+        if (searchKbdHint) searchKbdHint.style.display = "block";
         renderTools();
         searchInput.focus();
     });
+
+    // View Toggle (Grid vs List)
+    if (viewToggleBtn) {
+        viewToggleBtn.addEventListener("click", function () {
+            viewMode = (viewMode === "grid") ? "list" : "grid";
+            localStorage.setItem("ozo_view_mode", viewMode);
+            updateViewMode();
+            var msg = viewMode === "grid" 
+                ? (isKhmer() ? "ទិដ្ឋភាព Grid (តូច gọn)" : "Grid View (Compact)")
+                : (isKhmer() ? "ទិដ្ឋភាពបញ្ជី (លម្អិត)" : "List View (Detailed)");
+            setStatus(msg, "ready", 1500);
+        });
+    }
 
     // Category Tabs
     tabBtns.forEach(function (btn) {
@@ -504,6 +578,7 @@
     }
 
     // Initial Render
+    updateViewMode();
     renderTools();
     setStatus(isKhmer() ? ("រួចរាល់ • មាន " + TOOLS.length + " ឧបករណ៍") : ("Ready • " + TOOLS.length + " tools available"), "ready");
 })();

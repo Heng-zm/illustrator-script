@@ -434,17 +434,44 @@
     var templateInput = namePanel.add("edittext", undefined, "[doc]_[ab]_[w]x[h][unit]");
     templateInput.preferredSize.width = 300;
 
-    var tokensHint = namePanel.add("statictext", undefined, "Tokens: [doc] [ab] [num] [w] [h] [unit] [date] [color]");
-    tokensHint.graphics.foregroundColor = tokensHint.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.5, 0.5, 0.5, 1], 1);
+    // Interactive Token Insert Chips
+    var chipRow = namePanel.add("group");
+    chipRow.orientation = "row";
+    chipRow.alignChildren = ["left", "center"];
+    chipRow.spacing = 3;
+
+    var tokens = ["[doc]", "[ab]", "[w]x[h]", "[unit]", "[num]", "[date]", "[color]"];
+    for (var tk = 0; tk < tokens.length; tk++) {
+        (function (tokenStr) {
+            var chip = chipRow.add("button", undefined, tokenStr);
+            chip.preferredSize = [40, 20];
+            chip.helpTip = OZO.tr("Click to insert ") + tokenStr;
+            chip.onClick = function () {
+                var cur = templateInput.text;
+                if (!cur || cur.charAt(cur.length - 1) === "_") {
+                    templateInput.text = cur + tokenStr;
+                } else {
+                    templateInput.text = cur + "_" + tokenStr;
+                }
+                namingPresetList.selection = 5; // Custom...
+                updatePreviewName();
+            };
+        })(tokens[tk]);
+    }
 
     // Live Sample Preview Box
     var samplePreviewPanel = namePanel.add("panel", undefined, OZO.tr("Live Filename Preview"));
     samplePreviewPanel.orientation = "column";
     samplePreviewPanel.alignChildren = ["fill", "top"];
-    samplePreviewPanel.margins = [8, 8, 8, 8];
+    samplePreviewPanel.margins = [10, 10, 10, 10];
+    samplePreviewPanel.spacing = 4;
 
     var samplePreviewText = samplePreviewPanel.add("statictext", undefined, "");
     samplePreviewText.preferredSize.width = 285;
+
+    var sampleDimsText = samplePreviewPanel.add("statictext", undefined, "");
+    sampleDimsText.preferredSize.width = 285;
+    sampleDimsText.graphics.foregroundColor = sampleDimsText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.55, 0.55, 0.55, 1], 1);
 
     namingPresetList.onChange = function () {
         if (namingPresetList.selection && namingPresetList.selection.text !== "Custom...") {
@@ -476,6 +503,17 @@
         var sampleAb = (pdfBox.value && rbPdfCombined.value) ? -1 : activeAbIndex;
         var sampleName = buildFileName(templateInput.text, docBaseName, sampleAb, selExt, selUnit);
         samplePreviewText.text = "→ " + sampleName;
+
+        if (sampleDimsText) {
+            if (pdfBox.value && rbPdfCombined.value) {
+                sampleDimsText.text = OZO.tr("Multi-page PDF containing all selected artboards");
+            } else {
+                var ab = doc.artboards[activeAbIndex];
+                var dims = getArtboardDimensions(ab, selUnit);
+                var abName = ab.name || ("Artboard " + (activeAbIndex + 1));
+                sampleDimsText.text = abName + " • " + dims.width + " × " + dims.height + " " + selUnit + " (" + (activeAbIndex + 1) + "/" + totalArtboards + ")";
+            }
+        }
     }
     updatePreviewName();
 
