@@ -958,40 +958,72 @@
     }
 
     function addRoundedFinder(group, top, left, moduleSize, fill, opaqueBackground) {
-        if (!opaqueBackground) {
-            var ring = group.pathItems.roundedRectangle(
-                top - moduleSize / 2,
-                left + moduleSize / 2,
-                moduleSize * 6,
-                moduleSize * 6,
-                moduleSize * 0.9,
-                moduleSize * 0.9
-            );
-            ring.stroked = true;
-            ring.strokeWidth = moduleSize;
-            ring.strokeColor = fill;
-            ring.filled = false;
+        var outerRadius = moduleSize * 2.1;
+        var gapRadius = moduleSize * 1.1;
 
-            var transparentCenter = group.pathItems.roundedRectangle(
-                top - moduleSize * 2,
-                left + moduleSize * 2,
-                moduleSize * 3,
-                moduleSize * 3,
-                moduleSize * 0.5,
-                moduleSize * 0.5
-            );
-            transparentCenter.stroked = false;
-            transparentCenter.filled = true;
-            transparentCenter.fillColor = fill;
-            return 2;
+        if (!opaqueBackground) {
+            try {
+                var compound = group.compoundPathItems.add();
+                var outerPath = compound.pathItems.roundedRectangle(
+                    top, left,
+                    moduleSize * 7, moduleSize * 7,
+                    outerRadius, outerRadius
+                );
+                outerPath.stroked = false;
+                outerPath.filled = true;
+                outerPath.fillColor = fill;
+
+                var innerPath = compound.pathItems.roundedRectangle(
+                    top - moduleSize, left + moduleSize,
+                    moduleSize * 5, moduleSize * 5,
+                    gapRadius, gapRadius
+                );
+                innerPath.stroked = false;
+                innerPath.filled = true;
+                innerPath.fillColor = fill;
+
+                var centerDot = group.pathItems.ellipse(
+                    top - moduleSize * 2, left + moduleSize * 2,
+                    moduleSize * 3, moduleSize * 3
+                );
+                centerDot.stroked = false;
+                centerDot.filled = true;
+                centerDot.fillColor = fill;
+                return 2;
+            } catch (eCompound) {
+                var ring = group.pathItems.roundedRectangle(
+                    top - moduleSize / 2,
+                    left + moduleSize / 2,
+                    moduleSize * 6,
+                    moduleSize * 6,
+                    moduleSize * 1.6,
+                    moduleSize * 1.6
+                );
+                ring.stroked = true;
+                ring.strokeWidth = moduleSize;
+                ring.strokeColor = fill;
+                ring.filled = false;
+
+                var transparentCenter = group.pathItems.ellipse(
+                    top - moduleSize * 2,
+                    left + moduleSize * 2,
+                    moduleSize * 3,
+                    moduleSize * 3
+                );
+                transparentCenter.stroked = false;
+                transparentCenter.filled = true;
+                transparentCenter.fillColor = fill;
+                return 2;
+            }
         }
+
         var outer = group.pathItems.roundedRectangle(
             top,
             left,
             moduleSize * 7,
             moduleSize * 7,
-            moduleSize * 1.4,
-            moduleSize * 1.4
+            outerRadius,
+            outerRadius
         );
         outer.stroked = false;
         outer.filled = true;
@@ -1002,29 +1034,24 @@
             left + moduleSize,
             moduleSize * 5,
             moduleSize * 5,
-            moduleSize * 0.8,
-            moduleSize * 0.8
+            gapRadius,
+            gapRadius
         );
         middle.stroked = false;
         middle.filled = true;
         middle.fillColor = whiteColor();
 
-        var center = group.pathItems.roundedRectangle(
+        // Authentic circular center dot matching Telegram's official eye style
+        var center = group.pathItems.ellipse(
             top - moduleSize * 2,
             left + moduleSize * 2,
             moduleSize * 3,
-            moduleSize * 3,
-            moduleSize * 0.5,
-            moduleSize * 0.5
+            moduleSize * 3
         );
         center.stroked = false;
         center.filled = true;
         center.fillColor = fill;
         return 3;
-    }
-
-    function telegramModuleColor() {
-        return blackColor();
     }
 
     function telegramBrandBlue() {
@@ -1037,11 +1064,207 @@
             return cmyk;
         }
         var color = new RGBColor();
-        // Telegram brand blue #3390EC.
+        // Official Telegram Brand Blue #3390EC
         color.red = 51;
         color.green = 144;
         color.blue = 236;
         return color;
+    }
+
+    function getTelegramColors(themeName) {
+        var isCMYK = doc && doc.documentColorSpace === DocumentColorSpace.CMYK;
+
+        function rgb(r, g, b) {
+            var c = new RGBColor();
+            c.red = r; c.green = g; c.blue = b;
+            return c;
+        }
+
+        function cmyk(c, m, y, k) {
+            var col = new CMYKColor();
+            col.cyan = c; col.magenta = m; col.yellow = y; col.black = k;
+            return col;
+        }
+
+        if (themeName === "Midnight Dark") {
+            return {
+                qr: isCMYK ? cmyk(78, 39, 0, 0) : rgb(51, 144, 236),
+                cardBg: isCMYK ? cmyk(80, 70, 50, 70) : rgb(23, 33, 43),
+                subtitle: isCMYK ? cmyk(25, 15, 10, 0) : rgb(170, 190, 210),
+                footer: isCMYK ? cmyk(35, 20, 15, 0) : rgb(140, 165, 190)
+            };
+        } else if (themeName === "Classic Black") {
+            return {
+                qr: isCMYK ? cmyk(0, 0, 0, 100) : rgb(0, 0, 0),
+                cardBg: isCMYK ? cmyk(0, 0, 0, 92) : rgb(28, 28, 30),
+                subtitle: isCMYK ? cmyk(0, 0, 0, 40) : rgb(180, 180, 185),
+                footer: isCMYK ? cmyk(0, 0, 0, 50) : rgb(150, 150, 155)
+            };
+        } else if (themeName === "Vibrant Cyan") {
+            return {
+                qr: isCMYK ? cmyk(75, 18, 0, 0) : rgb(40, 167, 233),
+                cardBg: isCMYK ? cmyk(82, 30, 0, 0) : rgb(24, 138, 212),
+                subtitle: isCMYK ? cmyk(15, 2, 0, 0) : rgb(215, 242, 255),
+                footer: isCMYK ? cmyk(20, 5, 0, 0) : rgb(200, 235, 255)
+            };
+        }
+
+        // Official Telegram Blue (Default)
+        return {
+            qr: isCMYK ? cmyk(78, 39, 0, 0) : rgb(51, 144, 236),
+            cardBg: isCMYK ? cmyk(80, 42, 0, 0) : rgb(42, 134, 228),
+            subtitle: isCMYK ? cmyk(18, 5, 0, 0) : rgb(210, 235, 255),
+            footer: isCMYK ? cmyk(22, 7, 0, 0) : rgb(195, 225, 255)
+        };
+    }
+
+    function parseTelegramContent(content) {
+        var raw = String(content || "").replace(/^\s+|\s+$/g, "");
+        var handle = "";
+        var title = "";
+
+        var match = raw.match(/(?:https?:\/\/)?(?:www\.)?t\.me\/(?:\+)?([A-Za-z0-9_]+)/i);
+        if (match && match[1]) {
+            var slug = match[1];
+            if (raw.indexOf("/+") !== -1) {
+                handle = "Invite Link";
+                title = "Telegram Group";
+            } else {
+                handle = "@" + slug;
+                title = formatTelegramTitle(slug);
+            }
+        } else if (raw.indexOf("@") === 0) {
+            handle = raw;
+            title = formatTelegramTitle(raw.substring(1));
+        } else if (raw.length > 0) {
+            handle = raw.length > 25 ? (raw.substring(0, 22) + "...") : raw;
+            title = "Telegram Channel";
+        }
+
+        return { handle: handle, title: title };
+    }
+
+    function formatTelegramTitle(slug) {
+        if (!slug) return "Telegram";
+        var parts = slug.split("_");
+        for (var i = 0; i < parts.length; i++) {
+            if (parts[i].length > 0) {
+                parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].slice(1);
+            }
+        }
+        return parts.join(" ");
+    }
+
+    function buildTelegramCard(drawingTarget, qrCenter, qrSize, cardTheme, titleText, handleText) {
+        var centerX = qrCenter[0];
+        var centerY = qrCenter[1];
+
+        // Card Dimensions (Ratio approx 1:1.38, standard Telegram Share Card aspect)
+        var cardW = qrSize * 1.40;
+        var cardH = qrSize * 1.90;
+        var cardRadius = qrSize * 0.085;
+
+        // The white QR tile is size qrSize + 2 * padding
+        var tilePad = qrSize * 0.055;
+        var tileW = qrSize + tilePad * 2;
+        var tileH = qrSize + tilePad * 2;
+        var tileRadius = qrSize * 0.065;
+        var tileTop = centerY + (qrSize / 2) + tilePad;
+        var tileLeft = centerX - (qrSize / 2) - tilePad;
+
+        // Card Top & Left
+        var cardTop = tileTop + (qrSize * 0.50);
+        var cardLeft = centerX - (cardW / 2);
+
+        // 1. Card Background
+        var cardBg = drawingTarget.pathItems.roundedRectangle(
+            cardTop, cardLeft, cardW, cardH, cardRadius, cardRadius
+        );
+        cardBg.name = "Telegram Card Background";
+        cardBg.stroked = false;
+        cardBg.filled = true;
+        cardBg.fillColor = cardTheme.cardBg;
+
+        // 2. White QR Tile
+        var whiteTile = drawingTarget.pathItems.roundedRectangle(
+            tileTop, tileLeft, tileW, tileH, tileRadius, tileRadius
+        );
+        whiteTile.name = "QR White Tile";
+        whiteTile.stroked = false;
+        whiteTile.filled = true;
+        whiteTile.fillColor = whiteColor();
+
+        // 3. Avatar (Header)
+        var avatarDia = qrSize * 0.24;
+        var avatarCenterY = cardTop - (qrSize * 0.16);
+
+        var avatarOuter = drawingTarget.pathItems.ellipse(
+            avatarCenterY + (avatarDia / 2),
+            centerX - (avatarDia / 2),
+            avatarDia, avatarDia
+        );
+        avatarOuter.stroked = false;
+        avatarOuter.filled = true;
+        avatarOuter.fillColor = whiteColor();
+        avatarOuter.name = "Avatar Outer";
+
+        var avatarInnerDia = avatarDia * 0.90;
+        var avatarInner = drawingTarget.pathItems.ellipse(
+            avatarCenterY + (avatarInnerDia / 2),
+            centerX - (avatarInnerDia / 2),
+            avatarInnerDia, avatarInnerDia
+        );
+        avatarInner.stroked = false;
+        avatarInner.filled = true;
+        avatarInner.fillColor = cardTheme.qr;
+        avatarInner.name = "Avatar Inner";
+
+        addTelegramPlane(drawingTarget, centerX, avatarCenterY, avatarInnerDia, whiteColor());
+
+        // 4. Title (Display Name)
+        var titleFrame = drawingTarget.textFrames.add();
+        titleFrame.contents = titleText || "Telegram";
+        titleFrame.name = "Title Text";
+        var titleFontSize = Math.max(9, Math.round(qrSize * 0.078));
+        try {
+            titleFrame.textRange.characterAttributes.size = titleFontSize;
+            titleFrame.textRange.characterAttributes.fillColor = whiteColor();
+        } catch (eT1) {}
+        var titleTopY = avatarCenterY - (avatarDia / 2) - (qrSize * 0.025);
+        titleFrame.top = titleTopY;
+        titleFrame.left = centerX - (titleFrame.width / 2);
+
+        // 5. Handle (@username)
+        var handleFrame = drawingTarget.textFrames.add();
+        handleFrame.contents = handleText || "@telegram";
+        handleFrame.name = "Handle Text";
+        var handleFontSize = Math.max(7, Math.round(qrSize * 0.055));
+        try {
+            handleFrame.textRange.characterAttributes.size = handleFontSize;
+            handleFrame.textRange.characterAttributes.fillColor = cardTheme.subtitle;
+        } catch (eT2) {}
+        var handleTopY = titleTopY - titleFrame.height - (qrSize * 0.010);
+        handleFrame.top = handleTopY;
+        handleFrame.left = centerX - (handleFrame.width / 2);
+
+        // 6. Footer Caption
+        var footerFrame = drawingTarget.textFrames.add();
+        footerFrame.contents = "Scan with camera to open on Telegram";
+        footerFrame.name = "Footer Caption";
+        var footerFontSize = Math.max(6, Math.round(qrSize * 0.042));
+        try {
+            footerFrame.textRange.characterAttributes.size = footerFontSize;
+            footerFrame.textRange.characterAttributes.fillColor = cardTheme.footer;
+        } catch (eT3) {}
+        var tileBottom = tileTop - tileH;
+        var footerTopY = tileBottom - (qrSize * 0.038);
+        footerFrame.top = footerTopY;
+        footerFrame.left = centerX - (footerFrame.width / 2);
+
+        return {
+            cardBg: cardBg,
+            whiteTile: whiteTile
+        };
     }
 
     function setBezierPoint(point, anchor, leftDirection, rightDirection) {
@@ -1085,6 +1308,16 @@
                 },
                 ellipse: function (top, left, width, height) {
                     return remember(container.pathItems.ellipse(top, left, width, height));
+                }
+            },
+            textFrames: {
+                add: function () {
+                    return remember(container.textFrames.add());
+                }
+            },
+            compoundPathItems: {
+                add: function () {
+                    return remember(container.compoundPathItems.add());
                 }
             }
         };
@@ -1250,16 +1483,13 @@
         return addBezierPath(group, anchors, leftDirections, rightDirections, fill);
     }
 
-    function addTelegramBadge(group, centerX, centerY, moduleSize, matrixSize, opaqueBackground) {
+    function addTelegramBadge(group, centerX, centerY, moduleSize, matrixSize, logoColor) {
         var white = whiteColor();
-        var blue = telegramBrandBlue();
-        // Match the Telegram app: the white disc fills the cleared centre
-        // cutout, and the blue logo disc leaves a thin white ring.
+        var blue = logoColor || telegramBrandBlue();
         var cutout = telegramCutout(matrixSize);
         var badgeRadius = (cutout[1] - cutout[0]) * moduleSize / 2;
-        var logoRadius = badgeRadius * 0.82;
+        var logoRadius = badgeRadius * 0.84;
 
-        var count = 2;
         var badge = group.pathItems.ellipse(
             centerY + badgeRadius,
             centerX - badgeRadius,
@@ -1269,7 +1499,6 @@
         badge.stroked = false;
         badge.filled = true;
         badge.fillColor = white;
-        count++;
 
         var logo = group.pathItems.ellipse(
             centerY + logoRadius,
@@ -1282,7 +1511,7 @@
         logo.fillColor = blue;
 
         addTelegramPlane(group, centerX, centerY, logoRadius * 2, white);
-        return count;
+        return 3;
     }
 
     function telegramCutout(size) {
@@ -1318,7 +1547,7 @@
     }
 
     function addVectorQr(encoded, sizePoints, quietZone, includeBackground, newLayer,
-            outputStyle) {
+            outputStyle, telegramOptions) {
         normalizeEditingContext();
         var layer = doc.activeLayer;
         var previousActiveLayer = layer;
@@ -1365,7 +1594,7 @@
             var top = bounds[1] - ((bounds[1] - bounds[3]) - sizePoints) / 2;
 
             var background = null;
-            if (includeBackground) {
+            if (includeBackground && !isShareCard) {
                 background = drawingTarget.pathItems.rectangle(top, left, sizePoints, sizePoints);
                 background.stroked = false;
                 background.filled = true;
@@ -1373,8 +1602,23 @@
                 background.name = "Quiet Zone";
             }
 
-            var telegramStyle = outputStyle === "Telegram 2026";
-            var fill = telegramStyle ? telegramModuleColor() : blackColor();
+            var isShareCard = outputStyle === "Telegram 2026 (Share Card)";
+            var isQrOnly = outputStyle === "Telegram 2026 (QR Only)";
+            var telegramStyle = isShareCard || isQrOnly || outputStyle === "Telegram 2026";
+            var themeName = (telegramOptions && telegramOptions.theme) ? telegramOptions.theme : "Official Telegram Blue";
+            var cardTheme = getTelegramColors(themeName);
+            var fill = telegramStyle ? cardTheme.qr : blackColor();
+
+            if (isShareCard) {
+                buildTelegramCard(
+                    drawingTarget,
+                    [left + sizePoints / 2, top - sizePoints / 2],
+                    sizePoints,
+                    cardTheme,
+                    telegramOptions ? telegramOptions.title : "Telegram",
+                    telegramOptions ? telegramOptions.handle : "@telegram"
+                );
+            }
             var rectangleCount = 0;
             var row;
             var column;
@@ -1483,7 +1727,7 @@
                     top - sizePoints / 2,
                     moduleSize,
                     matrix.length,
-                    includeBackground
+                    fill
                 );
             } else {
                 for (row = 0; row < matrix.length; row++) {
@@ -1510,16 +1754,18 @@
                 }
             }
             group = layer.groupItems.add();
-            group.name = "QR Code v" + encoded.version;
+            group.name = isShareCard ?
+                ("Telegram QR Card - " + (telegramOptions ? (telegramOptions.handle || telegramOptions.title) : "Card")) :
+                ("Telegram QR Code v" + encoded.version);
             group.locked = false;
             group.hidden = false;
-            // Moving in reverse creation order with PLACEATEND preserves the
-            // original front-to-back order and keeps the background at the back.
             for (var moveIndex = createdPaths.length - 1; moveIndex >= 0; moveIndex--) {
-                createdPaths[moveIndex].move(group, ElementPlacement.PLACEATEND);
+                try {
+                    createdPaths[moveIndex].move(group, ElementPlacement.PLACEATEND);
+                } catch (eMove) {}
             }
-            if (background) {
-                background.zOrder(ZOrderMethod.SENDTOBACK);
+            if (background && !isShareCard) {
+                try { background.zOrder(ZOrderMethod.SENDTOBACK); } catch (eBg) {}
             }
             doc.selection = null;
             group.selected = true;
@@ -1659,9 +1905,55 @@
     var styleList = styleRow.add(
         "dropdownlist",
         undefined,
-        ["Normal", "Telegram 2026"]
+        ["Normal", "Telegram 2026 (Share Card)", "Telegram 2026 (QR Only)"]
     );
-    styleList.selection = 0;
+    styleList.selection = 1;
+
+    var telegramPanel = settingsPanel.add("panel", undefined, "Telegram Style Options");
+    telegramPanel.orientation = "column";
+    telegramPanel.alignChildren = ["left", "center"];
+    telegramPanel.margins = [12, 14, 12, 10];
+
+    var themeRow = telegramPanel.add("group");
+    themeRow.add("statictext", undefined, "Color theme:");
+    var themeList = themeRow.add("dropdownlist", undefined, [
+        "Official Telegram Blue",
+        "Vibrant Cyan",
+        "Midnight Dark",
+        "Classic Black"
+    ]);
+    themeList.selection = 0;
+
+    var cardDetailsGroup = telegramPanel.add("group");
+    cardDetailsGroup.orientation = "column";
+    cardDetailsGroup.alignChildren = ["left", "center"];
+
+    var nameRow = cardDetailsGroup.add("group");
+    nameRow.add("statictext", undefined, "Display name:");
+    var nameInput = nameRow.add("edittext", undefined, "Telegram");
+    nameInput.characters = 22;
+
+    var handleRow = cardDetailsGroup.add("group");
+    handleRow.add("statictext", undefined, "Username / link:");
+    var handleInput = handleRow.add("edittext", undefined, "@telegram");
+    handleInput.characters = 22;
+
+    var userCustomizedName = false;
+    var userCustomizedHandle = false;
+
+    nameInput.onChanging = function () { userCustomizedName = true; };
+    handleInput.onChanging = function () { userCustomizedHandle = true; };
+
+    function updateTelegramFieldsFromContent() {
+        if (!contentInput || !nameInput || !handleInput) return;
+        var parsed = parseTelegramContent(contentInput.text);
+        if (!userCustomizedName && parsed.title) {
+            nameInput.text = parsed.title;
+        }
+        if (!userCustomizedHandle && parsed.handle) {
+            handleInput.text = parsed.handle;
+        }
+    }
 
     var correctionRow = settingsPanel.add("group");
     correctionRow.add("statictext", undefined, "Error correction:");
@@ -1702,18 +1994,36 @@
     );
     note.preferredSize = [430, 34];
 
-
     styleList.onChange = function () {
-        var isTelegram = styleList.selection && styleList.selection.index === 1;
+        var idx = styleList.selection ? styleList.selection.index : 0;
+        var isNormal = idx === 0;
+        var isShareCard = idx === 1;
+        var isQrOnly = idx === 2;
+        var isTelegram = isShareCard || isQrOnly;
+
         if (isTelegram) {
             correctionList.selection = 1;
         }
         correctionList.enabled = !isTelegram;
-        var styleNote = isTelegram ?
-            "Telegram 2026 uses connected black modules, scanner-friendly rounded finders, the official blue paper-plane badge, and Telegram's M error correction." :
-            "Normal style creates editable square vector modules. No internet connection is used.";
+
+        telegramPanel.visible = isTelegram;
+        cardDetailsGroup.visible = isShareCard;
+
+        if (isTelegram) {
+            updateTelegramFieldsFromContent();
+        }
+
+        var styleNote = isShareCard ?
+            "Telegram 2026 (Share Card) generates the authentic Telegram card layout (rounded card, avatar badge, name, username, and Telegram Blue QR) exactly like saving from Telegram." :
+            (isQrOnly ?
+                "Telegram 2026 (QR Only) generates the standalone Telegram Blue vector QR code with connected rounded modules, squircle finders, and official paper-plane badge." :
+                "Normal style creates editable square vector modules. No internet connection is used.");
+
         note._ozoEnglishText = styleNote;
         note.text = OZO.tr(styleNote);
+        if (dialog.layout) {
+            dialog.layout.layout(true);
+        }
         updateQrSummary();
     };
 
@@ -1740,7 +2050,8 @@
                 OZO.tr("Enter a whole-number quiet zone from 0 to 20 modules.");
             return;
         }
-        var telegramStyle = styleList.selection && styleList.selection.index === 1;
+        var styleIdx = styleList.selection ? styleList.selection.index : 0;
+        var telegramStyle = styleIdx === 1 || styleIdx === 2;
         var level = telegramStyle ? "M" :
             ["L", "M", "Q", "H"][correctionList.selection ?
                 correctionList.selection.index : 1];
@@ -1793,7 +2104,10 @@
         contentInput.active = true;
         updateQrSummary();
     };
-    contentInput.onChanging = updateQrSummary;
+    contentInput.onChanging = function () {
+        updateQrSummary();
+        updateTelegramFieldsFromContent();
+    };
     sizeInput.onChanging = updateQrSummary;
     quietInput.onChanging = updateQrSummary;
     correctionList.onChange = updateQrSummary;
@@ -1850,9 +2164,19 @@
 
     var unit = unitList.selection ? unitList.selection.text : "mm";
     var sizeMillimeters = size * unitToMillimeters(unit);
-    var outputStyle = (styleList.selection && styleList.selection.index === 1) ? "Telegram 2026" : "Normal";
-    var level = outputStyle === "Telegram 2026" ?
+    var styleIdx = styleList.selection ? styleList.selection.index : 0;
+    var outputStyle = styleIdx === 1 ? "Telegram 2026 (Share Card)" :
+                      (styleIdx === 2 ? "Telegram 2026 (QR Only)" : "Normal");
+    var isTelegram = styleIdx === 1 || styleIdx === 2;
+    var level = isTelegram ?
         "M" : ["L", "M", "Q", "H"][correctionList.selection ? correctionList.selection.index : 1];
+
+    var telegramOptions = {
+        isCard: styleIdx === 1,
+        theme: themeList.selection ? themeList.selection.text : "Official Telegram Blue",
+        title: nameInput.text,
+        handle: handleInput.text
+    };
 
     try {
         var encoded = encodeQr(content, level);
@@ -1862,7 +2186,8 @@
             quietZone,
             backgroundCheck.value,
             newLayerCheck.value,
-            outputStyle
+            outputStyle,
+            telegramOptions
         );
         OZO.saveWindowState(dialog, "generate_qr_code_v3");
         var scanWarning = qrScanWarning(
@@ -1871,7 +2196,7 @@
             unit,
             quietZone,
             backgroundCheck.value,
-            outputStyle === "Telegram 2026"
+            isTelegram
         );
         var successMessage = OZO.isKhmer() ?
             "\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f\u1780\u17bc\u178a QR\u17d4\n\n\u1787\u17c6\u1793\u17b6\u1793\u17cb\u17d6 " + encoded.version + "\n\u1798\u17c9\u17b6\u1791\u17d2\u179a\u17b8\u179f\u17d6 " +
