@@ -316,10 +316,13 @@
                             }
                         }
                         if (hit) {
-                            try { item.locked = false; } catch (eUnlock) {}
-                            item.remove();
-                            removedCount++;
-                            break;
+                            try {
+                                if (item.layer && item.layer.locked) item.layer.locked = false;
+                                item.locked = false;
+                                item.remove();
+                                removedCount++;
+                                break;
+                            } catch (eUnlock) {}
                         }
                     }
                 }

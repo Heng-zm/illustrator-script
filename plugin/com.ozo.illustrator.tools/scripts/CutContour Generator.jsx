@@ -222,11 +222,13 @@
                 }
                 return;
             }
-            item.stroked = true;
-            item.filled = false;
-            item.strokeColor = spotColor;
-            item.strokeWidth = settings.strokeWeight;
-            try { item.strokeOverprint = settings.overprint; } catch (eOver) {}
+            if (item.typename === "PathItem") {
+                item.stroked = true;
+                item.filled = false;
+                item.strokeColor = spotColor;
+                item.strokeWidth = settings.strokeWeight;
+                try { item.strokeOverprint = settings.overprint; } catch (eOver) {}
+            }
         } catch (ignoreStyle) {}
     }
 
@@ -385,6 +387,34 @@
                         sourceItems[i].duplicate(contourGroup, ElementPlacement.PLACEATEND);
                     } catch (eDup) {}
                 }
+
+                // Ensure all items inside contourGroup are converted to vector paths
+                function ensureVectorOnly(container) {
+                    var items = container.pageItems;
+                    for (var it = items.length - 1; it >= 0; it--) {
+                        var curItem = items[it];
+                        try {
+                            if (curItem.typename === "GroupItem") {
+                                ensureVectorOnly(curItem);
+                            } else if (curItem.typename === "TextFrame") {
+                                try {
+                                    curItem.createOutline();
+                                } catch (eTfOut) {
+                                    var tb = curItem.geometricBounds;
+                                    container.pathItems.rectangle(tb[1], tb[0], tb[2] - tb[0], tb[1] - tb[3]);
+                                    curItem.remove();
+                                }
+                            } else if (curItem.typename === "RasterItem" || curItem.typename === "PlacedItem" ||
+                                       curItem.typename === "MeshItem" || curItem.typename === "PluginItem") {
+                                var rb = curItem.geometricBounds;
+                                container.pathItems.rectangle(rb[1], rb[0], rb[2] - rb[0], rb[1] - rb[3]);
+                                curItem.remove();
+                            }
+                        } catch (eClean) {}
+                    }
+                }
+                ensureVectorOnly(contourGroup);
+
                 if (offsetPt !== 0 && contourGroup.pageItems.length > 0) {
                     try {
                         var gBounds = contourGroup.geometricBounds;
@@ -561,6 +591,12 @@
         if (!doc) return {status: "ERROR", message: "No document open."};
         if (!sourceItems.length) return {status: "ERROR", message: "No artwork selected."};
 
+        if (!settings.kissEnabled && !settings.perfEnabled) {
+            issues.push(OZO.isKhmer() ?
+                "ត្រូវតែជ្រើសរើសយ៉ាងហោចណាស់ Kiss-Cut ឬ Die-Cut មួយ។" :
+                "At least one cutline (Kiss-Cut or Die-Cut) must be enabled.");
+            status = "ERROR";
+        }
         if (settings.kissEnabled && !settings.kissName) {
             issues.push("Kiss-Cut spot name cannot be empty.");
             status = "ERROR";
@@ -940,6 +976,11 @@
         previewButton.enabled = false;
         try {
             var settings = readSettings();
+            if (!settings.kissEnabled && !settings.perfEnabled) {
+                throw new Error(OZO.isKhmer() ?
+                    "ត្រូវតែជ្រើសរើសយ៉ាងហោចណាស់ Kiss-Cut ឬ Die-Cut មួយ។" :
+                    "Please enable at least Kiss-Cut or Die-Cut before generating.");
+            }
             generatePreview(settings);
             updateValidationUI();
         } catch (error) {
@@ -976,6 +1017,11 @@
 
     try {
         var finalSettings = readSettings();
+        if (!finalSettings.kissEnabled && !finalSettings.perfEnabled) {
+            throw new Error(OZO.isKhmer() ?
+                "ត្រូវតែជ្រើសរើសយ៉ាងហោចណាស់ Kiss-Cut ឬ Die-Cut មួយ។" :
+                "Please enable at least Kiss-Cut or Die-Cut before generating.");
+        }
         generatePreview(finalSettings);
 
         // Move previewGroup to destination production layer

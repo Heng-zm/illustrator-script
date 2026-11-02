@@ -12,7 +12,8 @@
     var doc = app.activeDocument;
     var activeLayer = doc.activeLayer;
     var selection = doc.selection;
-    var defaultUnit = OZO.getDocDefaultUnit(doc);
+    var defaultUnit = (typeof OZO !== "undefined" && OZO.getDocDefaultUnit) ?
+        OZO.getDocDefaultUnit(doc) : "cm";
 
     // -----------------------------------
     // Count selected objects & measure dimensions
@@ -71,14 +72,6 @@
                 counters.other++;
             }
         }
-        // If container has sub-layers (for Layer objects), count their items too
-        try {
-            if (container.layers && container.layers.length > 0) {
-                for (var l = 0; l < container.layers.length; l++) {
-                    countContainerItems(container.layers[l], counters);
-                }
-            }
-        } catch (ignoreSubLayers) {}
     }
 
     var layerCount = emptyTypeCounts();
@@ -112,7 +105,8 @@
 
     OZO.addDialogHeader(dialog, OZO.tr("Count Items"), "v2.2 \u2022 Document & Prepress Statistics");
 
-    var activeLayerText = dialog.add("statictext", undefined, OZO.tr("Active layer: ") + activeLayer.name);
+    var activeLayerName = (activeLayer && activeLayer.name) ? activeLayer.name : "Layer 1";
+    var activeLayerText = dialog.add("statictext", undefined, OZO.tr("Active layer: ") + activeLayerName);
     activeLayerText.graphics.foregroundColor = activeLayerText.graphics.newPen(
         activeLayerText.graphics.PenType.SOLID_COLOR, [0.65, 0.65, 0.65], 1
     );
@@ -189,7 +183,7 @@
     closeButton.preferredSize = [100, 28];
 
     OZO.addLanguageSelector(dialog, function () {
-        activeLayerText.text = OZO.tr("Active layer: ") + activeLayer.name;
+        activeLayerText.text = OZO.tr("Active layer: ") + activeLayerName;
     });
 
     dialog.defaultElement = closeButton;

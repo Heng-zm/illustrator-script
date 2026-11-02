@@ -614,230 +614,243 @@
             throw new Error(OZO.tr("The target artboard has invalid dimensions."));
         }
 
-        var targetLayer;
-        if (isPreview) {
-            if (!previewLayer) {
-                previewLayer = doc.layers.add();
-                previewLayer.name = PREVIEW_LAYER_NAME;
+        var targetLayer = null;
+        try {
+            if (isPreview) {
+                if (!previewLayer) {
+                    previewLayer = doc.layers.add();
+                    previewLayer.name = PREVIEW_LAYER_NAME;
+                } else {
+                    for (var p = previewLayer.pageItems.length - 1; p >= 0; p--) {
+                        try { previewLayer.pageItems[p].remove(); } catch (eP) {}
+                    }
+                }
+                targetLayer = previewLayer;
+                targetLayer.locked = false;
+                targetLayer.visible = true;
             } else {
-                for (var p = previewLayer.pageItems.length - 1; p >= 0; p--) {
-                    try { previewLayer.pageItems[p].remove(); } catch (eP) {}
-                }
+                targetLayer = doc.layers.add();
+                targetLayer.name = uniqueLayerName(settings.layerName);
             }
-            targetLayer = previewLayer;
-            targetLayer.locked = false;
-            targetLayer.visible = true;
-        } else {
-            targetLayer = doc.layers.add();
-            targetLayer.name = uniqueLayerName(settings.layerName);
-        }
-        doc.activeLayer = targetLayer;
+            doc.activeLayer = targetLayer;
 
-        var outputGroup = targetLayer.groupItems.add();
-        outputGroup.name = settings.layerName + (settings.mode === 2 ? " Radial" : " Pattern");
+            var outputGroup = targetLayer.groupItems.add();
+            outputGroup.name = settings.layerName + (settings.mode === 2 ? " Radial" : " Pattern");
 
-        var template = outputGroup.groupItems.add();
-        template.name = "Repeat Source";
-        for (var sIdx = 0; sIdx < sourceItems.length; sIdx++) {
-            sourceItems[sIdx].duplicate(template, ElementPlacement.PLACEATEND);
-        }
-        if (!template.pageItems.length) {
-            throw new Error(OZO.tr("The source artwork could not be duplicated."));
-        }
-
-        if (settings.scale !== 100) {
-            template.resize(settings.scale, settings.scale, true, true, true, true,
-                settings.scale, Transformation.CENTER);
-        }
-
-        var templateBounds = template.visibleBounds;
-        var artworkWidth = templateBounds[2] - templateBounds[0];
-        var artworkHeight = templateBounds[1] - templateBounds[3];
-        if (!(artworkWidth > 0) || !(artworkHeight > 0)) {
-            throw new Error(OZO.tr("The source artwork has invalid dimensions."));
-        }
-
-        var placedCount = 0;
-
-        if (settings.mode === 2) {
-            // ----------------------------------------------------
-            // RADIAL REPEAT MODE
-            // ----------------------------------------------------
-            var sourceCenterX = (templateBounds[0] + templateBounds[2]) / 2;
-            var sourceCenterY = (templateBounds[1] + templateBounds[3]) / 2;
-            var originX = (settings.radialCenter === 0) ?
-                (targetRect[0] + targetRect[2]) / 2 : sourceCenterX;
-            var originY = (settings.radialCenter === 0) ?
-                (targetRect[1] + targetRect[3]) / 2 : sourceCenterY;
-
-            var copies = settings.radialCopies;
-            var radius = settings.radialRadius;
-            var totalAngle = settings.radialTotalAngle;
-            var startAngle = settings.radialStartAngle;
-
-            for (var rIdx = 0; rIdx < copies; rIdx++) {
-                var angleDeg = startAngle + (Math.abs(totalAngle - 360) < 0.001 ?
-                    (rIdx * 360 / copies) :
-                    (copies > 1 ? rIdx * totalAngle / (copies - 1) : 0));
-                var angleRad = angleDeg * Math.PI / 180;
-                var targetCenterX = originX + radius * Math.cos(angleRad);
-                var targetCenterY = originY + radius * Math.sin(angleRad);
-
-                var radItem = template.duplicate(outputGroup, ElementPlacement.PLACEATEND);
-                radItem.translate(targetCenterX - sourceCenterX, targetCenterY - sourceCenterY);
-
-                if (settings.radialRotate) {
-                    radItem.rotate(angleDeg - 90, true, true, true, true, Transformation.CENTER);
-                }
-                radItem.name = "Radial " + (rIdx + 1);
-                placedCount++;
+            var template = outputGroup.groupItems.add();
+            template.name = "Repeat Source";
+            for (var sIdx = 0; sIdx < sourceItems.length; sIdx++) {
+                sourceItems[sIdx].duplicate(template, ElementPlacement.PLACEATEND);
             }
-        } else {
-            // ----------------------------------------------------
-            // GRID REPEAT MODE (Fit Artboard or Fixed Count)
-            // ----------------------------------------------------
-            if (artworkWidth > availableWidth || artworkHeight > availableHeight) {
-                if (!settings.autoFit) {
+            if (!template.pageItems.length) {
+                throw new Error(OZO.tr("The source artwork could not be duplicated."));
+            }
+
+            if (settings.scale !== 100) {
+                template.resize(settings.scale, settings.scale, true, true, true, true,
+                    settings.scale, Transformation.CENTER);
+            }
+
+            var templateBounds = template.visibleBounds;
+            var artworkWidth = templateBounds[2] - templateBounds[0];
+            var artworkHeight = templateBounds[1] - templateBounds[3];
+            if (!(artworkWidth > 0) || !(artworkHeight > 0)) {
+                throw new Error(OZO.tr("The source artwork has invalid dimensions."));
+            }
+
+            var placedCount = 0;
+
+            if (settings.mode === 2) {
+                // ----------------------------------------------------
+                // RADIAL REPEAT MODE
+                // ----------------------------------------------------
+                var sourceCenterX = (templateBounds[0] + templateBounds[2]) / 2;
+                var sourceCenterY = (templateBounds[1] + templateBounds[3]) / 2;
+                var originX = (settings.radialCenter === 0) ?
+                    (targetRect[0] + targetRect[2]) / 2 : sourceCenterX;
+                var originY = (settings.radialCenter === 0) ?
+                    (targetRect[1] + targetRect[3]) / 2 : sourceCenterY;
+
+                var copies = settings.radialCopies;
+                var radius = settings.radialRadius;
+                var totalAngle = settings.radialTotalAngle;
+                var startAngle = settings.radialStartAngle;
+
+                for (var rIdx = 0; rIdx < copies; rIdx++) {
+                    var angleDeg = startAngle + (Math.abs(totalAngle - 360) < 0.001 ?
+                        (rIdx * 360 / copies) :
+                        (copies > 1 ? rIdx * totalAngle / (copies - 1) : 0));
+                    var angleRad = angleDeg * Math.PI / 180;
+                    var targetCenterX = originX + radius * Math.cos(angleRad);
+                    var targetCenterY = originY + radius * Math.sin(angleRad);
+
+                    var radItem = template.duplicate(outputGroup, ElementPlacement.PLACEATEND);
+                    radItem.translate(targetCenterX - sourceCenterX, targetCenterY - sourceCenterY);
+
+                    if (settings.radialRotate) {
+                        radItem.rotate(angleDeg - 90, true, true, true, true, Transformation.CENTER);
+                    }
+                    radItem.name = "Radial " + (rIdx + 1);
+                    placedCount++;
+                }
+            } else {
+                // ----------------------------------------------------
+                // GRID REPEAT MODE (Fit Artboard or Fixed Count)
+                // ----------------------------------------------------
+                if (artworkWidth > availableWidth || artworkHeight > availableHeight) {
+                    if (!settings.autoFit) {
+                        throw new Error(OZO.tr("The scaled artwork does not fit inside the artboard bounds."));
+                    }
+                    var oversizedFit = Math.min(availableWidth / artworkWidth,
+                        availableHeight / artworkHeight) * 0.999;
+                    template.resize(oversizedFit * 100, oversizedFit * 100,
+                        true, true, true, true, oversizedFit * 100, Transformation.CENTER);
+                    templateBounds = template.visibleBounds;
+                    artworkWidth = templateBounds[2] - templateBounds[0];
+                    artworkHeight = templateBounds[1] - templateBounds[3];
+                }
+
+                var stepX = artworkWidth + settings.horizontalGap;
+                var stepY = artworkHeight + settings.verticalGap;
+                if (settings.pattern === 3) { // Honeycomb (Hexagonal)
+                    stepY = (artworkHeight + settings.verticalGap) * 0.8660254;
+                }
+
+                var staggerX = stepX * settings.stagger;
+                var staggerY = stepY * settings.stagger;
+                var columns, rows;
+
+                if (settings.mode === 1) { // Fixed Count
+                    columns = settings.fixedCols;
+                    rows = settings.fixedRows;
+                    if (settings.distributeEvenly) {
+                        if (columns > 1) {
+                            stepX = (availableWidth - artworkWidth) / (columns - 1);
+                        }
+                        if (rows > 1) {
+                            stepY = (availableHeight - artworkHeight) / (rows - 1);
+                        }
+                    }
+                } else { // Auto-fit Artboard
+                    var baseColumns = Math.floor((availableWidth + settings.horizontalGap) / stepX);
+                    var baseRows = Math.floor((availableHeight + settings.verticalGap) / stepY);
+                    columns = baseColumns;
+                    rows = baseRows;
+
+                    if ((settings.pattern === 1 || settings.pattern === 3) && rows > 1) {
+                        columns = Math.floor((availableWidth - staggerX + settings.horizontalGap) / stepX);
+                        if (columns < 1) { columns = baseColumns; rows = 1; }
+                    }
+                    if (settings.pattern === 2 && columns > 1) {
+                        rows = Math.floor((availableHeight - staggerY + settings.verticalGap) / stepY);
+                        if (rows < 1) { rows = baseRows; columns = 1; }
+                    }
+                }
+
+                if (columns < 1 || rows < 1) {
                     throw new Error(OZO.tr("The scaled artwork does not fit inside the artboard bounds."));
                 }
-                var oversizedFit = Math.min(availableWidth / artworkWidth,
-                    availableHeight / artworkHeight) * 0.999;
-                template.resize(oversizedFit * 100, oversizedFit * 100,
-                    true, true, true, true, oversizedFit * 100, Transformation.CENTER);
-                templateBounds = template.visibleBounds;
-                artworkWidth = templateBounds[2] - templateBounds[0];
-                artworkHeight = templateBounds[1] - templateBounds[3];
-            }
 
-            var stepX = artworkWidth + settings.horizontalGap;
-            var stepY = artworkHeight + settings.verticalGap;
-            if (settings.pattern === 3) { // Honeycomb (Hexagonal)
-                stepY = (artworkHeight + settings.verticalGap) * 0.8660254;
-            }
-
-            var staggerX = stepX * settings.stagger;
-            var staggerY = stepY * settings.stagger;
-            var columns, rows;
-
-            if (settings.mode === 1) { // Fixed Count
-                columns = settings.fixedCols;
-                rows = settings.fixedRows;
-                if (settings.distributeEvenly) {
-                    if (columns > 1) {
-                        stepX = (availableWidth - artworkWidth) / (columns - 1);
-                    }
-                    if (rows > 1) {
-                        stepY = (availableHeight - artworkHeight) / (rows - 1);
-                    }
+                var totalAttempts = columns * rows;
+                if (totalAttempts > MAX_REPEAT_COPIES) {
+                    throw new Error(OZO.tr("The layout would create") + " " + totalAttempts + " " +
+                        OZO.tr("copies, which exceeds the limit of") + " " + MAX_REPEAT_COPIES + ".");
                 }
-            } else { // Auto-fit Artboard
-                var baseColumns = Math.floor((availableWidth + settings.horizontalGap) / stepX);
-                var baseRows = Math.floor((availableHeight + settings.verticalGap) / stepY);
-                columns = baseColumns;
-                rows = baseRows;
 
-                if ((settings.pattern === 1 || settings.pattern === 3) && rows > 1) {
-                    columns = Math.floor((availableWidth - staggerX + settings.horizontalGap) / stepX);
-                    if (columns < 1) { columns = baseColumns; rows = 1; }
-                }
-                if (settings.pattern === 2 && columns > 1) {
-                    rows = Math.floor((availableHeight - staggerY + settings.verticalGap) / stepY);
-                    if (rows < 1) { rows = baseRows; columns = 1; }
-                }
-            }
+                var patternWidth = artworkWidth + (columns - 1) * stepX;
+                var patternHeight = artworkHeight + (rows - 1) * stepY;
+                if ((settings.pattern === 1 || settings.pattern === 3) && rows > 1) patternWidth += staggerX;
+                if (settings.pattern === 2 && columns > 1) patternHeight += staggerY;
 
-            if (columns < 1 || rows < 1) {
-                throw new Error(OZO.tr("The scaled artwork does not fit inside the artboard bounds."));
-            }
+                var originLeft = (settings.center && !settings.distributeEvenly) ?
+                    targetRect[0] + (availableWidth - patternWidth) / 2 : targetRect[0];
+                var originTop = (settings.center && !settings.distributeEvenly) ?
+                    targetRect[1] - (availableHeight - patternHeight) / 2 : targetRect[1];
 
-            var totalAttempts = columns * rows;
-            if (totalAttempts > MAX_REPEAT_COPIES) {
-                throw new Error(OZO.tr("The layout would create") + " " + totalAttempts + " " +
-                    OZO.tr("copies, which exceeds the limit of") + " " + MAX_REPEAT_COPIES + ".");
-            }
+                var safeLeft = targetRect[0];
+                var safeRight = targetRect[2];
+                var safeTop = targetRect[1];
+                var safeBottom = targetRect[3];
+                var tolerance = 0.5;
+                var templateLeft = templateBounds[0];
+                var templateTop = templateBounds[1];
 
-            var patternWidth = artworkWidth + (columns - 1) * stepX;
-            var patternHeight = artworkHeight + (rows - 1) * stepY;
-            if ((settings.pattern === 1 || settings.pattern === 3) && rows > 1) patternWidth += staggerX;
-            if (settings.pattern === 2 && columns > 1) patternHeight += staggerY;
+                for (var row = 0; row < rows; row++) {
+                    var rowOffsetX = ((settings.pattern === 1 || settings.pattern === 3) && row % 2 === 1) ? staggerX : 0;
+                    var rowLeft = originLeft + rowOffsetX;
+                    var rowTop = originTop - row * stepY;
 
-            var originLeft = (settings.center && !settings.distributeEvenly) ?
-                targetRect[0] + (availableWidth - patternWidth) / 2 : targetRect[0];
-            var originTop = (settings.center && !settings.distributeEvenly) ?
-                targetRect[1] - (availableHeight - patternHeight) / 2 : targetRect[1];
+                    for (var column = 0; column < columns; column++) {
+                        var offsetY = (settings.pattern === 2 && column % 2 === 1) ? staggerY : 0;
+                        var left = rowLeft + column * stepX;
+                        var top = rowTop - offsetY;
 
-            var safeLeft = targetRect[0];
-            var safeRight = targetRect[2];
-            var safeTop = targetRect[1];
-            var safeBottom = targetRect[3];
-            var tolerance = 0.5;
-            var templateLeft = templateBounds[0];
-            var templateTop = templateBounds[1];
-
-            for (var row = 0; row < rows; row++) {
-                var rowOffsetX = ((settings.pattern === 1 || settings.pattern === 3) && row % 2 === 1) ? staggerX : 0;
-                var rowLeft = originLeft + rowOffsetX;
-                var rowTop = originTop - row * stepY;
-
-                for (var column = 0; column < columns; column++) {
-                    var offsetY = (settings.pattern === 2 && column % 2 === 1) ? staggerY : 0;
-                    var left = rowLeft + column * stepX;
-                    var top = rowTop - offsetY;
-
-                    var outsideArtboard = false;
-                    if (!settings.distributeEvenly && settings.mode === 0) {
-                        outsideArtboard = left < safeLeft - tolerance ||
-                            left + artworkWidth > safeRight + tolerance ||
-                            top > safeTop + tolerance ||
-                            top - artworkHeight < safeBottom - tolerance;
-                    }
-
-                    if (!outsideArtboard) {
-                        var repeatedItem = template.duplicate(outputGroup, ElementPlacement.PLACEATEND);
-                        repeatedItem.translate(left - templateLeft, top - templateTop);
-
-                        // Alternation
-                        if (settings.alternating === 1 && column % 2 === 1) { // Flip X
-                            repeatedItem.resize(-100, 100, true, true, true, true, 100, Transformation.CENTER);
-                        } else if (settings.alternating === 2 && row % 2 === 1) { // Flip Y
-                            repeatedItem.resize(100, -100, true, true, true, true, 100, Transformation.CENTER);
-                        } else if (settings.alternating === 3 && (row + column) % 2 === 1) { // Rotate 180
-                            repeatedItem.rotate(180, true, true, true, true, Transformation.CENTER);
+                        var outsideArtboard = false;
+                        if (!settings.distributeEvenly && settings.mode === 0) {
+                            outsideArtboard = left < safeLeft - tolerance ||
+                                left + artworkWidth > safeRight + tolerance ||
+                                top > safeTop + tolerance ||
+                                top - artworkHeight < safeBottom - tolerance;
                         }
 
-                        repeatedItem.name = "Repeat " + (placedCount + 1);
-                        placedCount++;
+                        if (!outsideArtboard) {
+                            var repeatedItem = template.duplicate(outputGroup, ElementPlacement.PLACEATEND);
+                            repeatedItem.translate(left - templateLeft, top - templateTop);
+
+                            // Alternation
+                            if (settings.alternating === 1 && column % 2 === 1) { // Flip X
+                                repeatedItem.resize(-100, 100, true, true, true, true, 100, Transformation.CENTER);
+                            } else if (settings.alternating === 2 && row % 2 === 1) { // Flip Y
+                                repeatedItem.resize(100, -100, true, true, true, true, 100, Transformation.CENTER);
+                            } else if (settings.alternating === 3 && (row + column) % 2 === 1) { // Rotate 180
+                                repeatedItem.rotate(180, true, true, true, true, Transformation.CENTER);
+                            }
+
+                            repeatedItem.name = "Repeat " + (placedCount + 1);
+                            placedCount++;
+                        }
                     }
+                }
+
+                if (settings.clip && !isPreview) {
+                    var clipWidth = Math.abs(targetRect[2] - targetRect[0]);
+                    var clipHeight = Math.abs(targetRect[1] - targetRect[3]);
+                    var clippingPath = outputGroup.pathItems.rectangle(
+                        targetRect[1], targetRect[0], clipWidth, clipHeight);
+                    clippingPath.stroked = false;
+                    clippingPath.filled = false;
+                    clippingPath.clipping = true;
+                    clippingPath.move(outputGroup, ElementPlacement.PLACEATBEGINNING);
+                    outputGroup.clipped = true;
                 }
             }
 
-            if (settings.clip && !isPreview) {
-                var clipWidth = Math.abs(targetRect[2] - targetRect[0]);
-                var clipHeight = Math.abs(targetRect[1] - targetRect[3]);
-                var clippingPath = outputGroup.pathItems.rectangle(
-                    targetRect[1], targetRect[0], clipWidth, clipHeight);
-                clippingPath.stroked = false;
-                clippingPath.filled = false;
-                clippingPath.clipping = true;
-                clippingPath.move(outputGroup, ElementPlacement.PLACEATBEGINNING);
-                outputGroup.clipped = true;
+            try { template.remove(); } catch (eRem) {}
+
+            if (!placedCount) {
+                throw new Error(OZO.tr("No copies fit within the selected layout."));
             }
+
+            return {
+                count: placedCount,
+                layer: targetLayer,
+                group: outputGroup,
+                createdArtboard: createdArtboard,
+                resizedArtboard: resizedArtboard,
+                resizedOriginalRect: resizedOriginalRect
+            };
+        } catch (eRepeat) {
+            if (createdArtboard) {
+                try { createdArtboard.remove(); } catch (eRemAb) {}
+            }
+            if (resizedArtboard && resizedOriginalRect) {
+                try { resizedArtboard.artboardRect = resizedOriginalRect; } catch (eResAb) {}
+            }
+            if (targetLayer && !isPreview) {
+                try { targetLayer.remove(); } catch (eRemLay) {}
+            }
+            throw eRepeat;
         }
-
-        try { template.remove(); } catch (eRem) {}
-
-        if (!placedCount) {
-            throw new Error(OZO.tr("No copies fit within the selected layout."));
-        }
-
-        return {
-            count: placedCount,
-            layer: targetLayer,
-            group: outputGroup,
-            createdArtboard: createdArtboard,
-            resizedArtboard: resizedArtboard,
-            resizedOriginalRect: resizedOriginalRect
-        };
     }
 
     previewButton.onClick = function () {

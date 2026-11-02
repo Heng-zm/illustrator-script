@@ -949,11 +949,11 @@
                     try {
                         var tiffFile = new File(targetFolder.fsName + "/" + buildFileName(templateInput.text, docBaseName, abIdx, "tif", selUnit, null, batchCtx));
                         var tiffOpts = new ExportOptionsTIFF();
-                        var tDpi = dpiMap[tiffDpiList.selection.text] || 300;
+                        var tDpi = (tiffDpiList.selection && dpiMap[tiffDpiList.selection.text]) ? dpiMap[tiffDpiList.selection.text] : 300;
                         tiffOpts.resolution = tDpi;
                         tiffOpts.byteOrder = TIFFByteOrder.IBMPC;
                         tiffOpts.lzwCompression = tiffLzwBox.value;
-                        tiffOpts.imageColorSpace = (tiffColorList.selection.text === "RGB") ? ImageColorSpace.RGB : ImageColorSpace.CMYK;
+                        tiffOpts.imageColorSpace = (tiffColorList.selection && tiffColorList.selection.text === "RGB") ? ImageColorSpace.RGB : ImageColorSpace.CMYK;
                         tiffOpts.antiAliasing = AntiAliasingMethod.ARTOPTIMIZED;
                         tiffOpts.artBoardClipping = true;
                         doc.exportFile(tiffFile, ExportType.TIFF, tiffOpts);
@@ -968,7 +968,7 @@
                     try {
                         var pngFile = new File(targetFolder.fsName + "/" + buildFileName(templateInput.text, docBaseName, abIdx, "png", selUnit, null, batchCtx));
                         var pngOpts = new ExportOptionsPNG24();
-                        var pDpi = dpiMap[pngDpiList.selection.text] || 300;
+                        var pDpi = (pngDpiList.selection && dpiMap[pngDpiList.selection.text]) ? dpiMap[pngDpiList.selection.text] : 300;
                         var pScale = (pDpi / 72) * 100;
                         pngOpts.horizontalScale = pScale;
                         pngOpts.verticalScale = pScale;
@@ -987,7 +987,7 @@
                     try {
                         var jpgFile = new File(targetFolder.fsName + "/" + buildFileName(templateInput.text, docBaseName, abIdx, "jpg", selUnit, null, batchCtx));
                         var jpgOpts = new ExportOptionsJPEG();
-                        var jDpi = dpiMap[jpgDpiList.selection.text] || 300;
+                        var jDpi = (jpgDpiList.selection && dpiMap[jpgDpiList.selection.text]) ? dpiMap[jpgDpiList.selection.text] : 300;
                         var jScale = (jDpi / 72) * 100;
                         jpgOpts.horizontalScale = jScale;
                         jpgOpts.verticalScale = jScale;
@@ -1010,7 +1010,7 @@
             // 2. Export PDF
             var tempAiFile = null;
             if (pdfBox.value) {
-                var selectedPreset = pdfPresetList.selection ? pdfPresetList.selection.text : "[High Quality Print]";
+                var selectedPreset = (pdfPresetList.selection && pdfPresetList.selection.text) ? pdfPresetList.selection.text : "[High Quality Print]";
                 var pdfOpts = new PDFSaveOptions();
                 try {
                     if (selectedPreset) pdfOpts.pDFPreset = selectedPreset;
@@ -1116,7 +1116,7 @@
 
         // Restore original active artboard
         try {
-            if (origActiveAb >= 0 && origActiveAb < doc.artboards.length) {
+            if (doc && doc.artboards && origActiveAb >= 0 && origActiveAb < doc.artboards.length) {
                 doc.artboards.setActiveArtboardIndex(origActiveAb);
             }
         } catch (eOrigAb) {}

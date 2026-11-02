@@ -283,6 +283,7 @@
         // live preview's temporary artboard expansion does not feed back into
         // the header size calculation.
         var abIdx = doc.artboards.getActiveArtboardIndex();
+        if (abIdx < 0 || abIdx >= doc.artboards.length) abIdx = 0;
         var rect = doc.artboards[abIdx].artboardRect;
         if (abIdx === activeArtboardIndex && originalArtboardRect) {
             rect = originalArtboardRect;
