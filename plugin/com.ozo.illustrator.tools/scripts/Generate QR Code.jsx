@@ -958,101 +958,120 @@
             (row >= size - 7 && column <= 6);
     }
 
+    function getRoundedRectSpline(top, left, width, height, radius, clockwise) {
+        var r = Math.min(radius, width / 2, height / 2);
+        var right = left + width;
+        var bottom = top - height;
+        var k = r * 0.5522847498;
+
+        var cwAnchors = [
+            [left + r, top],
+            [right - r, top],
+            [right, top - r],
+            [right, bottom + r],
+            [right - r, bottom],
+            [left + r, bottom],
+            [left, bottom + r],
+            [left, top - r]
+        ];
+        var cwLeft = [
+            [left + r - k, top],
+            cwAnchors[1],
+            [right, top - r + k],
+            cwAnchors[3],
+            [right - r + k, bottom],
+            cwAnchors[5],
+            [left, bottom + r - k],
+            cwAnchors[7]
+        ];
+        var cwRight = [
+            cwAnchors[0],
+            [right - r + k, top],
+            cwAnchors[2],
+            [right, bottom + r - k],
+            cwAnchors[4],
+            [left + r - k, bottom],
+            cwAnchors[6],
+            [left, top - r + k]
+        ];
+
+        if (clockwise) {
+            return { anchors: cwAnchors, leftDirections: cwLeft, rightDirections: cwRight };
+        }
+
+        var ccwAnchors = [];
+        var ccwLeft = [];
+        var ccwRight = [];
+        var count = cwAnchors.length;
+        for (var i = 0; i < count; i++) {
+            var idx = (count - i) % count;
+            ccwAnchors.push(cwAnchors[idx]);
+            ccwLeft.push(cwRight[idx]);
+            ccwRight.push(cwLeft[idx]);
+        }
+        return { anchors: ccwAnchors, leftDirections: ccwLeft, rightDirections: ccwRight };
+    }
+
     function addRoundedFinder(group, top, left, moduleSize, fill, opaqueBackground) {
         var outerRadius = moduleSize * 2.1;
         var gapRadius = moduleSize * 1.1;
+        var shapeCount = 0;
 
-        if (!opaqueBackground) {
-            try {
-                var compound = group.compoundPathItems.add();
-                var outerPath = compound.pathItems.roundedRectangle(
-                    top, left,
-                    moduleSize * 7, moduleSize * 7,
-                    outerRadius, outerRadius
-                );
-                outerPath.stroked = false;
-                outerPath.filled = true;
-                outerPath.fillColor = fill;
-
-                var innerPath = compound.pathItems.roundedRectangle(
-                    top - moduleSize, left + moduleSize,
-                    moduleSize * 5, moduleSize * 5,
-                    gapRadius, gapRadius
-                );
-                innerPath.stroked = false;
-                innerPath.filled = true;
-                innerPath.fillColor = fill;
-
-                var centerDot = group.pathItems.ellipse(
-                    top - moduleSize * 2, left + moduleSize * 2,
-                    moduleSize * 3, moduleSize * 3
-                );
-                centerDot.stroked = false;
-                centerDot.filled = true;
-                centerDot.fillColor = fill;
-                return 2;
-            } catch (eCompound) {
-                var ring = group.pathItems.roundedRectangle(
-                    top - moduleSize / 2,
-                    left + moduleSize / 2,
-                    moduleSize * 6,
-                    moduleSize * 6,
-                    moduleSize * 1.6,
-                    moduleSize * 1.6
-                );
-                ring.stroked = true;
-                ring.strokeWidth = moduleSize;
-                ring.strokeColor = fill;
-                ring.filled = false;
-
-                var transparentCenter = group.pathItems.ellipse(
-                    top - moduleSize * 2,
-                    left + moduleSize * 2,
-                    moduleSize * 3,
-                    moduleSize * 3
-                );
-                transparentCenter.stroked = false;
-                transparentCenter.filled = true;
-                transparentCenter.fillColor = fill;
-                return 2;
-            }
+        // 1. Outer Ring as a true hollow CompoundPath (CW outer squircle + CCW inner squircle cutout)
+        try {
+            var compound = group.compoundPathItems.add();
+            var outerSpline = getRoundedRectSpline(
+                top, left,
+                moduleSize * 7, moduleSize * 7,
+                outerRadius, true
+            );
+            var innerSpline = getRoundedRectSpline(
+                top - moduleSize, left + moduleSize,
+                moduleSize * 5, moduleSize * 5,
+                gapRadius, false
+            );
+            addBezierPath(compound, outerSpline.anchors, outerSpline.leftDirections, outerSpline.rightDirections, fill);
+            addBezierPath(compound, innerSpline.anchors, innerSpline.leftDirections, innerSpline.rightDirections, fill);
+            compound.stroked = false;
+            compound.filled = true;
+            try { compound.fillColor = fill; } catch (eRCF) {}
+            shapeCount++;
+        } catch (eCompound) {
+            var outer = group.pathItems.roundedRectangle(
+                top, left,
+                moduleSize * 7, moduleSize * 7,
+                outerRadius, outerRadius
+            );
+            outer.stroked = false;
+            outer.filled = true;
+            outer.fillColor = fill;
+            shapeCount++;
         }
 
-        var outer = group.pathItems.roundedRectangle(
-            top,
-            left,
-            moduleSize * 7,
-            moduleSize * 7,
-            outerRadius,
-            outerRadius
-        );
-        outer.stroked = false;
-        outer.filled = true;
-        outer.fillColor = fill;
+        // 2. White middle gap if opaque background is enabled
+        if (opaqueBackground) {
+            var middle = group.pathItems.roundedRectangle(
+                top - moduleSize, left + moduleSize,
+                moduleSize * 5, moduleSize * 5,
+                gapRadius, gapRadius
+            );
+            middle.stroked = false;
+            middle.filled = true;
+            middle.fillColor = whiteColor();
+            shapeCount++;
+        }
 
-        var middle = group.pathItems.roundedRectangle(
-            top - moduleSize,
-            left + moduleSize,
-            moduleSize * 5,
-            moduleSize * 5,
-            gapRadius,
-            gapRadius
-        );
-        middle.stroked = false;
-        middle.filled = true;
-        middle.fillColor = whiteColor();
-
-        // Authentic circular center dot matching Telegram's official eye style
+        // 3. Center eye dot (Authentic circular center matching Telegram's official eye style)
         var center = group.pathItems.ellipse(
-            top - moduleSize * 2,
-            left + moduleSize * 2,
-            moduleSize * 3,
-            moduleSize * 3
+            top - moduleSize * 2, left + moduleSize * 2,
+            moduleSize * 3, moduleSize * 3
         );
         center.stroked = false;
         center.filled = true;
         center.fillColor = fill;
-        return 3;
+        shapeCount++;
+
+        return shapeCount;
     }
 
     function telegramBrandBlue() {
@@ -1597,6 +1616,13 @@
             var left = bounds[0] + ((bounds[2] - bounds[0]) - sizePoints) / 2;
             var top = bounds[1] - ((bounds[1] - bounds[3]) - sizePoints) / 2;
 
+            var isShareCard = outputStyle === "Telegram 2026 (Share Card)";
+            var isQrOnly = outputStyle === "Telegram 2026 (QR Only)";
+            var telegramStyle = isShareCard || isQrOnly || outputStyle === "Telegram 2026";
+            var themeName = (telegramOptions && telegramOptions.theme) ? telegramOptions.theme : "Official Telegram Blue";
+            var cardTheme = getTelegramColors(themeName);
+            var fill = telegramStyle ? cardTheme.qr : blackColor();
+
             var background = null;
             if (includeBackground && !isShareCard) {
                 background = drawingTarget.pathItems.rectangle(top, left, sizePoints, sizePoints);
@@ -1605,13 +1631,6 @@
                 background.fillColor = whiteColor();
                 background.name = "Quiet Zone";
             }
-
-            var isShareCard = outputStyle === "Telegram 2026 (Share Card)";
-            var isQrOnly = outputStyle === "Telegram 2026 (QR Only)";
-            var telegramStyle = isShareCard || isQrOnly || outputStyle === "Telegram 2026";
-            var themeName = (telegramOptions && telegramOptions.theme) ? telegramOptions.theme : "Official Telegram Blue";
-            var cardTheme = getTelegramColors(themeName);
-            var fill = telegramStyle ? cardTheme.qr : blackColor();
 
             if (isShareCard) {
                 buildTelegramCard(
