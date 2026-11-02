@@ -469,18 +469,22 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         function saveWindowState(windowObject, namespace, extraValues) {
             var data = readAll();
             visit(windowObject, function (control, path) {
-                if (control._ozoNoSave) return;
+                var key = namespace + ".control." + path + "." + control.type;
+                if (control._ozoNoSave) {
+                    if (data.hasOwnProperty(key)) delete data[key];
+                    return;
+                }
                 var value;
                 if (control.type === "edittext") value = control.text;
                 else if (control.type === "checkbox" || control.type === "radiobutton") value = control.value ? "1" : "0";
                 else if (control.type === "dropdownlist" && control.selection) value = String(control.selection.index);
                 else return;
-                data[namespace + ".control." + path + "." + control.type] = value;
+                data[key] = value;
             });
             if (extraValues) {
-                for (var key in extraValues) {
-                    if (extraValues.hasOwnProperty(key)) {
-                        data[namespace + "." + key] = String(extraValues[key]);
+                for (var extraKey in extraValues) {
+                    if (extraValues.hasOwnProperty(extraKey)) {
+                        data[namespace + "." + extraKey] = String(extraValues[extraKey]);
                     }
                 }
             }
@@ -958,7 +962,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         }
 
         return {
-            version: "2.2",
+            version: "2.2.1",
             addLanguageSelector: addLanguageSelector,
             addDonateButton: addDonateButton,
             addDialogHeader: addDialogHeader,

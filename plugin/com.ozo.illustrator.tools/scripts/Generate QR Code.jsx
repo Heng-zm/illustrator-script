@@ -1955,11 +1955,13 @@
     nameRow.add("statictext", undefined, OZO.tr("Display name:"));
     var nameInput = nameRow.add("edittext", undefined, "Telegram");
     nameInput.characters = 22;
+    nameInput._ozoNoSave = true;
 
     var handleRow = cardDetailsGroup.add("group");
     handleRow.add("statictext", undefined, OZO.tr("Username / link:"));
     var handleInput = handleRow.add("edittext", undefined, "@telegram");
     handleInput.characters = 22;
+    handleInput._ozoNoSave = true;
 
     var userCustomizedName = false;
     var userCustomizedHandle = false;

@@ -476,6 +476,7 @@
     var dateInput = dateGrp.add("edittext", undefined, getTodayFormatted());
     dateInput.preferredSize.width = 110;
     dateInput.helpTip = "Format: DD MM YYYY (e.g. 29 10 2026)";
+    dateInput._ozoNoSave = true;
     var dateTodayBtn = dateGrp.add("button", undefined, "Today");
     dateTodayBtn.preferredSize = [55, 24];
     dateTodayBtn.onClick = function () {
@@ -493,6 +494,7 @@
     var qtyInput = qtyGrp.add("edittext", undefined, "1");
     qtyInput.preferredSize = [45, 24];
     qtyInput.characters = 4;
+    qtyInput._ozoNoSave = true;
     var qtyPlusBtn = qtyGrp.add("button", undefined, "+");
     qtyPlusBtn.preferredSize = [26, 24];
 
@@ -517,9 +519,11 @@
     dimRow.add("statictext", undefined, "W:");
     var widthInput = dimRow.add("edittext", undefined, initWidth);
     widthInput.characters = 6;
+    widthInput._ozoNoSave = true;
     dimRow.add("statictext", undefined, "H:");
     var heightInput = dimRow.add("edittext", undefined, initHeight);
     heightInput.characters = 6;
+    heightInput._ozoNoSave = true;
 
     dimRow.add("statictext", undefined, OZO.tr("Unit:"));
     var unitList = dimRow.add("dropdownlist", undefined, ["cm", "mm", "m", "in"]);
@@ -576,6 +580,7 @@
     var noteInput = noteRow.add("edittext", undefined, "");
     noteInput.alignment = ["fill", "center"];
     noteInput.helpTip = "Optional note or customer contact (e.g. Tel: 012 288 285 / ហាង...)";
+    noteInput._ozoNoSave = true;
 
     // Panel 2: Style & Layout Panel
     var stylePanel = dialog.add("panel", undefined, OZO.tr("Header Layout & Styling"));
@@ -1138,6 +1143,14 @@
         destLayer.visible = true;
         destLayer.zOrder(ZOrderMethod.BRINGTOFRONT);
         doc.activeLayer = destLayer;
+
+        for (var dli = destLayer.pageItems.length - 1; dli >= 0; dli--) {
+            try {
+                if (destLayer.pageItems[dli].name === "Print Header Block") {
+                    destLayer.pageItems[dli].remove();
+                }
+            } catch (eOldItem) {}
+        }
 
         var rendered = renderHeaderGroup(destLayer, finalTarget, finalSettings, finalGeom);
         var headerGroup = rendered.group;

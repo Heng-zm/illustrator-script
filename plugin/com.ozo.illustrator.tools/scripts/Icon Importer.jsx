@@ -645,6 +645,7 @@
     searchInput.alignment = ["fill", "center"];
     searchInput.characters = 34;
     searchInput.helpTip = "Try home, arrow, phone, user, cart, or social media.";
+    searchInput._ozoNoSave = true;
     var searchButton = searchRow.add("button", undefined, "Search");
 
     var filterRow = dialog.add("group");

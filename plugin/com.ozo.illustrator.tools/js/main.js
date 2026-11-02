@@ -737,7 +737,7 @@
 // -------------------------------------------------------------
     // GitHub Release Update Checker
     // -------------------------------------------------------------
-    var CURRENT_VERSION = "2.2.0";
+    var CURRENT_VERSION = "2.2.1";
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var updateBanner = document.getElementById("updateBanner");
     var updateBannerText = document.getElementById("updateBannerText");
