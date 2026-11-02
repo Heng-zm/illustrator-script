@@ -735,7 +735,7 @@
     });
 
 // -------------------------------------------------------------
-    // GitHub Release Update Checker
+    // GitHub Release Update Checker (In-Plugin Direct Updater)
     // -------------------------------------------------------------
     var CURRENT_VERSION = "2.2.1";
     var GITHUB_REPO = "Heng-zm/illustrator-script";
@@ -761,6 +761,26 @@
             if (r[i] < l[i]) return false;
         }
         return false;
+    }
+
+    function resolveReleaseZip(data) {
+        if (!data) return null;
+        if (data.assets && data.assets.length > 0) {
+            for (var i = 0; i < data.assets.length; i++) {
+                var a = data.assets[i];
+                if (a && a.browser_download_url && /\.zip$/i.test(a.name || a.browser_download_url)) {
+                    return a.browser_download_url;
+                }
+            }
+            if (data.assets[0].browser_download_url) {
+                return data.assets[0].browser_download_url;
+            }
+        }
+        if (data.zipball_url) {
+            return data.zipball_url;
+        }
+        var tag = data.tag_name || "latest";
+        return "https://github.com/" + GITHUB_REPO + "/releases/download/" + tag + "/Ozo-Tools-" + tag + ".zip";
     }
 
     function checkForUpdates(force) {
@@ -789,17 +809,38 @@
                         localStorage.setItem("ozo_latest_release", JSON.stringify(data));
                         showUpdateNotification(data, force);
                     } catch (eParse) {}
+                } else if (force) {
+                    setStatus(isKhmer() ? "\u1798\u17b7\u1793\u17a6\u17b6\u1785\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u1780\u17c6\u178e\u17c2\u1790\u17d2\u1798\u17b8\u1794\u17b6\u1793\u1791\u17c1" : "Could not fetch release info", "error", 3000);
                 }
             };
-            xhr.onerror = function () {};
+            xhr.onerror = function () {
+                if (force) {
+                    setStatus(isKhmer() ? "\u1798\u17b7\u1793\u17a6\u17b6\u1785\u1797\u17d2\u1787\u17b6\u1794\u17cb\u1791\u17c5\u1780\u17b6\u178f\u17cb GitHub \u1794\u17b6\u1793\u1791\u17c1" : "Could not connect to GitHub", "error", 3000);
+                }
+            };
+            xhr.ontimeout = function () {
+                if (force) {
+                    setStatus(isKhmer() ? "\u1780\u17b6\u179a\u178f\u17d2\u1787\u17b6\u1794\u17cb\u1791\u17c5\u1780\u17b6\u178f\u17cb GitHub \u1799\u17ba\u178f\u1796\u17c1\u1780" : "GitHub connection timed out", "error", 3000);
+                }
+            };
             xhr.send();
         } catch (eCheck) {}
     }
 
     function showUpdateNotification(releaseData, force) {
-        if (!releaseData || !releaseData.tag_name) return;
+        if (!releaseData || !releaseData.tag_name) {
+            if (force) {
+                setStatus(isKhmer() ? "\u1798\u17b7\u1793\u17a6\u17b6\u1785\u179f\u17d2\u179c\u17c2\u1784\u179a\u1780\u1780\u17c6\u178e\u17c2\u1790\u17d2\u1798\u17b8\u1794\u17b6\u1793\u1791\u17c1" : "Could not find release info", "error", 3000);
+            }
+            return;
+        }
         var remoteTag = releaseData.tag_name;
-        if (!isNewerVersion(remoteTag, CURRENT_VERSION)) return;
+        if (!isNewerVersion(remoteTag, CURRENT_VERSION)) {
+            if (force) {
+                setStatus((isKhmer() ? "\u17a6\u17d2\u1793\u1780\u1780\u17c6\u1796\u17bb\u1784\u1794\u17d2\u179a\u17be\u1794\u17d2\u179a\u17b6\u179f\u17cb\u1780\u17c6\u178e\u17c2\u1785\u17bb\u1784\u1780\u17d2\u179a\u17c4\u1799 (v" : "You are using the latest version (v") + CURRENT_VERSION + ")", "success", 3000);
+            }
+            return;
+        }
 
         var dismissed = localStorage.getItem("ozo_dismissed_update");
         if (!force && dismissed === remoteTag) return;
@@ -818,17 +859,151 @@
         }
     }
 
+    function performInPluginUpdate(zipUrl, versionTag) {
+        if (!updateNowBtn) return;
+
+        updateNowBtn.disabled = true;
+        updateNowBtn.classList.add("updating");
+        updateNowBtn.innerHTML = '<span class="update-spinner"></span> ' + (isKhmer() ? "\u1780\u17c6\u1796\u17bb\u1784\u1791\u17b6\u1789\u1799\u1780..." : "Downloading...");
+
+        if (updateDismissBtn) {
+            updateDismissBtn.style.display = "none";
+        }
+
+        setStatus(
+            (isKhmer() ? "\u1780\u17c6\u1796\u17bb\u1784\u1791\u17b6\u1789\u1799\u1780 \u1793\u17b7\u1784\u178a\u17c6\u17a1\u17be\u1784\u1780\u17c6\u178e\u17c2 " : "Downloading & installing update ") + (versionTag || "") + "...",
+            "running"
+        );
+
+        if (!csInterface) {
+            setTimeout(function () {
+                updateNowBtn.classList.remove("updating");
+                updateNowBtn.classList.add("updated");
+                updateNowBtn.innerHTML = "✓ " + (isKhmer() ? "\u1794\u17b6\u1793\u1787\u17c4\u1785\u1787\u17d0\u1799!" : "Updated!");
+                setStatus("Simulated update complete (Browser Preview)", "success", 3000);
+                setTimeout(function () {
+                    window.location.reload();
+                }, 1500);
+            }, 2000);
+            return;
+        }
+
+        var scriptCall = "ozoDownloadAndApplyUpdate(" + JSON.stringify(zipUrl) + ", " + JSON.stringify(versionTag) + ")";
+
+        csInterface.evalScript(scriptCall, function (rawResult) {
+            var success = false;
+            var message = "";
+            try {
+                var res = JSON.parse(rawResult);
+                if (res && res.status === "success") {
+                    success = true;
+                    message = res.version ? ("v" + res.version.replace(/^v/i, "")) : "";
+                } else if (res && res.message) {
+                    message = res.message;
+                }
+            } catch (eParse) {
+                message = String(rawResult || "Unknown error");
+            }
+
+            if (success) {
+                updateNowBtn.classList.remove("updating");
+                updateNowBtn.classList.add("updated");
+                updateNowBtn.innerHTML = "✓ " + (isKhmer() ? "\u1794\u17b6\u1793\u1787\u17c4\u1785\u1787\u17d0\u1799!" : "Updated!");
+
+                try {
+                    localStorage.removeItem("ozo_dismissed_update");
+                    localStorage.setItem("ozo_last_update_check", "0");
+                } catch (eStorage) {}
+
+                setStatus(
+                    (isKhmer() ? "\u1794\u17b6\u1793\u178a\u17c6\u17a1\u17be\u1784\u1780\u17c6\u178e\u17c2\u1790\u17d2\u1798\u17b8\u1787\u17c4\u1785\u1787\u17d0\u1799! \u1780\u17c6\u1796\u17bb\u1784\u1795\u17d2\u1791\u17bb\u1780\u17a1\u17be\u1784\u179c\u17b7\u1789..." : "Update installed successfully! Reloading panel..."),
+                    "success",
+                    5000
+                );
+
+                try {
+                    var extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
+                    if (extPath) {
+                        var hsPath = extPath.replace(/\\/g, "/") + "/jsx/hostscript.jsx";
+                        csInterface.evalScript('$.evalFile(new File("' + hsPath + '"))');
+                    }
+                } catch (ignoreReloadHs) {}
+
+                setTimeout(function () {
+                    window.location.reload();
+                }, 1400);
+            } else {
+                updateNowBtn.classList.remove("updating");
+                updateNowBtn.disabled = false;
+                if (updateDismissBtn) {
+                    updateDismissBtn.style.display = "";
+                }
+                updateNowBtn.textContent = isKhmer() ? "\u1796\u17d2\u1799\u17b6\u1799\u17b6\u1798\u1798\u17d2\u178a\u1784\u1791\u17c0\u178f" : "Retry";
+                setStatus((isKhmer() ? "\u1794\u179a\u17b6\u1787\u17d0\u1799\u1780\u17d2\u1793\u17bb\u1784\u1780\u17b6\u179a\u1780\u17c2\u1794\u17d2\u179a\u17c2\u17d7 " : "Update failed: ") + message, "error", 8000);
+                alert((isKhmer() ? "\u1794\u1789\u17d2\u17a0\u17b6\u1796\u17c1\u179b\u1791\u17b6\u1789\u1799\u1780\u1780\u17c2\u1794\u17d2\u179a\u17c2\u17d7\n\n" : "Update failed:\n\n") + message);
+            }
+        });
+    }
+
     if (updateNowBtn) {
         updateNowBtn.addEventListener("click", function () {
-            var releaseUrl = "https://github.com/" + GITHUB_REPO + "/releases/latest";
+            if (updateNowBtn.classList.contains("updating") || updateNowBtn.classList.contains("updated")) {
+                return;
+            }
+
+            var cached = null;
             try {
-                var cached = localStorage.getItem("ozo_latest_release");
-                if (cached) {
-                    var data = JSON.parse(cached);
-                    if (data.html_url) releaseUrl = data.html_url;
-                }
+                var cachedStr = localStorage.getItem("ozo_latest_release");
+                if (cachedStr) cached = JSON.parse(cachedStr);
             } catch (e) {}
-            openExternalURL(releaseUrl);
+
+            if (cached && cached.tag_name) {
+                var zipUrl = resolveReleaseZip(cached);
+                performInPluginUpdate(zipUrl, cached.tag_name);
+            } else {
+                updateNowBtn.disabled = true;
+                updateNowBtn.classList.add("updating");
+                updateNowBtn.innerHTML = '<span class="update-spinner"></span> ' + (isKhmer() ? "\u1780\u17c6\u1796\u17bb\u1784\u1791\u17b6\u1789\u1799\u1780..." : "Downloading...");
+                setStatus(isKhmer() ? "\u1780\u17c6\u1796\u17bb\u1784\u1791\u17b6\u1789\u1799\u1780\u1796\u17d0\u178f\u17cf\u1798\u17b6\u1793\u1780\u17c2\u1794\u17d2\u179a\u17c2..." : "Fetching update details...", "running");
+
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest", true);
+                xhr.setRequestHeader("Accept", "application/vnd.github.v3+json");
+                xhr.timeout = 7000;
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            localStorage.setItem("ozo_latest_release", JSON.stringify(data));
+                            var zipUrl = resolveReleaseZip(data);
+                            performInPluginUpdate(zipUrl, data.tag_name);
+                        } catch (eParse) {
+                            updateNowBtn.classList.remove("updating");
+                            updateNowBtn.disabled = false;
+                            updateNowBtn.textContent = isKhmer() ? "\u1780\u17c2\u1794\u17d2\u179a\u17c2" : "Update";
+                            setStatus("Update error: failed to parse release data", "error", 5000);
+                        }
+                    } else {
+                        updateNowBtn.classList.remove("updating");
+                        updateNowBtn.disabled = false;
+                        updateNowBtn.textContent = isKhmer() ? "\u1780\u17c2\u1794\u17d2\u179a\u17c2" : "Update";
+                        setStatus("Update error: GitHub returned status " + xhr.status, "error", 5000);
+                    }
+                };
+                xhr.onerror = function () {
+                    updateNowBtn.classList.remove("updating");
+                    updateNowBtn.disabled = false;
+                    updateNowBtn.textContent = isKhmer() ? "\u1780\u17c2\u1794\u17d2\u179a\u17c2" : "Update";
+                    setStatus("Update error: network connection failed", "error", 5000);
+                };
+                xhr.ontimeout = function () {
+                    updateNowBtn.classList.remove("updating");
+                    updateNowBtn.disabled = false;
+                    updateNowBtn.textContent = isKhmer() ? "\u1780\u17c2\u1794\u17d2\u179a\u17c2" : "Update";
+                    setStatus("Update error: connection timed out", "error", 5000);
+                };
+                xhr.send();
+            }
         });
     }
 

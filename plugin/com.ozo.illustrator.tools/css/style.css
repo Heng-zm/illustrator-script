@@ -704,11 +704,56 @@ body.theme-light {
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    user-select: none;
 }
 
 .update-btn:hover {
     background-color: var(--accent-hover);
+}
+
+.update-btn:disabled {
+    opacity: 0.85;
+    cursor: wait;
+}
+
+.update-btn.updating {
+    background: linear-gradient(90deg, #6366f1 0%, #818cf8 50%, #4f46e5 100%);
+    background-size: 200% 100%;
+    animation: ozoUpdateShimmer 1.4s infinite linear;
+    cursor: wait;
+    color: #ffffff;
+}
+
+.update-btn.updated {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    cursor: default;
+}
+
+.update-spinner {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: ozoSpin 0.7s infinite linear;
+}
+
+@keyframes ozoUpdateShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@keyframes ozoSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .update-dismiss {

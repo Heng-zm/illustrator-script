@@ -281,3 +281,177 @@ function ozoOpenURL(url) {
     }
     return ozoJsonStringify({ status: "error", message: "Invalid URL" });
 }
+
+function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
+    try {
+        if (!zipUrl || typeof zipUrl !== "string") {
+            return ozoJsonStringify({ status: "error", message: "Invalid download URL" });
+        }
+
+        // Validate URL format (http/https only, reject shell metacharacters)
+        if (!/^https?:\/\/[a-zA-Z0-9\.\-_~:/?#[\]@!$&'()*+,;=%]+$/i.test(zipUrl)) {
+            return ozoJsonStringify({ status: "error", message: "Invalid or unsupported URL" });
+        }
+
+        var cleanTag = String(versionTag || "").replace(/[^a-zA-Z0-9\.\-_]/g, "");
+
+        var targetFolder = __ozoExplicitPluginFolder;
+        if (!targetFolder || !targetFolder.exists) {
+            targetFolder = __ozoPluginFolder;
+        }
+        if (!targetFolder || !targetFolder.exists) {
+            targetFolder = new Folder(Folder.userData.fsName + "/Adobe/CEP/extensions/com.ozo.illustrator.tools");
+        }
+        if (!targetFolder.exists) {
+            try { targetFolder.create(); } catch (eCreate) {}
+        }
+
+        var timestamp = (new Date()).getTime();
+        var tempFolder = Folder.temp;
+        var resultFile = new File(tempFolder.fsName + "/ozo_update_res_" + timestamp + ".json");
+        if (resultFile.exists) {
+            try { resultFile.remove(); } catch (e) {}
+        }
+
+        if (Folder.fs === "Windows") {
+            var runnerFile = new File(tempFolder.fsName + "/ozo_update_runner_" + timestamp + ".ps1");
+            var targetFsPath = targetFolder.fsName.replace(/'/g, "''");
+            var resultFsPath = resultFile.fsName.replace(/'/g, "''");
+            var safeZipUrl = zipUrl.replace(/'/g, "''");
+
+            var psScript = [
+                "$ProgressPreference = 'SilentlyContinue'",
+                "$ErrorActionPreference = 'Stop'",
+                "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls",
+                "$zipUrl = '" + safeZipUrl + "'",
+                "$targetDir = '" + targetFsPath + "'",
+                "$versionTag = '" + cleanTag + "'",
+                "$resultFile = '" + resultFsPath + "'",
+                "$tempZip = Join-Path $env:TEMP ('ozo_dl_' + [guid]::NewGuid().ToString('N') + '.zip')",
+                "$tempDir = Join-Path $env:TEMP ('ozo_ext_' + [guid]::NewGuid().ToString('N'))",
+                "try {",
+                "    try {",
+                "        Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing -TimeoutSec 60",
+                "    } catch {",
+                "        (New-Object System.Net.WebClient).DownloadFile($zipUrl, $tempZip)",
+                "    }",
+                "    if (-not (Test-Path $tempZip) -or (Get-Item $tempZip).Length -lt 1000) {",
+                "        throw 'Downloaded package is empty or invalid'",
+                "    }",
+                "    New-Item -Path $tempDir -ItemType Directory -Force | Out-Null",
+                "    try {",
+                "        Expand-Archive -Path $tempZip -DestinationPath $tempDir -Force",
+                "    } catch {",
+                "        Add-Type -AssemblyName System.IO.Compression.FileSystem",
+                "        [System.IO.Compression.ZipFile]::ExtractToDirectory($tempZip, $tempDir)",
+                "    }",
+                "    $cepDir = Get-ChildItem -Path $tempDir -Recurse -Directory -Filter 'com.ozo.illustrator.tools' -ErrorAction SilentlyContinue | Select-Object -First 1",
+                "    if (-not $cepDir) {",
+                "        throw 'Extension folder com.ozo.illustrator.tools not found in release archive'",
+                "    }",
+                "    if (-not (Test-Path $targetDir)) {",
+                "        New-Item -Path $targetDir -ItemType Directory -Force | Out-Null",
+                "    }",
+                "    Copy-Item -Path \"$($cepDir.FullName)\\*\" -Destination $targetDir -Recurse -Force",
+                "    $scriptsDir = Get-ChildItem -Path $tempDir -Recurse -Directory -Filter 'Script all' -ErrorAction SilentlyContinue | Select-Object -First 1",
+                "    if (-not $scriptsDir) {",
+                "        $scriptsDir = Join-Path $cepDir.FullName 'scripts'",
+                "        if (-not (Test-Path $scriptsDir)) { $scriptsDir = $null }",
+                "    }",
+                "    if ($scriptsDir) {",
+                "        $destScripts = Join-Path $targetDir 'scripts'",
+                "        if (-not (Test-Path $destScripts)) {",
+                "            New-Item -Path $destScripts -ItemType Directory -Force | Out-Null",
+                "        }",
+                "        Copy-Item -Path \"$($scriptsDir.FullName)\\*\" -Destination $destScripts -Recurse -Force",
+                "    }",
+                "    try {",
+                "        if (Test-Path (Join-Path $targetDir '..\\..\\Script all')) {",
+                "            if ($scriptsDir) { Copy-Item -Path \"$($scriptsDir.FullName)\\*\" -Destination (Join-Path $targetDir '..\\..\\Script all') -Recurse -Force -ErrorAction SilentlyContinue }",
+                "        }",
+                "    } catch {}",
+                "    $json = '{\"status\":\"success\",\"version\":\"' + $versionTag + '\"}'",
+                "    Set-Content -Path $resultFile -Value $json -Encoding UTF8 -Force",
+                "} catch {",
+                "    $errMsg = $_.Exception.Message.Replace('\"', '`\"').Replace(\"`r\", ' ').Replace(\"`n\", ' ')",
+                "    $json = '{\"status\":\"error\",\"message\":\"' + $errMsg + '\"}'",
+                "    Set-Content -Path $resultFile -Value $json -Encoding UTF8 -Force",
+                "} finally {",
+                "    try { Remove-Item -Path $tempZip -Force -ErrorAction SilentlyContinue } catch {}",
+                "    try { Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue } catch {}",
+                "}"
+            ].join("\r\n");
+
+            runnerFile.encoding = "UTF-8";
+            if (!runnerFile.open("w")) {
+                return ozoJsonStringify({ status: "error", message: "Failed to write update script" });
+            }
+            runnerFile.write(psScript);
+            runnerFile.close();
+
+            var sysCmd = 'powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -Command "& { & \'' + runnerFile.fsName.replace(/'/g, "''") + '\' }"';
+            app.system(sysCmd);
+
+            try { runnerFile.remove(); } catch (eRem) {}
+        } else {
+            // macOS POSIX
+            var runnerFile = new File(tempFolder.fsName + "/ozo_update_runner_" + timestamp + ".sh");
+            var shScript = [
+                "#!/bin/sh",
+                "ZIP_URL=\"" + zipUrl.replace(/"/g, '\\"') + "\"",
+                "TARGET_DIR=\"" + targetFolder.fsName.replace(/"/g, '\\"') + "\"",
+                "RESULT_FILE=\"" + resultFile.fsName.replace(/"/g, '\\"') + "\"",
+                "VERSION_TAG=\"" + cleanTag.replace(/"/g, '\\"') + "\"",
+                "TEMP_ZIP=\"/tmp/ozo_dl_" + timestamp + ".zip\"",
+                "TEMP_DIR=\"/tmp/ozo_ext_" + timestamp + "\"",
+                "mkdir -p \"$TEMP_DIR\"",
+                "curl -s -L \"$ZIP_URL\" -o \"$TEMP_ZIP\"",
+                "if [ $? -ne 0 ] || [ ! -f \"$TEMP_ZIP\" ]; then",
+                "    echo '{\"status\":\"error\",\"message\":\"Failed to download update package\"}' > \"$RESULT_FILE\"",
+                "    rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\"",
+                "    exit 1",
+                "fi",
+                "unzip -q -o \"$TEMP_ZIP\" -d \"$TEMP_DIR\"",
+                "FOUND_CEP=$(find \"$TEMP_DIR\" -type d -name \"com.ozo.illustrator.tools\" | head -n 1)",
+                "FOUND_SCRIPTS=$(find \"$TEMP_DIR\" -type d -name \"Script all\" | head -n 1)",
+                "if [ -n \"$FOUND_CEP\" ]; then",
+                "    mkdir -p \"$TARGET_DIR\"",
+                "    cp -R \"$FOUND_CEP/\"* \"$TARGET_DIR/\"",
+                "    if [ -n \"$FOUND_SCRIPTS\" ]; then",
+                "        mkdir -p \"$TARGET_DIR/scripts\"",
+                "        cp -R \"$FOUND_SCRIPTS/\"* \"$TARGET_DIR/scripts/\"",
+                "    fi",
+                "    echo \"{\\\"status\\\":\\\"success\\\",\\\"version\\\":\\\"$VERSION_TAG\\\"}\" > \"$RESULT_FILE\"",
+                "else",
+                "    echo '{\"status\":\"error\",\"message\":\"com.ozo.illustrator.tools not found in package\"}' > \"$RESULT_FILE\"",
+                "fi",
+                "rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\""
+            ].join("\n");
+
+            runnerFile.encoding = "UTF-8";
+            if (!runnerFile.open("w")) {
+                return ozoJsonStringify({ status: "error", message: "Failed to write update script" });
+            }
+            runnerFile.write(shScript);
+            runnerFile.close();
+
+            app.system('chmod +x "' + runnerFile.fsName + '" && "' + runnerFile.fsName + '"');
+            try { runnerFile.remove(); } catch (eRem) {}
+        }
+
+        var resultText = "";
+        if (resultFile.exists) {
+            resultFile.open("r");
+            resultText = resultFile.read();
+            resultFile.close();
+            try { resultFile.remove(); } catch (eRemResult) {}
+        }
+
+        if (resultText && resultText.length > 0) {
+            return resultText;
+        }
+        return ozoJsonStringify({ status: "error", message: "Update completed without status output" });
+    } catch (e) {
+        return ozoJsonStringify({ status: "error", message: String(e && e.message ? e.message : e) });
+    }
+}
