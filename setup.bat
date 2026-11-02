@@ -15,14 +15,14 @@ if /i "%ARG1%"=="noelevate" (
 :: Attempt Administrator elevation if not already elevated and not explicitly bypassed
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    if /i "%ARG1%" neq "noelevate" if /i "%ARG1%" neq "user" (
+    if /i "%ARG1%" neq "noelevate" if /i "%ARG1%" neq "user" if /i "%ARG1%" neq "push" if /i "%ARG1%" neq "auto-push" if /i "%ARG1%" neq "git" if /i "%ARG1%" neq "watch" (
         powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Start-Process cmd -ArgumentList '/c \"\"%SCRIPT_FILE%\" noelevate %*\"' -Verb RunAs; exit 0 } catch { exit 1 }"
         if %errorlevel% equ 0 exit /b
     )
 )
 
 :: Run embedded PowerShell logic
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$script = (Get-Content -LiteralPath $env:SCRIPT_FILE) -join [char]10; & ([scriptblock]::Create($script)) $env:ARG1"
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$script = (Get-Content -LiteralPath $env:SCRIPT_FILE) -join [char]10; & ([scriptblock]::Create($script)) $env:ARG1 $env:ARG2"
 
 :: Keep console open when double-clicked interactively
 if "%ARG1%"=="" pause
@@ -30,7 +30,8 @@ exit /b %ERRORLEVEL%
 #>
 
 param(
-    [string]$Action = ""
+    [string]$Action = "",
+    [string]$Message = ""
 )
 
 $ErrorActionPreference = 'Stop'
@@ -254,7 +255,7 @@ function Do-OnlineUpdate {
             if ($subFolder) { $extractedContent = $subFolder.FullName }
 
             Write-Host "[*] Updating local scripts and extensions..." -ForegroundColor Yellow
-            Get-ChildItem -Path $extractedContent | Where-Object { $_.Name -ne "setup.bat" } | ForEach-Object {
+            Get-ChildItem -Path $extractedContent | Where-Object { $_.Name -ne "setup.bat" -and $_.Name -ne "push.bat" } | ForEach-Object {
                 Copy-Item -Path $_.FullName -Destination $ScriptRoot -Recurse -Force
             }
 
@@ -293,6 +294,157 @@ function Do-OnlineUpdate {
     Write-Host "              Online Update Complete!                     " -ForegroundColor Cyan
     Write-Host "==========================================================" -ForegroundColor Cyan
     Write-Host "Restart Adobe Illustrator to load the latest tools." -ForegroundColor White
+}
+
+function Do-AutoPush {
+    param(
+        [string]$CommitMsg = "",
+        [switch]$WatchMode = $false
+    )
+
+    Show-Header
+    Write-Host "[*] Checking Git repository status..." -ForegroundColor Yellow
+
+    # Check if git is installed
+    $gitCmd = Get-Command git -ErrorAction SilentlyContinue
+    if (-not $gitCmd) {
+        Write-Host "    [ERROR] Git is not installed or not in your system PATH." -ForegroundColor Red
+        Write-Host "    Please install Git from https://git-scm.com/ and try again." -ForegroundColor White
+        return
+    }
+
+    # Check if in a git repository
+    $isRepo = & git rev-parse --is-inside-work-tree 2>$null
+    if ($LASTEXITCODE -ne 0 -or $isRepo -ne "true") {
+        Write-Host "    [ERROR] This folder is not a Git repository." -ForegroundColor Red
+        return
+    }
+
+    # Watch Mode
+    if ($WatchMode) {
+        Write-Host "==========================================================" -ForegroundColor Green
+        Write-Host "  Auto-Push Watcher Activated! Watching for file saves... " -ForegroundColor Green
+        Write-Host "==========================================================" -ForegroundColor Green
+        Write-Host "Working Directory : $ScriptRoot" -ForegroundColor Gray
+        Write-Host "Target Remote     : origin/main" -ForegroundColor Gray
+        Write-Host "Press Ctrl+C at any time to stop watching." -ForegroundColor Gray
+        Write-Host ""
+
+        $fsw = New-Object System.IO.FileSystemWatcher
+        $fsw.Path = $ScriptRoot
+        $fsw.IncludeSubdirectories = $true
+        $fsw.EnableRaisingEvents = $true
+        $fsw.NotifyFilter = [System.IO.NotifyFilters]'FileName, LastWrite'
+
+        $lastSync = [DateTime]::MinValue
+        $pendingChange = $false
+
+        while ($true) {
+            $change = $fsw.WaitForChanged([System.IO.WatcherChangeTypes]::All, 3000)
+            if ($change.TimedOut) {
+                if ($pendingChange -and ((Get-Date) - $lastSync).TotalSeconds -ge 4) {
+                    $status = & git status --porcelain
+                    if ($status) {
+                        $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+                        Write-Host "`n[$timestamp] Detected changes. Auto-committing and pushing..." -ForegroundColor Cyan
+                        & git add -A
+                        & git commit -m "auto: sync changes ($timestamp)"
+                        & git push origin main
+                        if ($LASTEXITCODE -eq 0) {
+                            Write-Host "[$timestamp] Pushed to GitHub successfully!`n" -ForegroundColor Green
+                        } else {
+                            Write-Host "[$timestamp] Git push failed. Will retry on next change.`n" -ForegroundColor Red
+                        }
+                    }
+                    $pendingChange = $false
+                }
+            } else {
+                # Ignore .git directory, release output, and temporary files
+                if ($change.Name -notmatch "^\.git" -and $change.Name -notmatch "^release" -and $change.Name -notmatch "\.tmp$") {
+                    $pendingChange = $true
+                    $lastSync = Get-Date
+                    Write-Host "[$((Get-Date).ToString('HH:mm:ss'))] File changed: $($change.Name)" -ForegroundColor DarkGray
+                }
+            }
+        }
+        return
+    }
+
+    # Normal / One-Shot Auto-Push
+    $statusLines = & git status --porcelain
+    if (-not $statusLines) {
+        # Check if there are unpushed commits
+        $unpushed = & git log origin/main..HEAD --oneline 2>$null
+        if ($unpushed) {
+            Write-Host "    [INFO] Working tree clean, but you have unpushed commits:" -ForegroundColor Yellow
+            $unpushed | ForEach-Object { Write-Host "      - $_" -ForegroundColor Cyan }
+            Write-Host ""
+            Write-Host "[*] Pushing to GitHub (origin/main)..." -ForegroundColor Yellow
+            & git push origin main
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "    [OK] Successfully pushed commits to GitHub!" -ForegroundColor Green
+            } else {
+                Write-Host "    [ERROR] Git push failed." -ForegroundColor Red
+            }
+            return
+        }
+
+        Write-Host "    [OK] Working tree clean. Everything is up-to-date with GitHub!" -ForegroundColor Green
+        Write-Host ""
+        $startWatch = Read-Host "Would you like to start Auto-Push Watcher Mode? (y/N)"
+        if ($startWatch -match "^[yY]") {
+            Do-AutoPush -WatchMode
+        }
+        return
+    }
+
+    Write-Host "Modified / untracked files detected:" -ForegroundColor White
+    $statusLines | ForEach-Object {
+        $prefix = $_.Substring(0, 2)
+        $file = $_.Substring(3)
+        Write-Host "   $prefix  $file" -ForegroundColor Cyan
+    }
+    Write-Host ""
+
+    $msg = $CommitMsg
+    if ([string]::IsNullOrWhiteSpace($msg)) {
+        $msg = Read-Host "Enter commit message (Press Enter for auto-timestamp)"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($msg)) {
+        $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+        $changedNames = ($statusLines | ForEach-Object {
+            $f = $_.Substring(3)
+            Split-Path -Leaf $f
+        } | Select-Object -Unique) -join ", "
+        if ($changedNames.Length -gt 60) {
+            $changedNames = $changedNames.Substring(0, 57) + "..."
+        }
+        $msg = "Update: $changedNames ($timestamp)"
+    }
+
+    Write-Host ""
+    Write-Host "[1/3] Staging all changes (git add -A)..." -ForegroundColor Yellow
+    & git add -A
+
+    Write-Host "[2/3] Committing changes: `"$msg`"..." -ForegroundColor Yellow
+    & git commit -m "$msg"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "    [WARN] Nothing committed." -ForegroundColor Yellow
+    }
+
+    Write-Host "[3/3] Pushing to GitHub (origin/main)..." -ForegroundColor Yellow
+    & git push origin main
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host ""
+        Write-Host "==========================================================" -ForegroundColor Green
+        Write-Host "            Pushed to GitHub Successfully!                " -ForegroundColor Green
+        Write-Host "==========================================================" -ForegroundColor Green
+        Write-Host "Remote URL: https://github.com/Heng-zm/illustrator-script" -ForegroundColor Gray
+    } else {
+        Write-Host ""
+        Write-Host "    [ERROR] Git push failed. Please verify your internet connection or git credentials." -ForegroundColor Red
+    }
 }
 
 function Do-Uninstall {
@@ -347,7 +499,11 @@ if ($act -eq "install" -or $act -eq "1" -or $act -eq "-install") {
     Do-OnlineUpdate
 } elseif ($act -eq "uninstall" -or $act -eq "remove" -or $act -eq "4" -or $act -eq "-uninstall") {
     Do-Uninstall
-} elseif ($act -eq "exit" -or $act -eq "quit" -or $act -eq "5") {
+} elseif ($act -eq "push" -or $act -eq "auto-push" -or $act -eq "git" -or $act -eq "git-push" -or $act -eq "5") {
+    Do-AutoPush -CommitMsg $Message
+} elseif ($act -eq "watch" -or $act -eq "watch-push" -or $act -eq "6") {
+    Do-AutoPush -WatchMode
+} elseif ($act -eq "exit" -or $act -eq "quit" -or $act -eq "7") {
     exit 0
 } else {
     # Interactive Menu
@@ -357,9 +513,11 @@ if ($act -eq "install" -or $act -eq "1" -or $act -eq "-install") {
     Write-Host "  [2] Update / Sync Installed Plugin   (Refresh local scripts & panel)" -ForegroundColor Cyan
     Write-Host "  [3] Check & Update from GitHub       (Download latest release online)" -ForegroundColor Magenta
     Write-Host "  [4] Uninstall Plugin & Menu Scripts  (Clean removal)" -ForegroundColor Yellow
-    Write-Host "  [5] Exit" -ForegroundColor Gray
+    Write-Host "  [5] Auto Commit & Push to GitHub     (1-Click stage, commit & push)" -ForegroundColor Blue
+    Write-Host "  [6] Auto-Push Watcher Mode           (Auto push whenever files are saved)" -ForegroundColor DarkGreen
+    Write-Host "  [7] Exit" -ForegroundColor Gray
     Write-Host ""
-    $choice = Read-Host "Enter your choice (1-5) [Default: 1]"
+    $choice = Read-Host "Enter your choice (1-7) [Default: 1]"
     Write-Host ""
     if ([string]::IsNullOrWhiteSpace($choice) -or $choice.Trim() -eq "1") {
         Do-Install
@@ -369,6 +527,10 @@ if ($act -eq "install" -or $act -eq "1" -or $act -eq "-install") {
         Do-OnlineUpdate
     } elseif ($choice.Trim() -eq "4") {
         Do-Uninstall
+    } elseif ($choice.Trim() -eq "5") {
+        Do-AutoPush
+    } elseif ($choice.Trim() -eq "6") {
+        Do-AutoPush -WatchMode
     } else {
         exit 0
     }

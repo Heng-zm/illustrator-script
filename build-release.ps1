@@ -44,6 +44,7 @@ New-Item -Path $stageDir -ItemType Directory -Force | Out-Null
 
 $itemsToCopy = @(
     "setup.bat",
+    "push.bat",
     "Install as Plugin.jsx",
     "Script Launcher.jsx",
     "README.md",
