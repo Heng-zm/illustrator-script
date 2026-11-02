@@ -7,7 +7,8 @@ if /i "%~1"=="--watch" goto :watch
 if /i "%~1"=="-w" goto :watch
 if /i "%~1"=="watch" goto :watch
 
-call "%~dp0setup.bat" noelevate push %*
+set "ARG2=%*"
+call "%~dp0setup.bat" noelevate push
 goto :done
 
 :watch

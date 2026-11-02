@@ -6,10 +6,10 @@ title Ozo Tools - Plugin Suite Manager
 
 set "SCRIPT_FILE=%~f0"
 set "ARG1=%~1"
-set "ARG2=%~2"
+if not defined ARG2 set "ARG2=%~2"
 if /i "%ARG1%"=="noelevate" (
     set "ARG1=%~2"
-    set "ARG2=%~3"
+    if not defined ARG2 set "ARG2=%~3"
 )
 
 :: Attempt Administrator elevation if not already elevated and not explicitly bypassed
