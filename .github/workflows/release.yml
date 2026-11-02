@@ -1,0 +1,71 @@
+name: Release Automation
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 2.2.0 or v2.2.0)'
+        required: false
+        default: '2.2.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Version
+        id: get_version
+        shell: pwsh
+        run: |
+          $ver = "${{ github.event.inputs.version }}"
+          if (-not $ver) {
+            $ref = "${{ github.ref_name }}"
+            if ($ref) { $ver = $ref } else { $ver = "2.2.0" }
+          }
+          if ($ver.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
+            $ver = $ver.Substring(1)
+          }
+          Write-Host "Determined Version: $ver"
+          "version=$ver" >> $env:GITHUB_OUTPUT
+          "tag_name=v$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Build Release Package (.zip)
+        shell: pwsh
+        run: |
+          .\build-release.ps1 -Version "${{ steps.get_version.outputs.version }}"
+
+      - name: Verify Package Archive
+        shell: pwsh
+        run: |
+          $zip = Get-Item "release\Ozo-Tools-*.zip"
+          if (-not $zip) {
+            Write-Error "Release zip package was not generated!"
+            exit 1
+          }
+          Write-Host "Ready to publish: $($zip.FullName) ($($zip.Length) bytes)"
+
+      - name: Publish Release & Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.tag_name }}
+          name: Ozo Tools ${{ steps.get_version.outputs.tag_name }}
+          files: release/Ozo-Tools-*.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

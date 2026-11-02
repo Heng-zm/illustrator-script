@@ -4,6 +4,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Version.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
+    $Version = $Version.Substring(1)
+}
 $ScriptRoot = $PSScriptRoot
 if (-not $ScriptRoot) { $ScriptRoot = (Get-Location).Path }
 
