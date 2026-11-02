@@ -180,6 +180,7 @@
     var statusMessage = document.getElementById("statusMessage");
     var emptyState = document.getElementById("emptyState");
     var emptyText = document.getElementById("emptyText");
+    var emptyClearBtn = document.getElementById("emptyClearBtn");
     var tabBtns = document.querySelectorAll(".tab-btn");
     var tabAllText = document.getElementById("tabAllText");
     var allCount = document.getElementById("allCount");
@@ -194,6 +195,39 @@
 
     function isKhmer() {
         return currentLang === "km";
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function escapeRegex(str) {
+        return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function highlightMatch(text, query) {
+        if (!text) return "";
+        if (!query) return escapeHtml(text);
+        var q = query.trim();
+        if (!q) return escapeHtml(text);
+        var reg = new RegExp("(" + escapeRegex(q) + ")", "gi");
+        var parts = String(text).split(reg);
+        var out = "";
+        for (var i = 0; i < parts.length; i++) {
+            var part = parts[i];
+            if (part.toLowerCase() === q.toLowerCase()) {
+                out += '<mark class="search-match">' + escapeHtml(part) + '</mark>';
+            } else {
+                out += escapeHtml(part);
+            }
+        }
+        return out;
     }
 
     function updateViewMode() {
@@ -211,6 +245,44 @@
         }
     }
 
+    function refreshDocumentStatus() {
+        if (isExecuting) return;
+        if (!csInterface) {
+            var defText = isKhmer() ? ("រួចរាល់ • មាន " + TOOLS.length + " ឧបករណ៍") : ("Ready • " + TOOLS.length + " tools available");
+            statusMessage.textContent = defText;
+            statusDot.className = "status-dot";
+            return;
+        }
+
+        csInterface.evalScript("ozoGetDocumentStatus()", function (raw) {
+            if (isExecuting) return;
+            try {
+                var docInfo = JSON.parse(raw);
+                if (docInfo && docInfo.hasDoc) {
+                    var docName = docInfo.name || "Untitled";
+                    var colorSpace = docInfo.colorSpace || "";
+                    var items = (typeof docInfo.itemCount === "number") ? docInfo.itemCount : 0;
+                    var itemLabel = isKhmer() ? " វត្ថុ" : " items";
+                    var statusStr = docName + " (" + colorSpace + " • " + items + itemLabel + ")";
+                    statusMessage.textContent = statusStr;
+                    statusMessage.title = docName + " • " + colorSpace + " • " + items + itemLabel;
+                    statusDot.className = "status-dot doc-active";
+                    statusDot.title = isKhmer() ? ("ឯកសារសកម្ម៖ " + docName) : ("Active Document: " + docName);
+                } else {
+                    var noDocText = isKhmer() ? ("គ្មានឯកសារបើក • មាន " + TOOLS.length + " ឧបករណ៍") : ("No document open • " + TOOLS.length + " tools available");
+                    statusMessage.textContent = noDocText;
+                    statusMessage.title = noDocText;
+                    statusDot.className = "status-dot";
+                    statusDot.title = noDocText;
+                }
+            } catch (e) {
+                var readyText = isKhmer() ? ("រួចរាល់ • មាន " + TOOLS.length + " ឧបករណ៍") : ("Ready • " + TOOLS.length + " tools available");
+                statusMessage.textContent = readyText;
+                statusDot.className = "status-dot";
+            }
+        });
+    }
+
     function setStatus(msg, type, duration) {
         if (statusResetTimer) {
             clearTimeout(statusResetTimer);
@@ -225,9 +297,7 @@
 
         if (duration && duration > 0) {
             statusResetTimer = setTimeout(function () {
-                var defaultText = isKhmer() ? ("រួចរាល់ • មាន " + TOOLS.length + " ឧបករណ៍") : ("Ready • " + TOOLS.length + " tools available");
-                statusMessage.textContent = defaultText;
-                statusDot.className = "status-dot";
+                refreshDocumentStatus();
             }, duration);
         }
     }
@@ -277,6 +347,10 @@
         searchInput.placeholder = khmer ? ("ស្វែងរកឧបករណ៍ទាំង " + TOOLS.length + " (QR, កាត់, Export)...") : ("Search " + TOOLS.length + " tools (e.g. QR, Export, Cut)...");
         if (donateText) donateText.textContent = khmer ? "ឧបត្ថម្ភ" : "Donate";
         donateBtn.title = khmer ? "ឧបត្ថម្ភអ្នកអភិវឌ្ឍន៍ (Support developer via ABA Pay)" : "Support developer via ABA Pay";
+        if (emptyClearBtn) {
+            emptyClearBtn.textContent = khmer ? "សម្អាតការស្វែងរក" : "Clear search";
+            emptyClearBtn.title = khmer ? "សម្អាតពាក្យស្វែងរកដើម្បីបង្ហាញឧបករណ៍ទាំងអស់" : "Clear search query to show all tools";
+        }
     }
 
     function renderTools() {
@@ -324,8 +398,10 @@
             card.setAttribute("tabindex", "0");
             card.setAttribute("role", "button");
 
-            var title = khmer ? tool.nameKm : tool.nameEn;
-            var desc = khmer ? tool.descKm : tool.descEn;
+            var rawTitle = khmer ? tool.nameKm : tool.nameEn;
+            var rawDesc = khmer ? tool.descKm : tool.descEn;
+            var titleDisplay = highlightMatch(rawTitle, searchQuery);
+            var descDisplay = highlightMatch(rawDesc, searchQuery);
             var runLabel = khmer ? "ដំណើរការ" : "Run";
             var categoryBadge = tool.category.toUpperCase();
 
@@ -333,18 +409,18 @@
                 '<div class="tool-icon-wrap">' + tool.icon + '</div>' +
                 '<div class="tool-info">' +
                     '<div class="tool-header-row">' +
-                        '<span class="tool-name" title="' + title + '">' + title + '</span>' +
+                        '<span class="tool-name" title="' + escapeHtml(rawTitle) + '">' + titleDisplay + '</span>' +
                         '<span class="tool-badge badge-' + tool.category + '">' + categoryBadge + '</span>' +
                     '</div>' +
-                    '<div class="tool-desc" title="' + desc + '">' + desc + '</div>' +
+                    '<div class="tool-desc" title="' + escapeHtml(rawDesc) + '">' + descDisplay + '</div>' +
                 '</div>' +
                 '<div class="tool-actions">' +
-                    '<button class="fav-btn' + (isFav ? ' active' : '') + '" title="' + (khmer ? "ដាក់ជាសំណព្វ" : "Toggle Favorite") + '" aria-label="Favorite">' +
+                    '<button class="fav-btn' + (isFav ? ' active' : '') + '" title="' + (khmer ? "ដាក់ជាសំណព្វ (F)" : "Toggle Favorite (F)") + '" aria-label="Favorite">' +
                         '<svg viewBox="0 0 24 24" width="14" height="14" fill="' + (isFav ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2">' +
                             '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>' +
                         '</svg>' +
                     '</button>' +
-                    '<button class="run-btn" title="' + (khmer ? "ដំណើរការ " + title : "Run " + title) + '">' + runLabel + '</button>' +
+                    '<button class="run-btn" title="' + (khmer ? "ដំណើរការ " + rawTitle : "Run " + rawTitle) + '">' + runLabel + '</button>' +
                 '</div>';
 
             // Favorite toggle
@@ -365,12 +441,33 @@
                 runScript(tool, card, runBtn);
             });
 
-            // Enter / Space to run on the focused card (ignore child buttons)
+            // Enter / Space to run, F to favorite, Arrow keys for navigation
             card.addEventListener("keydown", function (e) {
                 if (e.target !== card) return;
                 if (e.key === "Enter" || e.keyCode === 13 || e.key === " " || e.keyCode === 32) {
                     e.preventDefault();
                     runScript(tool, card, runBtn);
+                } else if (e.key === "f" || e.key === "F" || e.keyCode === 70) {
+                    e.preventDefault();
+                    toggleFavorite(tool.id);
+                } else if (e.key === "ArrowDown" || e.keyCode === 40) {
+                    e.preventDefault();
+                    var next = card.nextElementSibling;
+                    if (next && next.classList.contains("tool-card")) {
+                        next.focus();
+                    }
+                } else if (e.key === "ArrowUp" || e.keyCode === 38) {
+                    e.preventDefault();
+                    var prev = card.previousElementSibling;
+                    if (prev && prev.classList.contains("tool-card")) {
+                        prev.focus();
+                    } else {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                } else if (e.key === "Escape" || e.keyCode === 27) {
+                    e.preventDefault();
+                    searchInput.focus();
                 }
             });
 
@@ -393,6 +490,10 @@
         var title = isKhmer() ? tool.nameKm : tool.nameEn;
         setStatus((isKhmer() ? "កំពុងដំណើរការ " : "Running ") + title + "...", "running");
 
+        if (cardElement) {
+            cardElement.classList.add("is-running");
+        }
+
         if (runButtonElement) {
             runButtonElement.classList.add("running");
             runButtonElement.textContent = isKhmer() ? "កំពុងរត់..." : "Running...";
@@ -401,6 +502,9 @@
         if (!csInterface) {
             setTimeout(function () {
                 isExecuting = false;
+                if (cardElement) {
+                    cardElement.classList.remove("is-running");
+                }
                 if (runButtonElement) {
                     runButtonElement.classList.remove("running");
                     runButtonElement.textContent = isKhmer() ? "ដំណើរការ" : "Run";
@@ -412,6 +516,9 @@
 
         csInterface.evalScript('ozoRunScript(' + JSON.stringify(tool.file) + ')', function (rawResult) {
             isExecuting = false;
+            if (cardElement) {
+                cardElement.classList.remove("is-running");
+            }
             if (runButtonElement) {
                 runButtonElement.classList.remove("running");
                 runButtonElement.textContent = isKhmer() ? "ដំណើរការ" : "Run";
@@ -478,6 +585,12 @@
             if (firstCard) {
                 firstCard.click();
             }
+        } else if (e.key === "ArrowDown" || e.keyCode === 40) {
+            e.preventDefault();
+            var targetCard = toolList.querySelector(".tool-card");
+            if (targetCard) {
+                targetCard.focus();
+            }
         } else if (e.key === "Escape" || e.keyCode === 27) {
             searchInput.value = "";
             searchQuery = "";
@@ -496,6 +609,17 @@
         renderTools();
         searchInput.focus();
     });
+
+    if (emptyClearBtn) {
+        emptyClearBtn.addEventListener("click", function () {
+            searchInput.value = "";
+            searchQuery = "";
+            searchClearBtn.style.display = "none";
+            if (searchKbdHint) searchKbdHint.style.display = "block";
+            renderTools();
+            searchInput.focus();
+        });
+    }
 
     // View Toggle (Grid vs List)
     if (viewToggleBtn) {
@@ -538,7 +662,8 @@
     // Refresh Panel
     refreshBtn.addEventListener("click", function () {
         renderTools();
-        setStatus(isKhmer() ? "បានផ្ទុកឡើងវិញរួចរាល់" : "Refreshed panel", "success", 2500);
+        refreshDocumentStatus();
+        setStatus(isKhmer() ? "បានផ្ទុកឡើងវិញរួចរាល់" : "Refreshed panel", "success", 2000);
     });
 
     // Donate button
@@ -605,8 +730,13 @@
         } catch (eInit) {}
     }
 
+    // Refresh document info when window/panel gains focus
+    window.addEventListener("focus", function () {
+        refreshDocumentStatus();
+    });
+
     // Initial Render
     updateViewMode();
     renderTools();
-    setStatus(isKhmer() ? ("រួចរាល់ • មាន " + TOOLS.length + " ឧបករណ៍") : ("Ready • " + TOOLS.length + " tools available"), "ready");
+    refreshDocumentStatus();
 })();

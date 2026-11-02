@@ -525,6 +525,10 @@
     sampleDimsText.preferredSize.width = 285;
     sampleDimsText.graphics.foregroundColor = sampleDimsText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.55, 0.55, 0.55, 1], 1);
 
+    var sampleSummaryText = samplePreviewPanel.add("statictext", undefined, "");
+    sampleSummaryText.preferredSize.width = 285;
+    sampleSummaryText.graphics.foregroundColor = sampleSummaryText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.18, 0.48, 0.98, 1], 1);
+
     namingPresetList.onChange = function () {
         if (namingPresetList.selection && namingPresetList.selection.text !== "Custom...") {
             templateInput.text = namingPresetList.selection.text;
@@ -589,6 +593,24 @@
                 var dims = getArtboardDimensions(ab, selUnit);
                 var abName = ab.name || ("Artboard " + (previewAb + 1));
                 sampleDimsText.text = abName + " • " + dims.width + " × " + dims.height + " " + selUnit + " (" + (previewAb + 1) + "/" + totalArtboards + ")";
+            }
+        }
+
+        if (sampleSummaryText) {
+            var targetCount = previewIndices.length;
+            var fmtCount = (pdfBox.value ? 1 : 0) + (tiffBox.value ? 1 : 0) + (pngBox.value ? 1 : 0) + (jpgBox.value ? 1 : 0);
+            if (fmtCount === 0) {
+                sampleSummaryText.text = OZO.tr("Please select at least one format.");
+                sampleSummaryText.graphics.foregroundColor = sampleSummaryText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.92, 0.42, 0.12, 1], 1);
+            } else {
+                var totalFiles = 0;
+                if (pdfBox.value) totalFiles += isCombined ? 1 : targetCount;
+                if (tiffBox.value) totalFiles += targetCount;
+                if (pngBox.value) totalFiles += targetCount;
+                if (jpgBox.value) totalFiles += targetCount;
+
+                sampleSummaryText.text = OZO.tr("Planned output:") + " " + targetCount + " " + OZO.tr("artboard(s)") + " • " + fmtCount + " " + OZO.tr("format(s)") + " • " + totalFiles + " " + OZO.tr("file(s) total");
+                sampleSummaryText.graphics.foregroundColor = sampleSummaryText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.18, 0.48, 0.98, 1], 1);
             }
         }
     }

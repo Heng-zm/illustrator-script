@@ -20,7 +20,7 @@
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 8px;
-    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Leelawadee UI", "Khmer UI", "Kantumruy Pro", "Battambang", sans-serif;
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Kantumruy Pro", "Kantumruy", "Battambang", "Khmer UI", "Leelawadee UI", sans-serif;
 }
 
 * {
@@ -342,7 +342,13 @@ body {
 
 .tool-card:focus-visible {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(46, 122, 251, 0.3);
+    box-shadow: 0 0 0 2px rgba(46, 122, 251, 0.4);
+}
+
+.tool-card.is-running {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.45);
+    background-color: var(--bg-surface-active);
 }
 
 /* Category Accent Strip on Cards */
@@ -400,8 +406,10 @@ body {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.25;
-    height: 28px;
+    line-height: 1.38;
+    min-height: 32px;
+    max-height: 35px;
+    word-break: break-word;
 }
 
 .view-grid .tool-badge {
@@ -460,6 +468,8 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.36;
+    padding-bottom: 1px;
 }
 
 .tool-badge {
@@ -482,6 +492,8 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.36;
+    padding-bottom: 1px;
 }
 
 .tool-actions {
@@ -511,6 +523,17 @@ body {
 
 .fav-btn.active {
     color: var(--star-active);
+}
+
+@keyframes star-pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.4) rotate(14deg); }
+    70% { transform: scale(0.9) rotate(-8deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.fav-btn.active svg {
+    animation: star-pop 0.32s ease-out;
 }
 
 .run-btn {
@@ -545,6 +568,21 @@ body {
     pointer-events: none;
 }
 
+/* Search Match Highlighting */
+mark.search-match {
+    background: rgba(46, 122, 251, 0.32);
+    color: #93c5fd;
+    font-weight: 700;
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+body.theme-light mark.search-match,
+body.theme-medium-light mark.search-match {
+    background: rgba(2, 101, 220, 0.22);
+    color: #0265dc;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;
@@ -556,6 +594,27 @@ body {
 .empty-state svg {
     margin-bottom: 8px;
     stroke: var(--text-muted);
+}
+
+.empty-clear-btn {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-block;
+}
+
+.empty-clear-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
 }
 
 /* Footer Status Bar */
@@ -601,6 +660,11 @@ body {
 
 .status-dot.success {
     background-color: #10b981;
+}
+
+.status-dot.doc-active {
+    background-color: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.75);
 }
 
 @keyframes pulse {
