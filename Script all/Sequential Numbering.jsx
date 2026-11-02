@@ -409,7 +409,7 @@
     dialog.spacing = 10;
     dialog.margins = 14;
 
-    OZO.addDialogHeader(dialog, OZO.tr("Sequential Numbering"), "v2.0 • Ticket & Batch Numbering");
+    OZO.addDialogHeader(dialog, OZO.tr("Sequential Numbering"), "v2.2 \u2022 Ticket & Batch Serial Numbering");
 
     var sequencePanel = dialog.add("panel", undefined, OZO.tr("Sequence"));
     sequencePanel.orientation = "column";

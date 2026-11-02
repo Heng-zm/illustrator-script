@@ -129,44 +129,76 @@
         return null;
     })();
 
+    // Attempt to load OzoShared.jsxinc for unified bilingual support & theming
+    try {
+        var sharedCandidates = [
+            sourceFolder.fsName + "/lib/OzoShared.jsxinc",
+            sourceFolder.fsName + "/Script all/lib/OzoShared.jsxinc"
+        ];
+        for (var scIdx = 0; scIdx < sharedCandidates.length; scIdx++) {
+            var scFile = new File(sharedCandidates[scIdx]);
+            if (scFile.exists) {
+                $.evalFile(scFile);
+                break;
+            }
+        }
+    } catch (ignoreShared) {}
+
+    var hasOzo = (typeof OZO !== "undefined" && OZO && OZO.tr);
+    function _tr(txt) { return hasOzo ? OZO.tr(txt) : txt; }
+
     // UI Dialog
-    var dlg = new Window("dialog", "Install Ozo Tools Plugin");
+    var dlg = new Window("dialog", _tr("Install Ozo Tools Plugin"));
     dlg.orientation = "column";
     dlg.alignChildren = ["fill", "top"];
-    dlg.spacing = 14;
-    dlg.margins = 18;
-    dlg.preferredSize.width = 460;
+    dlg.spacing = 12;
+    dlg.margins = 16;
+    dlg.preferredSize.width = 480;
 
-    var header = dlg.add("group");
-    header.orientation = "column";
-    header.alignChildren = ["left", "center"];
-    var title = header.add("statictext", undefined, "Install Ozo Tools for Adobe Illustrator");
-    title.graphics.font = ScriptUI.newFont(title.graphics.font.name, "BOLD", 15);
-    var subtitle = header.add("statictext", undefined, "Transforms all scripts into a native dockable panel and menu plugin.");
+    if (hasOzo && OZO.addDialogHeader) {
+        OZO.addDialogHeader(dlg, _tr("Install Ozo Tools Plugin"), "v2.2 \u2022 Suite Setup & Integration");
+    } else {
+        var header = dlg.add("group");
+        header.orientation = "column";
+        header.alignChildren = ["left", "center"];
+        var title = header.add("statictext", undefined, "Install Ozo Tools for Adobe Illustrator");
+        title.graphics.font = ScriptUI.newFont(title.graphics.font.name, "BOLD", 15);
+        var subtitle = header.add("statictext", undefined, "Transforms all scripts into a native dockable panel and menu plugin.");
+    }
 
-    var optionsPanel = dlg.add("panel", undefined, "Installation Options");
+    var optionsPanel = dlg.add("panel", undefined, _tr("Installation Options"));
     optionsPanel.orientation = "column";
     optionsPanel.alignChildren = ["left", "center"];
     optionsPanel.margins = [14, 18, 14, 12];
     optionsPanel.spacing = 10;
 
-    var cepCheck = optionsPanel.add("checkbox", undefined, "Install Dockable Panel Plugin (Window > Extensions > Ozo Tools)");
+    var cepCheck = optionsPanel.add("checkbox", undefined, _tr("Install Dockable Panel Plugin (Window > Extensions > Ozo Tools)"));
     cepCheck.value = true;
-    var menuCheck = optionsPanel.add("checkbox", undefined, "Install Native Menu Items (File > Scripts > Ozo Tools)");
+    var menuCheck = optionsPanel.add("checkbox", undefined, _tr("Install Native Menu Items (File > Scripts > Ozo Tools)"));
     menuCheck.value = true;
-    var debugCheck = optionsPanel.add("checkbox", undefined, "Enable Adobe Extension Developer Mode (PlayerDebugMode)");
+    var debugCheck = optionsPanel.add("checkbox", undefined, _tr("Enable Adobe Extension Developer Mode (PlayerDebugMode)"));
     debugCheck.value = true;
 
     var infoText = dlg.add("statictext", undefined,
         "After installation, restart Adobe Illustrator to see the new panel under Window > Extensions > Ozo Tools.",
         {multiline: true}
     );
-    infoText.preferredSize.width = 420;
+    infoText.preferredSize.width = 440;
 
     var btnGroup = dlg.add("group");
     btnGroup.alignment = ["right", "center"];
-    var cancelBtn = btnGroup.add("button", undefined, "Cancel", {name: "cancel"});
-    var installBtn = btnGroup.add("button", undefined, "Install Now", {name: "ok"});
+    var cancelBtn = btnGroup.add("button", undefined, _tr("Cancel"), {name: "cancel"});
+    var installBtn = btnGroup.add("button", undefined, _tr("Install Now"), {name: "ok"});
+
+    dlg.defaultElement = installBtn;
+    dlg.cancelElement = cancelBtn;
+
+    if (hasOzo && OZO.addLanguageSelector) {
+        OZO.addLanguageSelector(dlg);
+        OZO.translateWindow(dlg, OZO.getLanguage());
+        OZO.applyTheme(dlg);
+    }
+    dlg.center();
 
     if (dlg.show() !== 1) {
         return;

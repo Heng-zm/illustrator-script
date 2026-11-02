@@ -635,7 +635,7 @@
     dialog.spacing = 10;
     dialog.margins = 14;
     dialog.minimumSize = [780, 600];
-    OZO.addDialogHeader(dialog, OZO.tr("Search Iconify"), "v2.0 • 200,000+ Vector Icons");
+    OZO.addDialogHeader(dialog, OZO.tr("Search Iconify"), "v2.2 \u2022 200,000+ Vector Icons");
 
     var searchRow = dialog.add("group");
     searchRow.orientation = "row";

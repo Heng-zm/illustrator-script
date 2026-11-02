@@ -8,7 +8,7 @@
  */
 (function () {
     var SCRIPT_NAME = "CutContour / Die-Line Generator PRO";
-    var SCRIPT_VERSION = "2.0";
+    var SCRIPT_VERSION = "2.2";
     var STATE_NAMESPACE = "cutcontour_pro_v2";
     var PREVIEW_LAYER_NAME = "__CutContour_Preview__";
 

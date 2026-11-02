@@ -12,7 +12,7 @@
  */
 (function () {
     var SCRIPT_NAME = "Print Job Info";
-    var SCRIPT_VERSION = "1.0";
+    var SCRIPT_VERSION = "2.2";
     var STATE_NAMESPACE = "print_job_info_v1";
     var PREVIEW_LAYER_NAME = "__PrintJobInfo_Preview__";
     var RESULT_LAYER_NAME = "[Print Job Info]";
@@ -405,18 +405,7 @@
     dialog.minimumSize = [530, 520];
 
     // Top Header Banner
-    var topBanner = dialog.add("group");
-    topBanner.orientation = "row";
-    topBanner.alignChildren = ["fill", "center"];
-    var titleText = topBanner.add("statictext", undefined, SCRIPT_NAME + " (ទំលាក់ File Print)");
-    try {
-        titleText.graphics.font = ScriptUI.newFont("dialog", "BOLD", 14);
-    } catch (eTitleFont) {}
-    var verBadge = topBanner.add("statictext", undefined, "v" + SCRIPT_VERSION + " • Wide-Format RIP");
-    verBadge.alignment = ["right", "center"];
-    verBadge.graphics.foregroundColor = verBadge.graphics.newPen(
-        verBadge.graphics.PenType.SOLID_COLOR, [0.55, 0.55, 0.55], 1
-    );
+    OZO.addDialogHeader(dialog, SCRIPT_NAME + " (\u1791\u17c6\u179b\u17b6\u1780\u17cb File Print)", "v2.2 \u2022 Wide-Format RIP Metadata");
 
     // Panel 1: Job Information
     var headerPanel = dialog.add("panel", undefined, OZO.tr("Job Information"));

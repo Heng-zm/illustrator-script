@@ -214,7 +214,7 @@
     OZO.addDialogHeader(
         dialog,
         OZO.tr("Batch Production Exporter"),
-        OZO.tr("Batch export artboards to PDF, TIFF, PNG & JPEG with dynamic naming")
+        "v2.2 \u2022 " + OZO.tr("Batch export artboards to PDF, TIFF, PNG & JPEG with dynamic naming")
     );
 
     // Main Content Group (2 Columns: Left = Scope & Formats, Right = Naming & Output)

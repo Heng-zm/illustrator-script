@@ -110,11 +110,11 @@
     dialog.spacing = 10;
     dialog.margins = 14;
 
-    OZO.addDialogHeader(dialog, OZO.tr("Count Items"), "Document & Prepress Summary");
+    OZO.addDialogHeader(dialog, OZO.tr("Count Items"), "v2.2 \u2022 Document & Prepress Statistics");
 
     var activeLayerText = dialog.add("statictext", undefined, OZO.tr("Active layer: ") + activeLayer.name);
     activeLayerText.graphics.foregroundColor = activeLayerText.graphics.newPen(
-        activeLayerText.graphics.PenType.SOLID_COLOR, [0.45, 0.45, 0.45], 1
+        activeLayerText.graphics.PenType.SOLID_COLOR, [0.65, 0.65, 0.65], 1
     );
 
     function addStatRow(parent, label, value) {

@@ -365,7 +365,17 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             "artboard(s)": "\u1795\u17d2\u1791\u17b6\u17c6\u1784\u1782\u17c6\u1793\u17bc\u179a",
             "format(s)": "\u1791\u1798\u17d2\u179a\u1784\u17cb",
             "file(s) total": "\u17af\u1780\u179f\u17b6\u179a\u179f\u179a\u17bb\u1794",
-            "Please select at least one format.": "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u1791\u1798\u17d2\u179a\u1784\u17cb\u1799\u17c7\u17a0\u17c4\u1785\u178e\u17b6\u179f\u17cb\u1798\u17bd\u1799\u17d4"
+            "Please select at least one format.": "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u1791\u1798\u17d2\u179a\u1784\u17cb\u1799\u17c7\u17a0\u17c4\u1785\u178e\u17b6\u179f\u17cb\u1798\u17bd\u1799\u17d4",
+
+            "CutContour / Die-Line Generator PRO": "\u1780\u1798\u17d2\u1798\u179c\u17b7\u1792\u17b8\u1794\u1784\u17d2\u1780\u17be\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb CutContour PRO",
+            "Install Ozo Tools Plugin": "\u178a\u17c6\u178e\u17be\u1784\u1780\u1798\u17d2\u1798\u179c\u17b7\u1792\u17b8\u1794\u1793\u17d2\u1790\u17c2\u1798 Ozo Tools",
+            "Install Ozo Tools for Adobe Illustrator": "\u178a\u17c6\u178e\u17be\u1784 Ozo Tools \u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb Adobe Illustrator",
+            "Transforms all scripts into a native dockable panel and menu plugin.": "\u1794\u1798\u17d2\u179b\u17c2\u1784\u179f\u17d2\u1782\u17d2\u179a\u17b8\u1794\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u1787\u17b6\u1795\u17d2\u1791\u17b6\u17c6\u1784 Dockable \u1793\u17b7\u1784\u1798\u17c9\u17c1\u1793\u17bb\u1799\u1795\u17d2\u179b\u17bc\u179c\u1780\u17b6\u179a\u17d4",
+            "Installation Options": "\u1787\u1798\u17d2\u179a\u17be\u179f\u178a\u17c6\u178e\u17be\u1784",
+            "Install Dockable Panel Plugin (Window > Extensions > Ozo Tools)": "\u178a\u17c6\u178e\u17be\u1784\u1795\u17d2\u1791\u17b6\u17c6\u1784 Dockable (Window > Extensions > Ozo Tools)",
+            "Install Native Menu Items (File > Scripts > Ozo Tools)": "\u178a\u17c6\u178e\u17be\u1784\u1798\u17c9\u17c1\u1793\u17bb\u1799\u179f\u17d2\u1782\u17d2\u179a\u17b8\u1794 (File > Scripts > Ozo Tools)",
+            "Enable Adobe Extension Developer Mode (PlayerDebugMode)": "\u1794\u17be\u1780 Developer Mode (PlayerDebugMode)",
+            "Install Now": "\u178a\u17c6\u178e\u17be\u1784\u17a2\u17c2\u179b\u17c4\u179c\u1793\u17c1\u17c7"
         };
 
         function prefFile() {
@@ -563,7 +573,9 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                 if (donateBtn) {
                     donateBtn.text = language() === "km" ? "\u2615 \u17a7\u1794\u178f\u17d2\u1790\u1798\u17d2\u1797\u1780\u17b6\u17a0\u17d2\u179c\u17c1 (Donate)" : "\u2615 Donate Coffee";
                 }
-                translateWindow(rootWindow(row));
+                var root = rootWindow(row);
+                translateWindow(root);
+                applyTheme(root);
                 if (onChanged) onChanged(language());
             };
             return list;
@@ -623,6 +635,29 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                             colors.bg, 1
                         );
                     } catch (ignoreWinBg) {}
+
+                    // Automatic Escape key listener for dialogs & palettes
+                    if (typeof windowObject.addEventListener === "function" && !windowObject._ozoEscapeAttached) {
+                        windowObject._ozoEscapeAttached = true;
+                        windowObject.addEventListener("keydown", function (evt) {
+                            try {
+                                if (!evt) return;
+                                if (evt.keyName === "Escape") {
+                                    if (windowObject.cancelElement) {
+                                        if (typeof windowObject.cancelElement.notify === "function") {
+                                            windowObject.cancelElement.notify();
+                                        } else if (typeof windowObject.cancelElement.onClick === "function") {
+                                            windowObject.cancelElement.onClick();
+                                        } else {
+                                            windowObject.close(0);
+                                        }
+                                    } else {
+                                        windowObject.close(0);
+                                    }
+                                }
+                            } catch (ignoreEsc) {}
+                        });
+                    }
                 }
                 visit(windowObject, function (control) {
                     try {
@@ -632,6 +667,13 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                                 control.graphics.PenType.SOLID_COLOR,
                                 colors.text, 1
                             );
+                        } else if (control.type === "panel") {
+                            try {
+                                control.graphics.foregroundColor = control.graphics.newPen(
+                                    control.graphics.PenType.SOLID_COLOR,
+                                    colors.text, 1
+                                );
+                            } catch (ePanelTheme) {}
                         }
                     } catch (ignoreControlTheme) {}
                 });
@@ -852,8 +894,10 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             topBanner.orientation = "row";
             topBanner.alignment = ["fill", "top"];
             topBanner.alignChildren = ["fill", "center"];
+            topBanner.margins = [0, 0, 0, 4];
 
             var titleLbl = topBanner.add("statictext", undefined, titleText || "Ozo Tool");
+            titleLbl._ozoSkipTranslate = true;
             try {
                 titleLbl.graphics.font = ScriptUI.newFont(
                     titleLbl.graphics.font ? titleLbl.graphics.font.name : "dialog",
@@ -865,6 +909,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             if (subtitleText) {
                 var verBadge = topBanner.add("statictext", undefined, subtitleText);
                 verBadge.alignment = ["right", "center"];
+                verBadge._ozoSkipTranslate = true;
                 try {
                     verBadge.graphics.foregroundColor = verBadge.graphics.newPen(
                         verBadge.graphics.PenType.SOLID_COLOR, [0.55, 0.55, 0.55], 1

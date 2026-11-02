@@ -469,7 +469,7 @@
     dialog.spacing = 10;
     dialog.margins = 14;
 
-    OZO.addDialogHeader(dialog, OZO.tr("Smart Dimension"), "v2.0 • Vector Dimensioning");
+    OZO.addDialogHeader(dialog, OZO.tr("Smart Dimension"), "v2.2 \u2022 Vector Technical Dimensioning");
 
     var measurePanel = dialog.add("panel", undefined, OZO.tr("Measurement"));
     measurePanel.orientation = "column";

@@ -447,7 +447,7 @@
     dialog.spacing = 10;
     dialog.margins = 14;
 
-    OZO.addDialogHeader(dialog, OZO.tr("New guide layout"), "Photoshop-Style Modular Guides");
+    OZO.addDialogHeader(dialog, OZO.tr("New guide layout"), "v2.2 \u2022 Modular Guide System");
 
     // Top Area: Controls on Left, Buttons on Right
     var topArea = dialog.add("group");

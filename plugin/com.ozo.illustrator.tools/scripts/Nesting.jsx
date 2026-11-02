@@ -417,7 +417,7 @@
     dialog.spacing = 10;
     dialog.margins = 14;
 
-    OZO.addDialogHeader(dialog, OZO.tr("Nesting"), "v2.0 • True-Shape Sheet Optimization");
+    OZO.addDialogHeader(dialog, OZO.tr("Nesting"), "v2.2 \u2022 True-Shape Sheet Optimization");
 
     var topGroup = dialog.add("group");
     topGroup.alignChildren = ["fill", "top"];
@@ -1705,6 +1705,7 @@
 
     dialog.defaultElement = applyButton;
     dialog.cancelElement = cancelButton;
+    OZO.translateWindow(dialog, OZO.getLanguage());
     OZO.applyTheme(dialog);
     spacingInput.active = true;
 

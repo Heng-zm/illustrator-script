@@ -1554,7 +1554,7 @@
     dialog.margins = 16;
     dialog.minimumSize = [500, 620];
 
-    OZO.addDialogHeader(dialog, OZO.tr("Generate QR Code"), "v2.1 • Offline Vector QR Code");
+    OZO.addDialogHeader(dialog, OZO.tr("Generate QR Code"), "v2.2 \u2022 Offline Vector QR Generator");
 
     var contentPanel = dialog.add("panel", undefined, OZO.tr("QR Content"));
     contentPanel.orientation = "column";

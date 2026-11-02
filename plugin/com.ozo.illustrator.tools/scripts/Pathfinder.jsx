@@ -684,7 +684,7 @@
     dialog.spacing = 10;
     dialog.margins = 14;
 
-    OZO.addDialogHeader(dialog, OZO.tr("Pathfinder"), "v2.0 • Live Boolean & Shape Operations");
+    OZO.addDialogHeader(dialog, OZO.tr("Pathfinder"), "v2.2 \u2022 Live Boolean & Shape Operations");
 
     var operationPanel = dialog.add("panel", undefined, "Operation");
     operationPanel.orientation = "column";
