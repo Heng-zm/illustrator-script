@@ -659,29 +659,28 @@
         }
     });
 
-    // Refresh Panel
-    refreshBtn.addEventListener("click", function () {
-        renderTools();
-        refreshDocumentStatus();
-        setStatus(isKhmer() ? "បានផ្ទុកឡើងវិញរួចរាល់" : "Refreshed panel", "success", 2000);
-    });
+
+
+    function openExternalURL(url) {
+        try {
+            if (csInterface && typeof csInterface.openURLInDefaultBrowser === "function") {
+                csInterface.openURLInDefaultBrowser(url);
+            } else if (typeof window.cep !== "undefined" && window.cep.util && typeof window.cep.util.openURLInDefaultBrowser === "function") {
+                window.cep.util.openURLInDefaultBrowser(url);
+            } else if (csInterface) {
+                csInterface.evalScript('ozoOpenURL(' + JSON.stringify(url) + ')');
+            } else {
+                window.open(url, "_blank");
+            }
+        } catch (e) {
+            window.open(url, "_blank");
+        }
+    }
 
     // Donate button
     donateBtn.addEventListener("click", function () {
         var donateUrl = "https://link.payway.com.kh/ABAPAYiR4667130";
-        try {
-            if (csInterface && typeof csInterface.openURLInDefaultBrowser === "function") {
-                csInterface.openURLInDefaultBrowser(donateUrl);
-            } else if (typeof window.cep !== "undefined" && window.cep.util && typeof window.cep.util.openURLInDefaultBrowser === "function") {
-                window.cep.util.openURLInDefaultBrowser(donateUrl);
-            } else if (csInterface) {
-                csInterface.evalScript('ozoOpenURL(' + JSON.stringify(donateUrl) + ')');
-            } else {
-                window.open(donateUrl, "_blank");
-            }
-        } catch (eDonate) {
-            window.open(donateUrl, "_blank");
-        }
+        openExternalURL(donateUrl);
     });
 
     // Theme Sync with Adobe Illustrator (4 Tiers)
@@ -735,8 +734,136 @@
         refreshDocumentStatus();
     });
 
+// -------------------------------------------------------------
+    // GitHub Release Update Checker
+    // -------------------------------------------------------------
+    var CURRENT_VERSION = "2.2.0";
+    var GITHUB_REPO = "Heng-zm/illustrator-script";
+    var updateBanner = document.getElementById("updateBanner");
+    var updateBannerText = document.getElementById("updateBannerText");
+    var updateNowBtn = document.getElementById("updateNowBtn");
+    var updateDismissBtn = document.getElementById("updateDismissBtn");
+    var brandBadge = document.querySelector(".brand-badge");
+
+    function parseVersion(vStr) {
+        if (!vStr) return [0, 0, 0];
+        var clean = String(vStr).replace(/^v/i, "").split("-")[0];
+        var parts = clean.split(".").map(function (p) { return parseInt(p, 10) || 0; });
+        while (parts.length < 3) parts.push(0);
+        return parts;
+    }
+
+    function isNewerVersion(remote, local) {
+        var r = parseVersion(remote);
+        var l = parseVersion(local);
+        for (var i = 0; i < 3; i++) {
+            if (r[i] > l[i]) return true;
+            if (r[i] < l[i]) return false;
+        }
+        return false;
+    }
+
+    function checkForUpdates(force) {
+        try {
+            var lastCheck = parseInt(localStorage.getItem("ozo_last_update_check") || "0", 10);
+            var now = new Date().getTime();
+
+            // Cache check for 3 hours unless manually requested
+            if (!force && (now - lastCheck < 3 * 3600 * 1000)) {
+                var cached = localStorage.getItem("ozo_latest_release");
+                if (cached) {
+                    try { showUpdateNotification(JSON.parse(cached), false); } catch (e) {}
+                }
+                return;
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest", true);
+            xhr.setRequestHeader("Accept", "application/vnd.github.v3+json");
+            xhr.timeout = 7000;
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        localStorage.setItem("ozo_last_update_check", String(now));
+                        localStorage.setItem("ozo_latest_release", JSON.stringify(data));
+                        showUpdateNotification(data, force);
+                    } catch (eParse) {}
+                }
+            };
+            xhr.onerror = function () {};
+            xhr.send();
+        } catch (eCheck) {}
+    }
+
+    function showUpdateNotification(releaseData, force) {
+        if (!releaseData || !releaseData.tag_name) return;
+        var remoteTag = releaseData.tag_name;
+        if (!isNewerVersion(remoteTag, CURRENT_VERSION)) return;
+
+        var dismissed = localStorage.getItem("ozo_dismissed_update");
+        if (!force && dismissed === remoteTag) return;
+
+        if (updateBanner) {
+            updateBanner.style.display = "flex";
+            if (updateBannerText) {
+                updateBannerText.textContent = isKhmer() ?
+                    ("\u1798\u17b6\u1793\u1780\u17c6\u178e\u17c2\u1790\u17d2\u1798\u17b8 " + remoteTag + "!") :
+                    ("New version " + remoteTag + " available!");
+            }
+        }
+        if (brandBadge) {
+            brandBadge.classList.add("has-update");
+            brandBadge.title = (isKhmer() ? "\u1798\u17b6\u1793\u1780\u17c6\u178e\u17c2\u1790\u17d2\u1798\u17b8: " : "New update available: ") + remoteTag;
+        }
+    }
+
+    if (updateNowBtn) {
+        updateNowBtn.addEventListener("click", function () {
+            var releaseUrl = "https://github.com/" + GITHUB_REPO + "/releases/latest";
+            try {
+                var cached = localStorage.getItem("ozo_latest_release");
+                if (cached) {
+                    var data = JSON.parse(cached);
+                    if (data.html_url) releaseUrl = data.html_url;
+                }
+            } catch (e) {}
+            openExternalURL(releaseUrl);
+        });
+    }
+
+    if (updateDismissBtn) {
+        updateDismissBtn.addEventListener("click", function () {
+            if (updateBanner) updateBanner.style.display = "none";
+            var cached = localStorage.getItem("ozo_latest_release");
+            if (cached) {
+                try {
+                    var data = JSON.parse(cached);
+                    if (data.tag_name) localStorage.setItem("ozo_dismissed_update", data.tag_name);
+                } catch (e) {}
+            }
+        });
+    }
+
+    if (brandBadge) {
+        brandBadge.addEventListener("click", function () {
+            checkForUpdates(true);
+            setStatus(isKhmer() ? "\u1780\u17c6\u1796\u17bb\u1784\u1796\u17b7\u1793\u17b7\u178f\u17d2\u1799\u1780\u17c6\u178e\u17c2\u1790\u17d2\u1798\u17b8..." : "Checking for updates...", "info", 2000);
+        });
+    }
+
+    // Refresh Panel
+    refreshBtn.addEventListener("click", function () {
+        renderTools();
+        refreshDocumentStatus();
+        checkForUpdates(true);
+        setStatus(isKhmer() ? "\u1794\u17b6\u1793\u1795\u17d2\u1791\u17bb\u1780\u17a1\u17be\u1784\u179c\u17b7\u1789\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb" : "Refreshed panel", "success", 2000);
+    });
+
     // Initial Render
     updateViewMode();
     renderTools();
     refreshDocumentStatus();
+    checkForUpdates(false);
 })();
+

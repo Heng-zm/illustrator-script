@@ -45,6 +45,18 @@
         </div>
     </header>
 
+    <!-- Update Notification Banner (Visible when new GitHub release is available) -->
+    <div id="updateBanner" class="update-banner" style="display: none;">
+        <div class="update-banner-content">
+            <span class="update-icon">&#9889;</span>
+            <span class="update-text" id="updateBannerText">New version available!</span>
+        </div>
+        <div class="update-banner-actions">
+            <button type="button" id="updateNowBtn" class="update-btn" title="Download & update to latest release">Update</button>
+            <button type="button" id="updateDismissBtn" class="update-dismiss" title="Dismiss notification">&times;</button>
+        </div>
+    </div>
+
     <!-- Search Input -->
     <div class="search-container" role="search">
         <div class="search-input-wrap">

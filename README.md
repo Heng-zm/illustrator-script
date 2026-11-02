@@ -44,11 +44,19 @@
    - **Dockable Panel**: `Window > Extensions > Ozo Tools`
    - **Menu Scripts**: `File > Scripts > Ozo Tools`
 
-### Method 2: Synchronize / Update Installed Extension
-Double-click `setup.bat` and select `[2] Update`, or run:
-```cmd
-setup.bat update
-```
+### Method 2: Check & Update from GitHub (Online Update)
+- **Automatic Online Update**: Double-click `setup.bat` and select `[3] Check & Update from GitHub`, or run:
+  ```cmd
+  setup.bat online-update
+  ```
+  This automatically checks GitHub for the latest release, downloads the `.zip` package, extracts it, and installs the updated panel & scripts.
+
+- **Local Update / Sync**: Double-click `setup.bat` and select `[2] Update`, or run:
+  ```cmd
+  setup.bat update
+  ```
+
+- **In-Panel Notification**: When inside Illustrator, the dockable panel (`Window > Extensions > Ozo Tools`) automatically checks GitHub for updates and displays a banner whenever a new release is available with a 1-click update button.
 
 ---
 

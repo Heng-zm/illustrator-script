@@ -52,11 +52,22 @@ You have **3 simple installation methods**:
 
 ## How to Update the Plugin
 
-Whenever you update or edit scripts in the repository:
+### Option 1: Automatic In-Panel Notification (Recommended)
+When running the dockable CEP panel in Illustrator (`Window > Extensions > Ozo Tools`), it automatically queries GitHub for the latest release. When a new version is published:
+- An update banner appears at the top of the panel with a one-click **Update** button.
+- The version badge lights up as an indicator.
 
-### Windows:
+### Option 2: Command-Line / One-Click Online Update (Windows)
+Double-click `setup.bat` and select **[3] Check & Update from GitHub**, or run:
+```cmd
+setup.bat online-update
+```
+This automatically fetches the latest release `.zip` from GitHub, updates your files, and reinstalls the CEP panel and native menu scripts.
+
+### Option 3: Local Sync / Offline Update
+Whenever you make local edits to scripts:
 - Double-click `setup.bat` and choose **[2] Update** (or run `setup.bat update`).
-- This automatically synchronizes all scripts, copies them to the CEP extension folder, and updates the native `File > Scripts` menu.
+- This automatically synchronizes all local scripts to the CEP extension folder and native `File > Scripts` menu.
 
 ### Inside Illustrator (Cross-Platform):
 - Run `Install as Plugin.jsx` from `File > Scripts > Other Script...` anytime to refresh the installed files.

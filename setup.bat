@@ -215,6 +215,86 @@ function Do-Update {
     Write-Host "Restart Adobe Illustrator to reload the updated scripts & panel." -ForegroundColor White
 }
 
+function Do-OnlineUpdate {
+    Show-Header
+    Write-Host "[*] Checking for the latest release on GitHub..." -ForegroundColor Yellow
+    Write-Host "    Repository: Heng-zm/illustrator-script" -ForegroundColor Gray
+
+    $repo = "Heng-zm/illustrator-script"
+    $apiUrl = "https://api.github.com/repos/$repo/releases/latest"
+    $isGit = Test-Path (Join-Path $ScriptRoot ".git")
+
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $release = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "OzoTools-Setup" } -TimeoutSec 10
+        $latestTag = $release.tag_name
+        $currentTag = "v2.2.0"
+
+        Write-Host "    Current version : $currentTag" -ForegroundColor Gray
+        Write-Host "    Latest release  : $latestTag" -ForegroundColor Cyan
+        Write-Host ""
+
+        $zipAsset = $release.assets | Where-Object { $_.name -like "*.zip" } | Select-Object -First 1
+
+        if ($zipAsset) {
+            Write-Host "[*] Downloading: $($zipAsset.name)..." -ForegroundColor Yellow
+            $tempZip = Join-Path $env:TEMP "Ozo-Tools-Latest.zip"
+            $tempDir = Join-Path $env:TEMP "Ozo-Tools-Update"
+            if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force }
+
+            Invoke-WebRequest -Uri $zipAsset.browser_download_url -OutFile $tempZip -UseBasicParsing
+            $mb = [math]::Round((Get-Item $tempZip).Length / 1MB, 2)
+            Write-Host "    [OK] Download complete ($mb MB)" -ForegroundColor Green
+
+            Write-Host "[*] Extracting update files..." -ForegroundColor Yellow
+            Expand-Archive -Path $tempZip -DestinationPath $tempDir -Force
+
+            $extractedContent = $tempDir
+            $subFolder = Get-ChildItem -Path $tempDir -Directory | Where-Object { Test-Path (Join-Path $_.FullName "Script all") } | Select-Object -First 1
+            if ($subFolder) { $extractedContent = $subFolder.FullName }
+
+            Write-Host "[*] Updating local scripts and extensions..." -ForegroundColor Yellow
+            Get-ChildItem -Path $extractedContent | Where-Object { $_.Name -ne "setup.bat" } | ForEach-Object {
+                Copy-Item -Path $_.FullName -Destination $ScriptRoot -Recurse -Force
+            }
+
+            try { Remove-Item $tempZip -Force } catch {}
+            try { Remove-Item $tempDir -Recurse -Force } catch {}
+
+            Write-Host "    [OK] Files updated to $latestTag successfully." -ForegroundColor Green
+        } elseif ($isGit) {
+            Write-Host "[*] Pulling latest updates from git remote..." -ForegroundColor Yellow
+            & git pull origin main
+        } else {
+            Write-Host "    [INFO] No zip package attached to release. Opening release page in browser..." -ForegroundColor Yellow
+            Start-Process $release.html_url
+            return
+        }
+    } catch {
+        Write-Host "    [WARN] GitHub connection check failed ($($_.Exception.Message))" -ForegroundColor Yellow
+        if ($isGit) {
+            Write-Host "[*] Falling back to 'git pull'..." -ForegroundColor Yellow
+            & git pull origin main
+        }
+    }
+
+    Write-Host ""
+    Write-Host "[*] Re-installing updated plugin into Adobe Illustrator..." -ForegroundColor Yellow
+    Write-Host ""
+    Enable-PlayerDebugMode
+    Write-Host ""
+    if (-not (Sync-PluginBundle)) { return }
+    Write-Host ""
+    Install-CepPanel
+    Write-Host ""
+    Install-MenuScripts
+    Write-Host ""
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    Write-Host "              Online Update Complete!                     " -ForegroundColor Cyan
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    Write-Host "Restart Adobe Illustrator to load the latest tools." -ForegroundColor White
+}
+
 function Do-Uninstall {
     Show-Header
     Write-Host "Uninstalling Ozo Tools from Adobe Illustrator..." -ForegroundColor Yellow
@@ -263,26 +343,31 @@ if ($act -eq "install" -or $act -eq "1" -or $act -eq "-install") {
     Do-Install
 } elseif ($act -eq "update" -or $act -eq "sync" -or $act -eq "2" -or $act -eq "-update") {
     Do-Update
-} elseif ($act -eq "uninstall" -or $act -eq "remove" -or $act -eq "3" -or $act -eq "-uninstall") {
+} elseif ($act -eq "online-update" -or $act -eq "upgrade" -or $act -eq "github" -or $act -eq "3" -or $act -eq "-upgrade") {
+    Do-OnlineUpdate
+} elseif ($act -eq "uninstall" -or $act -eq "remove" -or $act -eq "4" -or $act -eq "-uninstall") {
     Do-Uninstall
-} elseif ($act -eq "exit" -or $act -eq "quit" -or $act -eq "4") {
+} elseif ($act -eq "exit" -or $act -eq "quit" -or $act -eq "5") {
     exit 0
 } else {
     # Interactive Menu
     Show-Header
     Write-Host "Select an action to perform:" -ForegroundColor White
     Write-Host "  [1] Install Plugin & Menu Scripts    (Recommended)" -ForegroundColor Green
-    Write-Host "  [2] Update / Sync Installed Plugin   (Refresh scripts & panel)" -ForegroundColor Cyan
-    Write-Host "  [3] Uninstall Plugin & Menu Scripts  (Clean removal)" -ForegroundColor Yellow
-    Write-Host "  [4] Exit" -ForegroundColor Gray
+    Write-Host "  [2] Update / Sync Installed Plugin   (Refresh local scripts & panel)" -ForegroundColor Cyan
+    Write-Host "  [3] Check & Update from GitHub       (Download latest release online)" -ForegroundColor Magenta
+    Write-Host "  [4] Uninstall Plugin & Menu Scripts  (Clean removal)" -ForegroundColor Yellow
+    Write-Host "  [5] Exit" -ForegroundColor Gray
     Write-Host ""
-    $choice = Read-Host "Enter your choice (1-4) [Default: 1]"
+    $choice = Read-Host "Enter your choice (1-5) [Default: 1]"
     Write-Host ""
     if ([string]::IsNullOrWhiteSpace($choice) -or $choice.Trim() -eq "1") {
         Do-Install
     } elseif ($choice.Trim() -eq "2") {
         Do-Update
     } elseif ($choice.Trim() -eq "3") {
+        Do-OnlineUpdate
+    } elseif ($choice.Trim() -eq "4") {
         Do-Uninstall
     } else {
         exit 0
