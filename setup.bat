@@ -22,7 +22,7 @@ if %errorlevel% neq 0 (
 )
 
 :: Run embedded PowerShell logic
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$script = (Get-Content -LiteralPath $env:SCRIPT_FILE) -join [char]10; & ([scriptblock]::Create($script)) $env:ARG1 $env:ARG2"
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$script = (Get-Content -LiteralPath $env:SCRIPT_FILE) -join [char]10; & ([scriptblock]::Create($script))"
 
 :: Keep console open when double-clicked interactively
 if "%ARG1%"=="" pause
@@ -30,8 +30,8 @@ exit /b %ERRORLEVEL%
 #>
 
 param(
-    [string]$Action = "",
-    [string]$Message = ""
+    [string]$Action = $env:ARG1,
+    [string]$Message = $env:ARG2
 )
 
 $ErrorActionPreference = 'Stop'

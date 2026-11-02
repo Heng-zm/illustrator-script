@@ -74,6 +74,34 @@ Whenever you make local edits to scripts:
 
 ---
 
+---
+
+## Developer Automation: Auto-Push to GitHub
+
+When working on scripts or updating tools, sync and push changes to GitHub in 1 click:
+
+### Option 1: 1-Click Auto Push (`push.bat`)
+Double-click `push.bat` (or run `push.bat` in CMD):
+- Automatically stages all modified and new files (`git add -A`).
+- Prompts for a commit message (or press **Enter** for an automatic timestamped summary).
+- Automatically pushes to `origin/main` on GitHub.
+
+### Option 2: Live Watcher Mode (Continuous Push on Save)
+Run:
+```cmd
+push.bat --watch
+```
+- Continuously monitors the workspace for file changes.
+- Automatically commits and pushes to GitHub whenever scripts or files are saved!
+- Press `Ctrl+C` anytime to stop watching.
+
+### Option 3: Via Suite Manager (`setup.bat`)
+Double-click `setup.bat` and choose:
+- `[5] Auto Commit & Push to GitHub`
+- `[6] Auto-Push Watcher Mode`
+
+---
+
 ## How to Use in Adobe Illustrator
 
 ### 1. Dockable Panel Plugin
