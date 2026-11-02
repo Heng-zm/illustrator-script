@@ -144,10 +144,24 @@
     var currentLang = localStorage.getItem("ozo_lang") || "en";
     var currentCategory = "all";
     var searchQuery = "";
-    var favorites = JSON.parse(localStorage.getItem("ozo_favorites") || "[]");
+    var favorites = [];
+    try {
+        var storedFavorites = JSON.parse(localStorage.getItem("ozo_favorites") || "[]");
+        if (Object.prototype.toString.call(storedFavorites) === "[object Array]") {
+            var seenFavorites = {};
+            favorites = storedFavorites.filter(function (id) {
+                if (typeof id !== "string" || !id || seenFavorites[id]) return false;
+                seenFavorites[id] = true;
+                return true;
+            });
+        }
+    } catch (eFavorites) {
+        favorites = [];
+    }
     var isExecuting = false;
     var statusResetTimer = null;
-    var viewMode = localStorage.getItem("ozo_view_mode") || "list";
+    var viewMode = localStorage.getItem("ozo_view_mode");
+    if (viewMode !== "grid" && viewMode !== "list") viewMode = "list";
 
     // Elements
     var toolList = document.getElementById("toolList");
@@ -167,18 +181,14 @@
     var emptyState = document.getElementById("emptyState");
     var emptyText = document.getElementById("emptyText");
     var tabBtns = document.querySelectorAll(".tab-btn");
-    var tabAll = document.getElementById("tabAll");
     var tabAllText = document.getElementById("tabAllText");
     var allCount = document.getElementById("allCount");
     var tabFavsText = document.getElementById("tabFavsText");
     var favsCount = document.getElementById("favsCount");
-    var tabPrepress = document.getElementById("tabPrepress");
     var tabPrepressText = document.getElementById("tabPrepressText");
     var prepressCount = document.getElementById("prepressCount");
-    var tabLayout = document.getElementById("tabLayout");
     var tabLayoutText = document.getElementById("tabLayoutText");
     var layoutCount = document.getElementById("layoutCount");
-    var tabUtilities = document.getElementById("tabUtilities");
     var tabUtilitiesText = document.getElementById("tabUtilitiesText");
     var utilCount = document.getElementById("utilCount");
 
@@ -195,6 +205,9 @@
             toolList.classList.remove("view-grid");
             if (viewIconGrid) viewIconGrid.style.display = "block";
             if (viewIconList) viewIconList.style.display = "none";
+        }
+        if (viewToggleBtn) {
+            viewToggleBtn.setAttribute("aria-pressed", viewMode === "grid" ? "true" : "false");
         }
     }
 
@@ -248,12 +261,14 @@
         if (utilCount) utilCount.textContent = utilTotal;
 
         // Favorite badge
-        if (favorites.length > 0) {
-            favsCount.textContent = favorites.length;
-            favsCount.classList.add("has-count");
-        } else {
-            favsCount.textContent = "";
-            favsCount.classList.remove("has-count");
+        if (favsCount) {
+            if (favorites.length > 0) {
+                favsCount.textContent = favorites.length;
+                favsCount.classList.add("has-count");
+            } else {
+                favsCount.textContent = "";
+                favsCount.classList.remove("has-count");
+            }
         }
 
         // Header tooltips & search placeholder
@@ -350,9 +365,11 @@
                 runScript(tool, card, runBtn);
             });
 
-            // Enter key to run on focused card
+            // Enter / Space to run on the focused card (ignore child buttons)
             card.addEventListener("keydown", function (e) {
-                if (e.key === "Enter" || e.keyCode === 13) {
+                if (e.target !== card) return;
+                if (e.key === "Enter" || e.keyCode === 13 || e.key === " " || e.keyCode === 32) {
+                    e.preventDefault();
                     runScript(tool, card, runBtn);
                 }
             });
@@ -436,15 +453,26 @@
     });
 
     window.addEventListener("keydown", function (e) {
-        if (e.key === "/" && document.activeElement !== searchInput) {
+        var active = document.activeElement;
+        var isEditable = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable);
+        if (e.key === "/" && !isEditable && !e.ctrlKey && !e.metaKey && !e.altKey) {
             e.preventDefault();
             searchInput.focus();
             searchInput.select();
+        } else if ((e.key === "Escape" || e.keyCode === 27) && (searchQuery || searchInput.value)) {
+            searchInput.value = "";
+            searchQuery = "";
+            searchClearBtn.style.display = "none";
+            if (searchKbdHint) searchKbdHint.style.display = "block";
+            renderTools();
+            searchInput.blur();
         }
     });
 
     searchInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.keyCode === 13) {
+            // Only launch when the user has actually typed a search query.
+            if (!searchQuery) return;
             // Run the first displayed tool if search matched
             var firstCard = toolList.querySelector(".tool-card");
             if (firstCard) {
@@ -476,7 +504,7 @@
             localStorage.setItem("ozo_view_mode", viewMode);
             updateViewMode();
             var msg = viewMode === "grid" 
-                ? (isKhmer() ? "ទិដ្ឋភាព Grid (តូច gọn)" : "Grid View (Compact)")
+                ? (isKhmer() ? "ទិដ្ឋភាព Grid (តូច)" : "Grid View (Compact)")
                 : (isKhmer() ? "ទិដ្ឋភាពបញ្ជី (លម្អិត)" : "List View (Detailed)");
             setStatus(msg, "ready", 1500);
         });

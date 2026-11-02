@@ -5,7 +5,7 @@ Transform all your Illustrator scripts into an official, native Illustrator plug
 2. **Native Menu Integration**: Appears in `File > Scripts > Ozo Tools > ...` with full support for Illustrator custom keyboard shortcuts (`Edit > Keyboard Shortcuts`).
 3. **Bilingual Support**: Instant toggle between English & Khmer (ភាសាខ្មែរ).
 4. **4-Tier Adaptive Theme Synchronization**: Automatically matches Illustrator's interface brightness (Dark, Medium Dark, Medium Light, Light) dynamically reading CEP skin color.
-5. **Favorites & Search**: Pin favorites with dynamic count badge, category color tags, and keyboard search (`Enter` to launch first match, `Esc` to clear).
+5. **Favorites, Search & View Modes**: Pin favorites with dynamic count badge, category color tags, instant search (`/` to focus, `Enter` to launch the first match, `Esc` to clear), and a persistent grid/list view toggle.
 
 ---
 
@@ -17,7 +17,7 @@ Transform all your Illustrator scripts into an official, native Illustrator plug
 | **CutContour Generator** | Prepress | Automated die-cut paths, bleed offset & spot color registration. |
 | **Print Job Info** | Prepress | Production metadata banner, dimensions, active ink separations & color slugs. |
 | **Nesting** | Prepress | High-efficiency shape packing to minimize sheet and vinyl material waste. |
-| **Batch Production Exporter** | Prepress | Batch export artboards to PDF, TIFF (CMYK/LZW 300DPI), PNG & JPEG with dynamic naming. |
+| **Batch Production Exporter** | Prepress | Batch export artboards to separate files or a single multi-page PDF (PDF, TIFF CMYK/LZW, PNG & JPEG) with dynamic naming and optional text outlining. |
 | **Smart Dimension** | Layout | Automatic linear, radial, and bounding box technical dimensioning. |
 | **Pathfinder Pro** | Layout | Advanced vector boolean operations, shape merging & path cleanup. |
 | **New Guide Layout** | Layout | Precision grid guide system with columns, rows, margins & gutting. |
@@ -26,6 +26,8 @@ Transform all your Illustrator scripts into an official, native Illustrator plug
 | **Sequential Numbering**| Utilities | Serialized batch number stamping on labels, tickets & barcode prep. |
 | **Object Count** | Utilities | Detailed object statistics, selection count & layer breakdown. |
 | **Script Launcher** | Utilities | Floating modeless palette browser with favorites and custom folder browsing. |
+
+> **Batch Production Exporter note:** PDF export and text outlining require a saved `.ai` document. The exporter reopens the original file afterward, preserving live text and the original document path.
 
 ---
 
@@ -79,8 +81,9 @@ Whenever you update or edit scripts in the repository:
   `Window > Extensions > Ozo Tools`
 - You can drag and dock this panel anywhere in your Illustrator workspace (next to Properties, Layers, Swatches, etc.).
 - Features:
-  - **Live Search**: Instant keyword search in English or Khmer. Press `Enter` to run the first matched tool, or `Esc` to reset.
+  - **Live Search**: Instant keyword search in English or Khmer. Press `/` to focus the search box, `Enter` to run the first matched tool, or `Esc` to reset.
   - **Category Tabs**: Filter by *All*, *Favorites*, *Prepress*, *Layout*, or *Utilities*.
+  - **Grid / List View**: Toggle the compact grid or detailed list layout with the view button; your choice is remembered.
   - **Pin Favorites**: Click the star icon (★) on any tool to pin it to your favorites list.
   - **Language Toggle**: Click `EN` / `KM` at top-right to switch between English and Khmer.
 
