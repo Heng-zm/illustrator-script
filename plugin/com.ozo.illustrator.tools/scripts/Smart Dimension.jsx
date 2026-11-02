@@ -412,6 +412,7 @@
     }
 
     function createDimensions(settings) {
+        var specs = buildDimensionSpecs(settings);
         if (!previewLayer) {
             cleanupPreview(true);
             normalizeEditingContext();
@@ -437,12 +438,16 @@
             previewGroup = previewLayer.groupItems.add();
             previewGroup.name = "Smart Dimensions Preview";
             for (var moveIndex = createdItems.length - 1; moveIndex >= 0; moveIndex--) {
-                createdItems[moveIndex].move(previewGroup, ElementPlacement.PLACEATEND);
+                try {
+                    createdItems[moveIndex].move(previewGroup, ElementPlacement.PLACEATEND);
+                } catch (ignoreMove) {}
             }
             // Reassert text stacking after the staged items enter the group.
             for (moveIndex = 0; moveIndex < createdItems.length; moveIndex++) {
                 if (createdItems[moveIndex].typename === "TextFrame") {
-                    createdItems[moveIndex].zOrder(ZOrderMethod.BRINGTOFRONT);
+                    try {
+                        createdItems[moveIndex].zOrder(ZOrderMethod.BRINGTOFRONT);
+                    } catch (ignoreZ) {}
                 }
             }
         } catch (error) {
@@ -450,7 +455,9 @@
             throw error;
         }
         doc.selection = null;
-        previewGroup.selected = true;
+        if (previewGroup) {
+            try { previewGroup.selected = true; } catch (ignoreSel) {}
+        }
         app.redraw();
         return specs.horizontal.length + specs.vertical.length;
     }
@@ -588,18 +595,42 @@
     OZO.addLanguageSelector(dialog);
 
     function readSettings() {
-        var unit = unitList.selection.text;
+        var unit = "mm";
+        if (unitList.selection) {
+            unit = (typeof unitList.selection.text !== "undefined") ? unitList.selection.text : String(unitList.selection);
+        }
         var textSize = numberValue(textSizeInput, "Text size", false);
         var arrowSize = numberValue(arrowInput, "Arrow size", false);
         var stroke = numberValue(strokeInput, "Line weight", false);
         if (textSize > 1000 || arrowSize > 1000 || stroke > 100) {
             throw new Error("Dimension style values are too large.");
         }
+
+        var selMode = 0;
+        if (typeof modeList.selection === "number") selMode = modeList.selection;
+        else if (modeList.selection && typeof modeList.selection.index === "number") selMode = modeList.selection.index;
+
+        var boundsIdx = 0;
+        if (typeof boundsList.selection === "number") boundsIdx = boundsList.selection;
+        else if (boundsList.selection && typeof boundsList.selection.index === "number") boundsIdx = boundsList.selection.index;
+
+        var precIdx = 2;
+        if (typeof precisionList.selection === "number") precIdx = precisionList.selection;
+        else if (precisionList.selection && typeof precisionList.selection.index === "number") precIdx = precisionList.selection.index;
+
+        var fontName = "Auto";
+        if (fontList.selection) {
+            var fIdx = (typeof fontList.selection === "number") ? fontList.selection : fontList.selection.index;
+            if (fIdx > 0) {
+                fontName = (typeof fontList.selection.text !== "undefined") ? fontList.selection.text : popularFonts[fIdx];
+            }
+        }
+
         return {
-            mode: modeList.selection.index,
-            boundsProperty: boundsList.selection.index === 0 ? "visibleBounds" : "geometricBounds",
+            mode: selMode,
+            boundsProperty: boundsIdx === 0 ? "visibleBounds" : "geometricBounds",
             unit: unit,
-            precision: precisionList.selection.index,
+            precision: precIdx,
             showUnit: showUnitCheck.value,
             scale: numberValue(scaleInput, "Drawing scale", false),
             offset: numberValue(offsetInput, "Offset", true) * unitFactor(unit),
@@ -607,7 +638,7 @@
             arrow: arrowSize,
             stroke: stroke,
             labelBackground: backgroundCheck.value,
-            fontName: (fontList.selection && fontList.selection.index > 0) ? fontList.selection.text : "Auto",
+            fontName: fontName,
             widthPrefix: wPrefixInput.text,
             heightPrefix: hPrefixInput.text,
             color: blackColor()
@@ -685,11 +716,14 @@
             var specs = buildDimensionSpecs(finalSettings);
             dimensionCount = specs.horizontal.length + specs.vertical.length;
         }
-        previewLayer.name = "Smart Dimensions";
-        previewGroup.name = "Smart Dimensions";
-        previewSignature = null;
-        doc.selection = null;
-        previewGroup.selected = true;
+        if (previewLayer) {
+            previewLayer.name = "Smart Dimensions";
+        }
+        if (previewGroup) {
+            previewGroup.name = "Smart Dimensions";
+            doc.selection = null;
+            try { previewGroup.selected = true; } catch (ignoreSel2) {}
+        }
         OZO.saveWindowState(dialog, "smart_dimension");
         alert((OZO.isKhmer() ?
             "\u1794\u17b6\u1793\u1794\u1789\u17d2\u1785\u1794\u17cb\u1780\u17b6\u179a\u179c\u17b6\u179f\u17cb\u1791\u17c6\u17a0\u17c6\u1786\u17d2\u179b\u17b6\u178f\u179c\u17c3\u17d4\n\n\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f " + dimensionCount +
