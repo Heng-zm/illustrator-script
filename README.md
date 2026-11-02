@@ -38,18 +38,17 @@
 ## Installation
 
 ### Method 1: Automatic Installer (Windows)
-1. Double-click `install-plugin.bat` (or right-click and choose **Run as administrator**).
+1. Double-click `setup.bat` (or right-click and choose **Run as administrator**).
 2. Restart Adobe Illustrator.
 3. Access via:
    - **Dockable Panel**: `Window > Extensions > Ozo Tools`
    - **Menu Scripts**: `File > Scripts > Ozo Tools`
 
 ### Method 2: Synchronize / Update Installed Extension
-Run in PowerShell:
-```powershell
-powershell -ExecutionPolicy Bypass -File .\update-plugin.ps1
+Double-click `setup.bat` and select `[2] Update`, or run:
+```cmd
+setup.bat update
 ```
-Or double-click `update-plugin.bat`.
 
 ---
 

@@ -251,7 +251,7 @@
 
     if (adminNeeded && isWindows) {
         if (confirm(msg + "\n\nWould you like to run the Administrator installer now to complete File > Scripts menu integration?")) {
-            var batFile = new File(sourceFolder.fsName + "/install-plugin.bat");
+            var batFile = new File(sourceFolder.fsName + "/setup.bat");
             if (batFile.exists) {
                 batFile.execute();
                 return;

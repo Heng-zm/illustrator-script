@@ -35,9 +35,9 @@ Transform all your Illustrator scripts into an official, native Illustrator plug
 
 You have **3 simple installation methods**:
 
-### Method 1: One-Click Installer (Windows) — Recommended
-1. Double-click `install-plugin.bat`.
-2. Click **Yes** if Windows prompts for Administrator permissions (this installs into both `Window > Extensions` and `File > Scripts`).
+### Method 1: One-Click Installer & Manager (Windows) — Recommended
+1. Double-click `setup.bat`.
+2. Choose **[1] Install** (or right-click `setup.bat` and choose **Run as administrator** to install into both `Window > Extensions` and `File > Scripts`).
    - *Note*: If administrator elevation is declined, it automatically proceeds with user-level installation into `Window > Extensions > Ozo Tools`.
 3. Restart Adobe Illustrator.
 
@@ -48,14 +48,6 @@ You have **3 simple installation methods**:
 4. Choose your options and click **Install Now**.
 5. Restart Adobe Illustrator.
 
-### Method 3: macOS Terminal
-1. Open Terminal in the repository directory.
-2. Run:
-   ```bash
-   bash install-plugin.sh
-   ```
-3. Restart Adobe Illustrator.
-
 ---
 
 ## How to Update the Plugin
@@ -63,14 +55,11 @@ You have **3 simple installation methods**:
 Whenever you update or edit scripts in the repository:
 
 ### Windows:
-- Double-click `update-plugin.bat` (or run `powershell -ExecutionPolicy Bypass -File update-plugin.ps1`).
+- Double-click `setup.bat` and choose **[2] Update** (or run `setup.bat update`).
 - This automatically synchronizes all scripts, copies them to the CEP extension folder, and updates the native `File > Scripts` menu.
 
 ### Inside Illustrator (Cross-Platform):
 - Run `Install as Plugin.jsx` from `File > Scripts > Other Script...` anytime to refresh the installed files.
-
-### macOS:
-- Re-run `bash install-plugin.sh`.
 
 ---
 
@@ -103,5 +92,5 @@ Whenever you update or edit scripts in the repository:
 ## How to Uninstall
 
 If you ever wish to remove the plugin:
-- On Windows: Run `uninstall-plugin.bat`.
+- On Windows: Run `setup.bat uninstall` or double-click `setup.bat` and choose **[3] Uninstall**.
 - On macOS: Delete `~/Library/Application Support/Adobe/CEP/extensions/com.ozo.illustrator.tools`.
