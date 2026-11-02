@@ -177,7 +177,8 @@
                     if (f.exists) return f;
                 }
             }
-            return new Folder(new File($.fileName || "").parent.fsName + "/lib");
+            var fallbackDir = scriptFolder ? scriptFolder.fsName : Folder.current.fsName;
+            return new Folder(fallbackDir + "/lib");
         })();
 
         if (Folder.fs !== "Windows") {
@@ -1229,6 +1230,7 @@
         try {
             titleFrame.textRange.characterAttributes.size = titleFontSize;
             titleFrame.textRange.characterAttributes.fillColor = whiteColor();
+            titleFrame.textRange.paragraphAttributes.justification = Justification.CENTER;
         } catch (eT1) {}
         var titleTopY = avatarCenterY - (avatarDia / 2) - (qrSize * 0.025);
         titleFrame.top = titleTopY;
@@ -1242,6 +1244,7 @@
         try {
             handleFrame.textRange.characterAttributes.size = handleFontSize;
             handleFrame.textRange.characterAttributes.fillColor = cardTheme.subtitle;
+            handleFrame.textRange.paragraphAttributes.justification = Justification.CENTER;
         } catch (eT2) {}
         var handleTopY = titleTopY - titleFrame.height - (qrSize * 0.010);
         handleFrame.top = handleTopY;
@@ -1249,12 +1252,13 @@
 
         // 6. Footer Caption
         var footerFrame = drawingTarget.textFrames.add();
-        footerFrame.contents = "Scan with camera to open on Telegram";
+        footerFrame.contents = OZO.tr("Scan with camera to open on Telegram");
         footerFrame.name = "Footer Caption";
         var footerFontSize = Math.max(6, Math.round(qrSize * 0.042));
         try {
             footerFrame.textRange.characterAttributes.size = footerFontSize;
             footerFrame.textRange.characterAttributes.fillColor = cardTheme.footer;
+            footerFrame.textRange.paragraphAttributes.justification = Justification.CENTER;
         } catch (eT3) {}
         var tileBottom = tileTop - tileH;
         var footerTopY = tileBottom - (qrSize * 0.038);
@@ -1909,13 +1913,13 @@
     );
     styleList.selection = 1;
 
-    var telegramPanel = settingsPanel.add("panel", undefined, "Telegram Style Options");
+    var telegramPanel = settingsPanel.add("panel", undefined, OZO.tr("Telegram Style Options"));
     telegramPanel.orientation = "column";
     telegramPanel.alignChildren = ["left", "center"];
     telegramPanel.margins = [12, 14, 12, 10];
 
     var themeRow = telegramPanel.add("group");
-    themeRow.add("statictext", undefined, "Color theme:");
+    themeRow.add("statictext", undefined, OZO.tr("Color theme:"));
     var themeList = themeRow.add("dropdownlist", undefined, [
         "Official Telegram Blue",
         "Vibrant Cyan",
@@ -1929,12 +1933,12 @@
     cardDetailsGroup.alignChildren = ["left", "center"];
 
     var nameRow = cardDetailsGroup.add("group");
-    nameRow.add("statictext", undefined, "Display name:");
+    nameRow.add("statictext", undefined, OZO.tr("Display name:"));
     var nameInput = nameRow.add("edittext", undefined, "Telegram");
     nameInput.characters = 22;
 
     var handleRow = cardDetailsGroup.add("group");
-    handleRow.add("statictext", undefined, "Username / link:");
+    handleRow.add("statictext", undefined, OZO.tr("Username / link:"));
     var handleInput = handleRow.add("edittext", undefined, "@telegram");
     handleInput.characters = 22;
 
@@ -1956,7 +1960,7 @@
     }
 
     var correctionRow = settingsPanel.add("group");
-    correctionRow.add("statictext", undefined, "Error correction:");
+    correctionRow.add("statictext", undefined, OZO.tr("Error correction:"));
     var correctionList = correctionRow.add(
         "dropdownlist",
         undefined,

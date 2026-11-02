@@ -708,12 +708,15 @@
                     templateBounds = template.visibleBounds;
                     artworkWidth = templateBounds[2] - templateBounds[0];
                     artworkHeight = templateBounds[1] - templateBounds[3];
+                    if (!(artworkWidth > 0) || !(artworkHeight > 0)) {
+                        throw new Error(OZO.tr("The scaled artwork has invalid dimensions."));
+                    }
                 }
 
-                var stepX = artworkWidth + settings.horizontalGap;
-                var stepY = artworkHeight + settings.verticalGap;
+                var stepX = Math.max(0.001, artworkWidth + settings.horizontalGap);
+                var stepY = Math.max(0.001, artworkHeight + settings.verticalGap);
                 if (settings.pattern === 3) { // Honeycomb (Hexagonal)
-                    stepY = (artworkHeight + settings.verticalGap) * 0.8660254;
+                    stepY = Math.max(0.001, (artworkHeight + settings.verticalGap) * 0.8660254);
                 }
 
                 var staggerX = stepX * settings.stagger;

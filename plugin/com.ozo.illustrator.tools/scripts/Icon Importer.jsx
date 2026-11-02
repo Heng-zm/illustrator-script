@@ -30,7 +30,8 @@
                 if (f.exists) return f;
             }
         }
-        return new File(new File($.fileName || "").parent.fsName + "/lib/iconify-api.ps1");
+        var fallbackDir = ($.fileName ? new File($.fileName).parent.fsName : Folder.current.fsName);
+        return new File(fallbackDir + "/lib/iconify-api.ps1");
     })();
 
     function errorMessage(error) {
