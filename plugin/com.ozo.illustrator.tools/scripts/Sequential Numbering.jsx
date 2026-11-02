@@ -13,26 +13,54 @@
 
     var doc = app.activeDocument;
     var currentSelection = doc.selection;
-    if (!currentSelection || currentSelection.typename === "TextRange" ||
-            currentSelection.length === 0) {
+    if (!currentSelection || currentSelection.length === 0) {
         alert(OZO.tr("Select one template text frame before running Sequential Numbering."));
         return;
     }
 
-    var template = null;
-    var selectedTextCount = 0;
-    for (var selectionIndex = 0; selectionIndex < currentSelection.length; selectionIndex++) {
-        if (currentSelection[selectionIndex].typename === "TextFrame") {
-            template = currentSelection[selectionIndex];
-            selectedTextCount++;
+    function collectSelectedTextFrames(items, collected) {
+        if (!items) return collected;
+        var len = items.length;
+        if (typeof len !== "number") return collected;
+        for (var i = 0; i < len; i++) {
+            var item = items[i];
+            if (!item) continue;
+            if (item.typename === "TextFrame") {
+                collected.push(item);
+            } else if (item.typename === "GroupItem" && item.pageItems) {
+                collectSelectedTextFrames(item.pageItems, collected);
+            }
         }
+        return collected;
     }
-    if (selectedTextCount !== 1) {
+
+    var template = null;
+    var selectedFrames = [];
+
+    if (currentSelection.typename === "TextRange") {
+        try {
+            if (currentSelection.story && currentSelection.story.textFrames &&
+                    currentSelection.story.textFrames.length > 0) {
+                selectedFrames.push(currentSelection.story.textFrames[0]);
+            } else if (currentSelection.parent && currentSelection.parent.typename === "TextFrame") {
+                selectedFrames.push(currentSelection.parent);
+            }
+        } catch (ignoreTextRange) {}
+    } else {
+        selectedFrames = collectSelectedTextFrames(currentSelection, []);
+    }
+
+    if (selectedFrames.length === 0) {
+        alert(OZO.tr("Select one template text frame before running Sequential Numbering."));
+        return;
+    }
+    if (selectedFrames.length !== 1) {
         alert(OZO.isKhmer() ?
             "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u1794\u17d2\u179a\u17a2\u1794\u17cb\u17a2\u178f\u17d2\u1790\u1794\u1791\u1796\u17bb\u1798\u17d2\u1796\u178f\u17c2\u1798\u17bd\u1799\u17d4\n\n\u1794\u17d2\u179a\u17a2\u1794\u17cb\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u1795\u17d2\u178a\u179b\u17cb\u1796\u17bb\u1798\u17d2\u1796\u17a2\u1780\u17d2\u179f\u179a \u1791\u17c6\u17a0\u17c6 \u1796\u178e\u17cc \u1780\u17b6\u179a\u178f\u1798\u17d2\u179a\u17b9\u1798 \u1793\u17b7\u1784\u179a\u1785\u1793\u17b6\u1794\u17d0\u1791\u17d2\u1798\u17d4" :
             "Select exactly one template text frame.\n\nThe selected frame supplies the font, size, color, alignment, and styling.");
         return;
     }
+    template = selectedFrames[0];
 
     var originalActiveLayer = doc.activeLayer;
     var originalTemplateHidden = template.hidden;
@@ -45,11 +73,17 @@
     var artboardNames = [];
     for (var cachedArtboardIndex = 0; cachedArtboardIndex < artboardCount;
             cachedArtboardIndex++) {
-        var cachedRect = doc.artboards[cachedArtboardIndex].artboardRect;
-        artboardRects[cachedArtboardIndex] = [
-            cachedRect[0], cachedRect[1], cachedRect[2], cachedRect[3]
-        ];
-        artboardNames[cachedArtboardIndex] = doc.artboards[cachedArtboardIndex].name;
+        var abObj = doc.artboards[cachedArtboardIndex];
+        var cachedRect = abObj ? abObj.artboardRect : null;
+        if (cachedRect && cachedRect.length >= 4) {
+            artboardRects[cachedArtboardIndex] = [
+                cachedRect[0], cachedRect[1], cachedRect[2], cachedRect[3]
+            ];
+        } else {
+            artboardRects[cachedArtboardIndex] = [0, 0, 0, 0];
+        }
+        artboardNames[cachedArtboardIndex] = (abObj && abObj.name) ?
+            abObj.name : ("Artboard " + (cachedArtboardIndex + 1));
     }
 
     function errorMessage(error) {
@@ -109,6 +143,29 @@
             Number(String(text || "").replace(/,/g, ".").replace(/[a-zA-Z%]+$/, "").replace(/^\s+|\s+$/g, ""));
         if (!isFinite(value)) throw new Error("Enter a valid number for " + name + ".");
         return value;
+    }
+
+    function getSelectionIndex(control, defaultIndex) {
+        if (!control) return typeof defaultIndex === "number" ? defaultIndex : 0;
+        var sel = control.selection;
+        if (sel === null || typeof sel === "undefined") {
+            return typeof defaultIndex === "number" ? defaultIndex : 0;
+        }
+        if (typeof sel === "number") return Math.floor(sel);
+        if (typeof sel.index === "number") return sel.index;
+        return typeof defaultIndex === "number" ? defaultIndex : 0;
+    }
+
+    function getSelectionText(control, defaultText) {
+        if (!control) return defaultText || "";
+        var sel = control.selection;
+        if (sel === null || typeof sel === "undefined") return defaultText || "";
+        if (typeof sel.text !== "undefined") return String(sel.text);
+        if (typeof sel === "string") return sel;
+        if (typeof sel === "number" && control.items && control.items[sel]) {
+            return String(control.items[sel].text || "");
+        }
+        return defaultText || "";
     }
 
     function formatSequenceNumber(value, padding) {
@@ -174,53 +231,97 @@
     }
 
     function findTemplateArtboard() {
+        if (artboardCount <= 1) return 0;
         var bounds;
         try { bounds = template.visibleBounds; }
-        catch (ignoreBounds) { return doc.artboards.getActiveArtboardIndex(); }
+        catch (ignoreBounds) {
+            try { return doc.artboards.getActiveArtboardIndex(); }
+            catch (eAct) { return 0; }
+        }
+        if (!bounds || bounds.length < 4) {
+            try { return doc.artboards.getActiveArtboardIndex(); }
+            catch (eAct2) { return 0; }
+        }
         var centerX = (bounds[0] + bounds[2]) / 2;
         var centerY = (bounds[1] + bounds[3]) / 2;
         for (var i = 0; i < artboardCount; i++) {
             var rect = artboardRects[i];
-            if (centerX >= rect[0] && centerX <= rect[2] &&
-                    centerY <= rect[1] && centerY >= rect[3]) return i;
+            if (rect && centerX >= rect[0] && centerX <= rect[2] &&
+                    centerY <= rect[1] && centerY >= rect[3]) {
+                return i;
+            }
         }
-        return doc.artboards.getActiveArtboardIndex();
+        try { return doc.artboards.getActiveArtboardIndex(); }
+        catch (eAct3) { return 0; }
     }
 
     function duplicateTemplate(targetLayer, fullText) {
         var duplicate = null;
-        var hasKhmer = /[\u1780-\u17FF]/.test(fullText || "");
-        if (hasKhmer) {
-            var donor = OZO.findDonorTextFrame(doc);
-            if (donor) {
+        try {
+            duplicate = template.duplicate(targetLayer, ElementPlacement.PLACEATEND);
+        } catch (eDup) {
+            duplicate = null;
+        }
+
+        if (!duplicate) {
+            var hasKhmer = /[\u1780-\u17FF]/.test(fullText || "");
+            if (hasKhmer && typeof OZO.findDonorTextFrame === "function") {
                 try {
-                    duplicate = donor.duplicate(targetLayer, ElementPlacement.PLACEATEND);
-                    duplicate.textRange.characterAttributes.size = template.textRange.characterAttributes.size;
-                    duplicate.textRange.characterAttributes.fillColor = template.textRange.characterAttributes.fillColor;
-                } catch (eDonorDup) {
+                    var donor = OZO.findDonorTextFrame(doc);
+                    if (donor) {
+                        duplicate = donor.duplicate(targetLayer, ElementPlacement.PLACEATEND);
+                    }
+                } catch (eDonor) {
                     duplicate = null;
                 }
             }
+            if (!duplicate) {
+                try {
+                    duplicate = targetLayer.textFrames.add();
+                } catch (eAdd) {
+                    duplicate = null;
+                }
+            }
+            if (duplicate && template) {
+                try {
+                    duplicate.textRange.characterAttributes.size = template.textRange.characterAttributes.size;
+                    duplicate.textRange.characterAttributes.fillColor = template.textRange.characterAttributes.fillColor;
+                    if (template.textRange.characterAttributes.textFont) {
+                        duplicate.textRange.characterAttributes.textFont = template.textRange.characterAttributes.textFont;
+                    }
+                } catch (ignoreStyle) {}
+            }
         }
-        if (!duplicate) {
-            duplicate = template.duplicate(targetLayer, ElementPlacement.PLACEATEND);
-        }
+
         if (duplicate && duplicate.typename === "TextRange") {
             var owner = duplicate.parent;
             if (owner && owner.typename === "TextFrame") {
                 duplicate = owner;
-            } else if (owner && owner.typename === "Story" && owner.textFrames.length > 0) {
+            } else if (owner && owner.typename === "Story" && owner.textFrames && owner.textFrames.length > 0) {
                 duplicate = owner.textFrames[0];
             }
         }
+
         if (!duplicate || duplicate.typename !== "TextFrame") {
-            throw new Error("Illustrator did not return an editable text-frame duplicate.");
+            throw new Error(OZO.isKhmer() ?
+                "\u1798\u17b7\u1793\u17a2\u17b6\u1785\u1785\u1798\u17d2\u179b\u1784\u1794\u17d2\u179a\u17a2\u1794\u17cb\u17a2\u178f\u17d2\u1790\u1794\u1791\u1796\u17bb\u1798\u17d2\u1796\u1794\u17b6\u1793\u1782\u17d2\u179a\u1794\u17cb\u1787\u17d2\u179a\u17bb\u1784\u1787\u17d2\u179a\u17c4\u1799\u17d4" :
+                "Illustrator did not return an editable text-frame duplicate.");
         }
         return duplicate;
     }
 
     function generatePreview(settings) {
-        if (!previewLayer) {
+        var previewLayerValid = false;
+        if (previewLayer) {
+            try {
+                var test = previewLayer.name;
+                previewLayerValid = true;
+            } catch (eLayer) {
+                previewLayerValid = false;
+                previewLayer = null;
+            }
+        }
+        if (!previewLayerValid) {
             cleanupPreview(true);
             normalizeEditingContext();
             previewLayer = doc.layers.add();
@@ -238,27 +339,33 @@
         var step = settings.end >= settings.start ? 1 : -1;
         var templatePoint = frameReferencePoint(template);
         var templateArtboardIndex = findTemplateArtboard();
-        var templateArtboardRect = artboardRects[templateArtboardIndex];
+        if (templateArtboardIndex < 0 || templateArtboardIndex >= artboardCount) {
+            templateArtboardIndex = 0;
+        }
+        var templateArtboardRect = artboardRects[templateArtboardIndex] || artboardRects[0] || [0, 0, 0, 0];
         var relX = templatePoint[0] - templateArtboardRect[0];
         var relY = templatePoint[1] - templateArtboardRect[1];
 
         try {
             for (var index = 0; index < settings.count; index++) {
                 var currentNumber = settings.start + index * step;
-                var fullText = settings.prefix +
-                    formatSequenceNumber(currentNumber, settings.padding) + settings.suffix;
+                var fullText = (settings.prefix || "") +
+                    formatSequenceNumber(currentNumber, settings.padding) + (settings.suffix || "");
                 var targetPoint;
 
                 if (settings.layout === 0) {
-                    var columnIndex = index % settings.columns;
-                    var rowIndex = Math.floor(index / settings.columns);
+                    var cols = settings.columns > 0 ? settings.columns : 1;
+                    var columnIndex = index % cols;
+                    var rowIndex = Math.floor(index / cols);
                     targetPoint = [
                         settings.startX + columnIndex * settings.horizontalStep,
                         settings.startY - rowIndex * settings.verticalStep
                     ];
                 } else {
-                    var artboardIndex = (settings.startArtboard + index) % artboardCount;
-                    var targetRect = artboardRects[artboardIndex];
+                    var startAb = (typeof settings.startArtboard === "number" && !isNaN(settings.startArtboard)) ?
+                        settings.startArtboard : 0;
+                    var artboardIndex = (startAb + index) % (artboardCount || 1);
+                    var targetRect = artboardRects[artboardIndex] || artboardRects[0] || [0, 0, 0, 0];
                     targetPoint = [
                         targetRect[0] + relX,
                         targetRect[1] + relY
@@ -266,6 +373,8 @@
                 }
 
                 var numberFrame = duplicateTemplate(previewLayer, fullText);
+                try { numberFrame.locked = false; } catch (eUnlockFrame) {}
+                try { numberFrame.hidden = false; } catch (eUnhideFrame) {}
                 numberFrame.contents = fullText;
                 moveFrameReferenceTo(numberFrame, targetPoint);
                 numberFrame.name = "Sequential Number " + fullText;
@@ -280,10 +389,12 @@
         try {
             previewLayer.hasSelectedArtwork = true;
         } catch (ignoreLayerSelect) {
-            doc.selection = null;
-            for (var itemIndex = 0; itemIndex < previewItems.length; itemIndex++) {
-                previewItems[itemIndex].selected = true;
-            }
+            try {
+                doc.selection = null;
+                for (var itemIndex = 0; itemIndex < previewItems.length; itemIndex++) {
+                    previewItems[itemIndex].selected = true;
+                }
+            } catch (ignoreItemSelect) {}
         }
         app.redraw();
         return previewItems.length;
@@ -372,9 +483,12 @@
     var artboardList = artboardGroup.add("dropdownlist", undefined, []);
     artboardList.preferredSize.width = 250;
     for (var artboardIndex = 0; artboardIndex < artboardCount; artboardIndex++) {
-        artboardList.add("item", (artboardIndex + 1) + " \u2014 " + artboardNames[artboardIndex]);
+        var abName = artboardNames[artboardIndex] || ("Artboard " + (artboardIndex + 1));
+        artboardList.add("item", (artboardIndex + 1) + " \u2014 " + abName);
     }
-    artboardList.selection = detectedArtboard;
+    if (artboardCount > 0) {
+        artboardList.selection = (detectedArtboard >= 0 && detectedArtboard < artboardCount) ? detectedArtboard : 0;
+    }
     artboardGroup.visible = false;
 
     var optionsPanel = dialog.add("panel", undefined, OZO.tr("Template after Apply"));
@@ -387,8 +501,11 @@
     ]);
     templateActionList.selection = 0;
 
-    var statusText = dialog.add("statictext", undefined, "Ready to generate a reversible preview.");
-    var noteText = dialog.add("statictext", undefined,
+    var statusText = dialog.add("statictext", undefined, OZO.isKhmer() ?
+        "\u178f\u17d2\u179a\u17c0\u1798\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb\u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb\u1780\u17b6\u179a\u1798\u17be\u179b\u1787\u17b6\u1798\u17bb\u1793\u17d4" :
+        "Ready to generate a reversible preview.");
+    var noteText = dialog.add("statictext", undefined, OZO.isKhmer() ?
+        "\u179a\u1794\u17c0\u1794 Artboard \u178a\u17b6\u1780\u17cb\u1798\u17bd\u1799\u179b\u17c1\u1781\u1780\u17d2\u1793\u17bb\u1784\u1798\u17bd\u1799 Artboard \u178f\u17b6\u1798\u1791\u17b8\u178f\u17b6\u17c6\u1784\u1792\u17c0\u1794\u1793\u17c3\u1796\u17bb\u1798\u17d2\u1796 \u17a0\u17be\u1799\u1794\u1793\u17d2\u178f\u178f\u17b6\u1798\u179b\u17c6\u178a\u17b6\u1794\u17cb\u17d4" :
         "Artboard mode places one number per artboard at the template's relative position and wraps from the selected start artboard.",
         {multiline: true});
     noteText.preferredSize = [475, 36];
@@ -403,7 +520,7 @@
     OZO.addLanguageSelector(dialog);
 
     function updateLayoutControls() {
-        var isGrid = layoutList.selection.index === 0;
+        var isGrid = getSelectionIndex(layoutList, 0) === 0;
         gridGroup.visible = isGrid;
         artboardGroup.visible = !isGrid;
         unitRow.enabled = isGrid;
@@ -415,7 +532,7 @@
     var previousUnit = "mm";
     unitList.onChange = function () {
         if (restoringState) return;
-        var newUnit = unitList.selection ? unitList.selection.text : "mm";
+        var newUnit = getSelectionText(unitList, "mm");
         var controls = [horizontalInput, verticalInput, startXInput, startYInput];
         for (var i = 0; i < controls.length; i++) {
             var val = (typeof OZO !== "undefined" && OZO.parseNumber) ?
@@ -434,20 +551,26 @@
         var start = readInteger(startInput, "Start number", -1000000000, 1000000000);
         var end = readInteger(endInput, "End number", -1000000000, 1000000000);
         var count = Math.abs(end - start) + 1;
-        if (count > 10000) throw new Error("The sequence is limited to 10,000 numbers per run.");
-        var layout = layoutList.selection.index;
+        if (count > 10000) {
+            throw new Error(OZO.isKhmer() ?
+                "\u179b\u17c6\u178a\u17b6\u1794\u17cb\u179b\u17c1\u1781\u178f\u17d2\u179a\u17bc\u179c\u1794\u17b6\u1793\u1780\u17c6\u178e\u178f\u17cb\u178f\u17d2\u179a\u17b9\u1798 10,000 \u179b\u17c1\u1781\u1780\u17d2\u1793\u17bb\u1784\u1798\u17bd\u1799\u179b\u17be\u1780\u17d4" :
+                "The sequence is limited to 10,000 numbers per run.");
+        }
+        var layout = getSelectionIndex(layoutList, 0);
         if (layout === 1 && count > artboardCount) {
-            throw new Error("Artboard mode creates one number per artboard.\nThe sequence has " +
+            throw new Error(OZO.isKhmer() ?
+                "\u179a\u1794\u17c0\u1794 Artboard \u1794\u1784\u17d2\u1780\u17be\u178f\u1798\u17bd\u1799\u179b\u17c1\u1781\u1780\u17d2\u1793\u17bb\u1784\u1798\u17bd\u1799 Artboard\u17d4\n\u179b\u17c6\u178a\u17b6\u1794\u17cb\u1798\u17b6\u1793 " + count + " \u179b\u17c1\u1781 \u1794\u17c9\u17bb\u1793\u17d2\u178f\u17c2\u17af\u1780\u179f\u17b6\u179a\u1798\u17b6\u1793\u178f\u17d2\u179a\u17b9\u1798 " + artboardCount + " artboards\u17d4" :
+                "Artboard mode creates one number per artboard.\nThe sequence has " +
                 count + " numbers, but the document has " + artboardCount + " artboards.");
         }
-        var unit = unitList.selection.text;
+        var unit = getSelectionText(unitList, "mm");
         var factor = unitFactor(unit);
         return {
             start: start,
             end: end,
             count: count,
-            prefix: prefixInput.text,
-            suffix: suffixInput.text,
+            prefix: prefixInput.text || "",
+            suffix: suffixInput.text || "",
             padding: readInteger(paddingInput, "Padding", 0, 20),
             layout: layout,
             columns: layout === 0 ? readInteger(columnsInput, "Columns", 1, 1000) : 1,
@@ -457,15 +580,17 @@
                 readNumber(verticalInput, "Vertical step", false) * factor : 0,
             startX: layout === 0 ? readCoordinate(startXInput, "Start X") * factor : 0,
             startY: layout === 0 ? readCoordinate(startYInput, "Start Y") * factor : 0,
-            startArtboard: artboardList.selection.index,
-            templateAction: templateActionList.selection.index
+            startArtboard: getSelectionIndex(artboardList, detectedArtboard),
+            templateAction: getSelectionIndex(templateActionList, 0)
         };
     }
 
     function settingsSignature(settings) {
+        var pref = settings.prefix || "";
+        var suff = settings.suffix || "";
         return [settings.start, settings.end,
-            settings.prefix.length + ":" + settings.prefix,
-            settings.suffix.length + ":" + settings.suffix, settings.padding,
+            pref.length + ":" + pref,
+            suff.length + ":" + suff, settings.padding,
             settings.layout, settings.columns, settings.horizontalStep, settings.verticalStep,
             settings.startX, settings.startY, settings.startArtboard].join("|");
     }
@@ -492,13 +617,13 @@
 
     OZO.makeNumericSmooth(startInput, {step: 1});
     OZO.makeNumericSmooth(endInput, {step: 1});
-    OZO.makeNumericSmooth(paddingInput, {step: 1, min: 1, max: 20});
+    OZO.makeNumericSmooth(paddingInput, {step: 1, min: 0, max: 20});
     OZO.makeNumericSmooth(columnsInput, {step: 1, min: 1, max: 500});
     OZO.makeNumericSmooth(horizontalInput, {step: 1});
     OZO.makeNumericSmooth(verticalInput, {step: 1});
 
     OZO.restoreWindowState(dialog, "sequential_numbering");
-    previousUnit = unitList.selection ? unitList.selection.text : "mm";
+    previousUnit = getSelectionText(unitList, "mm");
     restoringState = false;
     updateLayoutControls();
     OZO.translateWindow(dialog, OZO.getLanguage());
@@ -518,6 +643,12 @@
             generatePreview(finalSettings);
         }
 
+        if (!previewLayer) {
+            throw new Error(OZO.isKhmer() ?
+                "\u1798\u17b7\u1793\u17a2\u17b6\u1785\u1794\u1784\u17d2\u1780\u17be\u178f\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb\u179b\u1791\u17d2\u1780\u1795\u179b\u1794\u17b6\u1793\u1781\u17c1\u17d4" :
+                "Could not create result layer.");
+        }
+
         var finalLayerName = uniqueResultLayerName();
         previewLayer.name = finalLayerName;
         restoreTemplateState();
@@ -533,10 +664,12 @@
         try {
             previewLayer.hasSelectedArtwork = true;
         } catch (ignoreFinalSelect) {
-            doc.selection = null;
-            for (var finalIndex = 0; finalIndex < previewItems.length; finalIndex++) {
-                previewItems[finalIndex].selected = true;
-            }
+            try {
+                doc.selection = null;
+                for (var finalIndex = 0; finalIndex < previewItems.length; finalIndex++) {
+                    previewItems[finalIndex].selected = true;
+                }
+            } catch (ignoreItemSelect) {}
         }
         OZO.saveWindowState(dialog, "sequential_numbering");
         app.redraw();
