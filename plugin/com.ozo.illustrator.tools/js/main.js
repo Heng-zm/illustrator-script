@@ -737,7 +737,7 @@
 // -------------------------------------------------------------
     // GitHub Release Update Checker (In-Plugin Direct Updater)
     // -------------------------------------------------------------
-    var CURRENT_VERSION = "2.2.2";
+    var CURRENT_VERSION = "2.2.3";
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var updateBanner = document.getElementById("updateBanner");
     var updateBannerText = document.getElementById("updateBannerText");
@@ -788,13 +788,19 @@
             var lastCheck = parseInt(localStorage.getItem("ozo_last_update_check") || "0", 10);
             var now = new Date().getTime();
 
-            // Cache check for 3 hours unless manually requested
-            if (!force && (now - lastCheck < 3 * 3600 * 1000)) {
+            // Cache check for 20 minutes unless manually requested
+            var checkInterval = 20 * 60 * 1000;
+            if (!force && (now - lastCheck < checkInterval)) {
                 var cached = localStorage.getItem("ozo_latest_release");
                 if (cached) {
-                    try { showUpdateNotification(JSON.parse(cached), false); } catch (e) {}
+                    try {
+                        var parsed = JSON.parse(cached);
+                        if (parsed && isNewerVersion(parsed.tag_name, CURRENT_VERSION)) {
+                            showUpdateNotification(parsed, false);
+                            return;
+                        }
+                    } catch (e) {}
                 }
-                return;
             }
 
             var xhr = new XMLHttpRequest();
@@ -836,6 +842,11 @@
         }
         var remoteTag = releaseData.tag_name;
         if (!isNewerVersion(remoteTag, CURRENT_VERSION)) {
+            if (updateBanner) updateBanner.style.display = "none";
+            if (brandBadge) {
+                brandBadge.classList.remove("has-update");
+                brandBadge.title = "Ozo Tools v" + CURRENT_VERSION;
+            }
             if (force) {
                 setStatus((isKhmer() ? "\u17a6\u17d2\u1793\u1780\u1780\u17c6\u1796\u17bb\u1784\u1794\u17d2\u179a\u17be\u1794\u17d2\u179a\u17b6\u179f\u17cb\u1780\u17c6\u178e\u17c2\u1785\u17bb\u1784\u1780\u17d2\u179a\u17c4\u1799 (v" : "You are using the latest version (v") + CURRENT_VERSION + ")", "success", 3000);
             }

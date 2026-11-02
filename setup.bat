@@ -229,7 +229,7 @@ function Do-OnlineUpdate {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $release = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "OzoTools-Setup" } -TimeoutSec 10
         $latestTag = $release.tag_name
-        $currentTag = "v2.2.2"
+        $currentTag = "v2.2.3"
 
         Write-Host "    Current version : $currentTag" -ForegroundColor Gray
         Write-Host "    Latest release  : $latestTag" -ForegroundColor Cyan
