@@ -227,13 +227,13 @@
     leftCol.orientation = "column";
     leftCol.alignChildren = ["fill", "top"];
     leftCol.spacing = 10;
-    leftCol.preferredSize.width = 300;
+    leftCol.preferredSize.width = 305;
 
     var rightCol = contentGroup.add("group");
     rightCol.orientation = "column";
     rightCol.alignChildren = ["fill", "top"];
     rightCol.spacing = 10;
-    rightCol.preferredSize.width = 330;
+    rightCol.preferredSize.width = 345;
 
     // =============================================================
     // Left Column: 1. Artboard Scope & 2. Export Formats
@@ -420,14 +420,13 @@
         syncControlStates();
     };
 
-    // Panel: Prepress Options
-    var prepressPanel = leftCol.add("panel", undefined, OZO.tr("Prepress Options"));
-    prepressPanel.orientation = "column";
-    prepressPanel.alignChildren = ["fill", "top"];
-    prepressPanel.margins = [12, 14, 12, 10];
-    prepressPanel.spacing = 6;
+    // Prepress Option: Text Outlining
+    var outlineGroup = formatPanel.add("group");
+    outlineGroup.orientation = "column";
+    outlineGroup.alignChildren = ["left", "top"];
+    outlineGroup.margins = [0, 6, 0, 0];
 
-    var outlineBox = prepressPanel.add("checkbox", undefined, OZO.tr("Convert text to outlines before export"));
+    var outlineBox = outlineGroup.add("checkbox", undefined, OZO.tr("Convert text to outlines before export"));
     outlineBox.value = false;
     outlineBox.helpTip = "Outlines all text frames for export, then reopens the saved original so live text is preserved.";
 
@@ -442,13 +441,13 @@
     namePanel.margins = [12, 14, 12, 10];
     namePanel.spacing = 8;
 
-    var presetRow = namePanel.add("group");
-    presetRow.orientation = "row";
-    presetRow.alignChildren = ["left", "center"];
-    presetRow.spacing = 6;
+    var presetUnitRow = namePanel.add("group");
+    presetUnitRow.orientation = "row";
+    presetUnitRow.alignChildren = ["left", "center"];
+    presetUnitRow.spacing = 6;
 
-    presetRow.add("statictext", undefined, OZO.tr("Naming Preset:"));
-    var namingPresetList = presetRow.add("dropdownlist", undefined, [
+    presetUnitRow.add("statictext", undefined, OZO.tr("Preset:"));
+    var namingPresetList = presetUnitRow.add("dropdownlist", undefined, [
         "[doc]_[ab]_[w]x[h][unit]",
         "[doc]_[ab]",
         "[ab]_[w]x[h][unit]",
@@ -457,7 +456,7 @@
         "Custom..."
     ]);
     namingPresetList.selection = 0;
-    namingPresetList.preferredSize.width = 190;
+    namingPresetList.preferredSize.width = 165;
 
     function selectPresetByText(presetText) {
         for (var np = 0; np < namingPresetList.items.length; np++) {
@@ -468,22 +467,17 @@
         }
     }
 
-    var unitRow = namePanel.add("group");
-    unitRow.orientation = "row";
-    unitRow.alignChildren = ["left", "center"];
-    unitRow.spacing = 6;
-
-    unitRow.add("statictext", undefined, OZO.tr("Dimensions Unit:"));
-    var unitList = unitRow.add("dropdownlist", undefined, ["mm", "cm", "in", "pt"]);
+    presetUnitRow.add("statictext", undefined, OZO.tr("Unit:"));
+    var unitList = presetUnitRow.add("dropdownlist", undefined, ["mm", "cm", "in", "pt"]);
     var defaultUnitIndex = 0;
     if (defaultUnit === "cm") defaultUnitIndex = 1;
     else if (defaultUnit === "in" || defaultUnit === "inches") defaultUnitIndex = 2;
     else if (defaultUnit === "pt" || defaultUnit === "points") defaultUnitIndex = 3;
     unitList.selection = defaultUnitIndex;
-    unitList.preferredSize.width = 80;
+    unitList.preferredSize.width = 65;
 
     var templateInput = namePanel.add("edittext", undefined, "[doc]_[ab]_[w]x[h][unit]");
-    templateInput.preferredSize.width = 300;
+    templateInput.preferredSize.width = 315;
     templateInput.helpTip = "Tokens: [doc] [ab] [num] [raw_num] [w] [h] [unit] [date] [time] [color] [fmt]";
 
     // Interactive Token Insert Chips
@@ -493,10 +487,20 @@
     chipRow.spacing = 3;
 
     var tokens = ["[doc]", "[ab]", "[w]x[h]", "[unit]", "[num]", "[date]", "[color]"];
+    var tokenWidths = {
+        "[ab]": 34,
+        "[doc]": 38,
+        "[num]": 38,
+        "[unit]": 42,
+        "[date]": 42,
+        "[w]x[h]": 46,
+        "[color]": 48
+    };
     for (var tk = 0; tk < tokens.length; tk++) {
         (function (tokenStr) {
             var chip = chipRow.add("button", undefined, tokenStr);
-            chip.preferredSize = [42, 22];
+            var w = tokenWidths[tokenStr] || 40;
+            chip.preferredSize = [w, 22];
             chip.helpTip = OZO.tr("Click to insert ") + tokenStr;
             chip.onClick = function () {
                 var cur = templateInput.text;
@@ -516,17 +520,24 @@
     samplePreviewPanel.orientation = "column";
     samplePreviewPanel.alignChildren = ["fill", "top"];
     samplePreviewPanel.margins = [10, 10, 10, 10];
-    samplePreviewPanel.spacing = 4;
+    samplePreviewPanel.spacing = 3;
 
     var samplePreviewText = samplePreviewPanel.add("statictext", undefined, "");
-    samplePreviewText.preferredSize.width = 285;
+    samplePreviewText.preferredSize.width = 300;
+    try {
+        samplePreviewText.graphics.font = ScriptUI.newFont(
+            samplePreviewText.graphics.font ? samplePreviewText.graphics.font.name : "dialog",
+            "BOLD",
+            11
+        );
+    } catch (eBold) {}
 
     var sampleDimsText = samplePreviewPanel.add("statictext", undefined, "");
-    sampleDimsText.preferredSize.width = 285;
-    sampleDimsText.graphics.foregroundColor = sampleDimsText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.55, 0.55, 0.55, 1], 1);
+    sampleDimsText.preferredSize.width = 300;
+    sampleDimsText.graphics.foregroundColor = sampleDimsText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.6, 0.6, 0.6, 1], 1);
 
     var sampleSummaryText = samplePreviewPanel.add("statictext", undefined, "");
-    sampleSummaryText.preferredSize.width = 285;
+    sampleSummaryText.preferredSize.width = 300;
     sampleSummaryText.graphics.foregroundColor = sampleSummaryText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.18, 0.48, 0.98, 1], 1);
 
     namingPresetList.onChange = function () {
@@ -628,10 +639,10 @@
     folderRow.spacing = 6;
 
     var destFolderInput = folderRow.add("edittext", undefined, defaultDestFolder.fsName);
-    destFolderInput.preferredSize.width = 220;
+    destFolderInput.preferredSize.width = 230;
 
     var browseBtn = folderRow.add("button", undefined, OZO.tr("Browse..."));
-    browseBtn.preferredSize = [80, 24];
+    browseBtn.preferredSize = [78, 24];
 
     browseBtn.onClick = function () {
         var startFolder = new Folder(destFolderInput.text);
@@ -663,14 +674,19 @@
     // Buttons
     var buttonGroup = dialog.add("group");
     buttonGroup.orientation = "row";
-    buttonGroup.alignment = ["right", "top"];
-    buttonGroup.spacing = 8;
+    buttonGroup.alignment = ["fill", "top"];
+    buttonGroup.alignChildren = ["right", "center"];
+    buttonGroup.spacing = 10;
+    buttonGroup.margins = [0, 4, 0, 2];
+
+    var btnSpacer = buttonGroup.add("group");
+    btnSpacer.alignment = ["fill", "center"];
 
     var cancelButton = buttonGroup.add("button", undefined, OZO.tr("Cancel"), {name: "cancel"});
-    cancelButton.preferredSize = [100, 30];
+    cancelButton.preferredSize = [105, 30];
 
     var exportButton = buttonGroup.add("button", undefined, OZO.tr("Export Now"), {name: "ok"});
-    exportButton.preferredSize = [120, 30];
+    exportButton.preferredSize = [135, 30];
 
     // Language Selector Footer
     OZO.addLanguageSelector(dialog, function () {
