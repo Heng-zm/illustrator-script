@@ -2,14 +2,25 @@ name: Release Automation
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Optional override; must match version.json'
+        description: 'Optional manual version override (e.g. 2.7.0). If blank, auto-increments.'
         required: false
         default: ''
+      bump:
+        description: 'Version bump type if auto-incrementing'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -24,52 +35,145 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Determine Version & Verify Tag Integrity
+      - name: Determine Version & Auto-Bump
         id: get_version
         shell: pwsh
         run: |
-          # version.json is the single source of truth.
+          # 1. Fetch all tags from remote to ensure complete tag history
+          git fetch --tags --force
+
+          # 2. Single source of truth: version.json
           $versionFile = "version.json"
           if (-not (Test-Path -LiteralPath $versionFile)) {
             throw "version.json not found"
           }
-          $ver = [string]((Get-Content -LiteralPath $versionFile -Raw | ConvertFrom-Json).version)
-          $inputVersion = "${{ github.event.inputs.version }}"
-          if ($inputVersion) { $ver = $inputVersion }
+          $vObj = Get-Content -LiteralPath $versionFile -Raw | ConvertFrom-Json
+          $ver = [string]$vObj.version
           $ver = $ver.Trim()
           if ($ver.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
             $ver = $ver.Substring(1)
           }
-          if ($ver -notmatch '^\d+\.\d+\.\d+$') {
-            throw "version.json must contain a semantic version (found '$ver')"
+
+          # 3. Handle manual input override (from workflow_dispatch)
+          $inputVer = "${{ github.event.inputs.version }}".Trim()
+          if ($inputVer) {
+            if ($inputVer.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
+              $inputVer = $inputVer.Substring(1)
+            }
+            $ver = $inputVer
           }
 
-          # A v* tag must agree with version.json, otherwise the release would
-          # publish one version while the panel reports another.
-          $ref = "${{ github.ref_name }}"
-          if ($ref -match '^[vV](.+)$') {
-            $tagVer = $matches[1]
-            if ($tagVer -ne $ver) {
-              throw "Tag $ref does not match version.json ($ver). Bump version.json before tagging."
+          $bumpType = "${{ github.event.inputs.bump }}"
+          if (-not $bumpType) { $bumpType = "patch" }
+
+          # 4. Check whether we are on a tag push or branch push
+          $isTagPush = "${{ github.ref }}".StartsWith("refs/tags/")
+          $headSha = (& git rev-parse HEAD).Trim()
+          $tagRef = "v$ver"
+
+          $bumpNeeded = $false
+
+          if ($isTagPush) {
+            $refName = "${{ github.ref_name }}"
+            if ($refName -match '^[vV](.+)$') {
+              $ver = $matches[1]
+              $tagRef = "v$ver"
+            }
+            Write-Host "Triggered by tag push: $tagRef on commit $headSha"
+            if ($vObj.version -ne $ver) {
+              $bumpNeeded = $true
+            }
+          } else {
+            $tagExists = [bool](& git tag -l $tagRef)
+            if ($tagExists) {
+              $tagSha = (& git rev-list -n 1 $tagRef).Trim()
+              if ($tagSha -ne $headSha) {
+                Write-Host "Tag $tagRef already exists on older commit $tagSha (HEAD is $headSha)."
+                Write-Host "Auto-incrementing $bumpType version for new push..."
+
+                $parts = $ver.Split('.')
+                $major = [int]$parts[0]
+                $minor = [int]$parts[1]
+                $patch = [int]$parts[2]
+
+                if ($bumpType -eq "major") {
+                  $major++
+                  $minor = 0
+                  $patch = 0
+                } elseif ($bumpType -eq "minor") {
+                  $minor++
+                  $patch = 0
+                } else {
+                  $patch++
+                }
+                $ver = "$major.$minor.$patch"
+                $tagRef = "v$ver"
+
+                while ([bool](& git tag -l $tagRef)) {
+                  $patch++
+                  $ver = "$major.$minor.$patch"
+                  $tagRef = "v$ver"
+                }
+
+                Write-Host "Determined next auto-version: $ver ($tagRef)"
+                $bumpNeeded = $true
+              } else {
+                Write-Host "Tag $tagRef already points to HEAD ($headSha). Re-building existing release."
+              }
+            } else {
+              Write-Host "New version $ver ($tagRef) detected (no existing tag)."
+              if ($vObj.version -ne $ver) {
+                $bumpNeeded = $true
+              }
+            }
+          }
+
+          # 5. If version was bumped, update version.json, sync metadata, and commit
+          if ($bumpNeeded) {
+            Write-Host "Updating version.json to $ver and synchronizing repository metadata..."
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            $newJson = "{`n  `"version`": `"$ver`"`n}`n"
+            [System.IO.File]::WriteAllText((Join-Path (Get-Location) "version.json"), $newJson, $utf8NoBom)
+
+            & .\sync-version.ps1
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            git add -A
+            git commit -m "chore(release): bump version to v$ver [skip ci]"
+
+            if (-not $isTagPush) {
+              Write-Host "Pushing version bump commit to main..."
+              try {
+                git push origin HEAD:main
+              } catch {
+                Write-Warning "Could not push version bump commit to main (check branch protection): $_"
+              }
             }
 
-            # Verify the tag points to the checked out HEAD commit.
-            $tagSha = (& git rev-list -n 1 $ref).Trim()
             $headSha = (& git rev-parse HEAD).Trim()
-            if ($tagSha -and $headSha -and $tagSha -ne $headSha) {
-              throw "Tag $ref ($tagSha) does not point to checked out commit ($headSha)."
-            }
           }
 
-          Write-Host "Determined Version: $ver"
+          # 6. Ensure tag exists on remote
+          $tagExistsOnRemote = [bool](& git tag -l $tagRef)
+          if (-not $tagExistsOnRemote) {
+            Write-Host "Creating git tag $tagRef at $headSha..."
+            git tag -a $tagRef -m "Release $tagRef" $headSha
+            git push origin $tagRef
+          }
+
+          Write-Host "Release Version: $ver"
+          Write-Host "Release Tag: $tagRef"
           "version=$ver" >> $env:GITHUB_OUTPUT
-          "tag_name=v$ver" >> $env:GITHUB_OUTPUT
+          "tag_name=$tagRef" >> $env:GITHUB_OUTPUT
 
       - name: Verify Version Consistency
         shell: pwsh
