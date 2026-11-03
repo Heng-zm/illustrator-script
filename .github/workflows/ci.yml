@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-build:
+    name: Validate & Build Artifact
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify Version Consistency
+        shell: pwsh
+        run: .\sync-version.ps1 -Check
+
+      - name: Syntax Check (ExtendScript & panel)
+        shell: pwsh
+        run: node tools/check-syntax.js
+
+      - name: Host Bridge Unit Tests
+        shell: pwsh
+        run: node tools/test-hostscript.js
+
+      - name: Determine Version
+        id: get_version
+        shell: pwsh
+        run: |
+          $ver = [string]((Get-Content -LiteralPath "version.json" -Raw | ConvertFrom-Json).version)
+          $ver = $ver.Trim()
+          Write-Host "Build Version: $ver"
+          "version=$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Build Release Package (.zip)
+        shell: pwsh
+        run: |
+          .\build-release.ps1 -Version "${{ steps.get_version.outputs.version }}"
+
+      - name: Verify Package Archive
+        shell: pwsh
+        run: |
+          $zip = Get-Item "release\Ozo-Tools-*.zip"
+          if (-not $zip) {
+            Write-Error "Release zip package was not generated!"
+            exit 1
+          }
+          Write-Host "Artifact verified: $($zip.FullName) ($($zip.Length) bytes)"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ozo-Tools-v${{ steps.get_version.outputs.version }}
+          path: release/Ozo-Tools-*.zip
+          retention-days: 14

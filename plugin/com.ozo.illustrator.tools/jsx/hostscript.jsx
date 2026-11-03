@@ -38,7 +38,7 @@ function ozoJsonStringify(value) {
     if (type === "string") {
         return ozoJsonQuote(value);
     }
-    if (value instanceof Array) {
+    if (value instanceof Array || Object.prototype.toString.call(value) === "[object Array]") {
         var items = [];
         for (var i = 0; i < value.length; i++) {
             items.push(ozoJsonStringify(value[i]));
@@ -93,6 +93,135 @@ function ozoJsonQuote(text) {
         }
     }
     return result + '"';
+}
+
+// eval-free JSON parser for bridge parameters. The panel always sends JSON,
+// but the host must never evaluate that string as code.
+function ozoJsonParse(source) {
+    var text = String(source === null || source === undefined ? "" : source).replace(/^\uFEFF/, "");
+    var at = 0;
+    var depth = 0;
+
+    function fail(message) {
+        throw new Error("Invalid JSON at position " + at + ": " + message);
+    }
+
+    function skipWhitespace() {
+        while (at < text.length) {
+            var ch = text.charAt(at);
+            if (ch === " " || ch === "\t" || ch === "\n" || ch === "\r") {
+                at++;
+            } else {
+                break;
+            }
+        }
+    }
+
+    function parseString() {
+        if (text.charAt(at) !== '"') fail("expected a string");
+        at++;
+        var out = "";
+        while (at < text.length) {
+            var ch = text.charAt(at++);
+            if (ch === '"') return out;
+            if (ch !== "\\") {
+                if (ch.charCodeAt(0) < 32) fail("control character in string");
+                out += ch;
+                continue;
+            }
+            var escape = text.charAt(at++);
+            if (escape === '"' || escape === "\\" || escape === "/") out += escape;
+            else if (escape === "b") out += "\b";
+            else if (escape === "f") out += "\f";
+            else if (escape === "n") out += "\n";
+            else if (escape === "r") out += "\r";
+            else if (escape === "t") out += "\t";
+            else if (escape === "u") {
+                var hex = text.substr(at, 4);
+                if (!/^[0-9a-fA-F]{4}$/.test(hex)) fail("invalid unicode escape");
+                at += 4;
+                out += String.fromCharCode(parseInt(hex, 16));
+            } else {
+                fail("invalid escape sequence");
+            }
+        }
+        fail("unterminated string");
+    }
+
+    function parseNumber() {
+        var match = /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/.exec(text.substr(at));
+        if (!match) fail("invalid value");
+        at += match[0].length;
+        return Number(match[0]);
+    }
+
+    function parseObject() {
+        depth++;
+        if (depth > 64) fail("nesting too deep");
+        at++;
+        var object = {};
+        skipWhitespace();
+        if (text.charAt(at) === "}") {
+            at++;
+            depth--;
+            return object;
+        }
+        while (true) {
+            skipWhitespace();
+            var key = parseString();
+            skipWhitespace();
+            if (text.charAt(at) !== ":") fail("expected ':'");
+            at++;
+            var value = parseValue();
+            if (key !== "__proto__" && key !== "constructor" && key !== "prototype") {
+                object[key] = value;
+            }
+            skipWhitespace();
+            var ch = text.charAt(at);
+            if (ch === ",") { at++; continue; }
+            if (ch === "}") { at++; depth--; return object; }
+            fail("expected ',' or '}'");
+        }
+    }
+
+    function parseArray() {
+        depth++;
+        if (depth > 64) fail("nesting too deep");
+        at++;
+        var array = [];
+        skipWhitespace();
+        if (text.charAt(at) === "]") {
+            at++;
+            depth--;
+            return array;
+        }
+        while (true) {
+            array.push(parseValue());
+            skipWhitespace();
+            var ch = text.charAt(at);
+            if (ch === ",") { at++; continue; }
+            if (ch === "]") { at++; depth--; return array; }
+            fail("expected ',' or ']'");
+        }
+    }
+
+    function parseValue() {
+        skipWhitespace();
+        if (at >= text.length) fail("unexpected end of input");
+        var ch = text.charAt(at);
+        if (ch === "{") return parseObject();
+        if (ch === "[") return parseArray();
+        if (ch === '"') return parseString();
+        if (text.substr(at, 4) === "true") { at += 4; return true; }
+        if (text.substr(at, 5) === "false") { at += 5; return false; }
+        if (text.substr(at, 4) === "null") { at += 4; return null; }
+        return parseNumber();
+    }
+
+    var result = parseValue();
+    skipWhitespace();
+    if (at < text.length) fail("unexpected trailing characters");
+    return result;
 }
 
 function ozoInitExtensionPath(pathStr) {
@@ -239,23 +368,38 @@ function ozoGetDocumentStatus() {
                 name: "",
                 colorSpace: "",
                 artboardsCount: 0,
-                selectedCount: 0
+                selectedCount: 0,
+                itemCount: 0
             });
         }
         var doc = app.activeDocument;
         var selCount = 0;
         try {
-            if (doc.selection && doc.selection.length !== undefined) {
-                selCount = doc.selection.length;
+            var selection = doc.selection;
+            if (selection) {
+                // A single selected object is not an Array in Illustrator's DOM.
+                if (selection instanceof Array ||
+                        selection.typename === "Array" ||
+                        Object.prototype.toString.call(selection) === "[object Array]") {
+                    selCount = selection.length;
+                } else {
+                    selCount = 1;
+                }
             }
         } catch (eSel) {}
+
+        var itemCount = 0;
+        try {
+            if (doc.pageItems) itemCount = doc.pageItems.length;
+        } catch (eItems) {}
 
         return ozoJsonStringify({
             hasDoc: true,
             name: doc.name,
             colorSpace: String(doc.documentColorSpace).replace("DocumentColorSpace.", ""),
             artboardsCount: doc.artboards.length,
-            selectedCount: selCount
+            selectedCount: selCount,
+            itemCount: itemCount
         });
     } catch (e) {
         return ozoJsonStringify({
@@ -370,6 +514,8 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "$resultFile = '" + resultFsPath + "'",
                 "$tempZip = Join-Path $env:TEMP ('ozo_dl_' + [guid]::NewGuid().ToString('N') + '.zip')",
                 "$tempDir = Join-Path $env:TEMP ('ozo_ext_' + [guid]::NewGuid().ToString('N'))",
+                "$backupDir = Join-Path $env:TEMP ('ozo_backup_' + [guid]::NewGuid().ToString('N'))",
+                "$expectedVersion = $versionTag.TrimStart('v', 'V')",
                 "try {",
                 "    try {",
                 "        Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing -UserAgent 'OzoTools-Updater' -TimeoutSec 60",
@@ -392,33 +538,55 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "    if (-not $cepDir) {",
                 "        throw 'Extension folder com.ozo.illustrator.tools not found in release archive'",
                 "    }",
-                "    if (-not (Test-Path $targetDir)) {",
-                "        New-Item -Path $targetDir -ItemType Directory -Force | Out-Null",
+                "    $pkgVersionFile = Get-ChildItem -Path $tempDir -Recurse -File -Filter 'version.json' -ErrorAction SilentlyContinue | Select-Object -First 1",
+                "    if (-not $pkgVersionFile) { throw 'Release package is missing version.json' }",
+                "    $pkgVersion = [string]((Get-Content -LiteralPath $pkgVersionFile.FullName -Raw | ConvertFrom-Json).version)",
+                "    if ($pkgVersion.Trim() -ne $expectedVersion) {",
+                "        throw ('Package version ' + $pkgVersion + ' does not match release ' + $expectedVersion)",
                 "    }",
-                "    Copy-Item -Path \"$($cepDir.FullName)\\*\" -Destination $targetDir -Recurse -Force",
-                "    $scriptsDir = Get-ChildItem -Path $tempDir -Recurse -Directory -Filter 'Script all' -ErrorAction SilentlyContinue | Select-Object -First 1",
-                "    if (-not $scriptsDir) {",
-                "        $scriptsDir = Join-Path $cepDir.FullName 'scripts'",
-                "        if (-not (Test-Path $scriptsDir)) { $scriptsDir = $null }",
-                "    }",
-                "    if ($scriptsDir) {",
-                "        $destScripts = Join-Path $targetDir 'scripts'",
-                "        if (-not (Test-Path $destScripts)) {",
-                "            New-Item -Path $destScripts -ItemType Directory -Force | Out-Null",
-                "        }",
-                "        Copy-Item -Path \"$($scriptsDir.FullName)\\*\" -Destination $destScripts -Recurse -Force",
-                "    }",
-                "    $topLibDir = Get-ChildItem -Path $tempDir -Recurse -Directory -Filter 'lib' -ErrorAction SilentlyContinue | Select-Object -First 1",
-                "    if ($topLibDir -and $scriptsDir) {",
-                "        $destLib = Join-Path (Join-Path $targetDir 'scripts') 'lib'",
-                "        if (-not (Test-Path $destLib)) { New-Item -Path $destLib -ItemType Directory -Force | Out-Null }",
-                "        Copy-Item -Path \"$($topLibDir.FullName)\\*\" -Destination $destLib -Recurse -Force -ErrorAction SilentlyContinue",
-                "    }",
+                "    if (Test-Path $targetDir) { Copy-Item -Path $targetDir -Destination $backupDir -Recurse -Force }",
                 "    try {",
-                "        if (Test-Path (Join-Path $targetDir '..\\..\\Script all')) {",
-                "            if ($scriptsDir) { Copy-Item -Path \"$($scriptsDir.FullName)\\*\" -Destination (Join-Path $targetDir '..\\..\\Script all') -Recurse -Force -ErrorAction SilentlyContinue }",
+                "        if (-not (Test-Path $targetDir)) {",
+                "            New-Item -Path $targetDir -ItemType Directory -Force | Out-Null",
                 "        }",
-                "    } catch {}",
+                "        Get-ChildItem -Path $targetDir -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {",
+                "            $rel = $_.FullName.Substring($targetDir.Length).TrimStart([char]92)",
+                "            $src = Join-Path $cepDir.FullName $rel",
+                "            if (-not (Test-Path -LiteralPath $src)) { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue }",
+                "        }",
+                "        Copy-Item -Path \"$($cepDir.FullName)\\*\" -Destination $targetDir -Recurse -Force",
+                "        $scriptsDir = Get-ChildItem -Path $tempDir -Recurse -Directory -Filter 'Script all' -ErrorAction SilentlyContinue | Select-Object -First 1",
+                "        if (-not $scriptsDir) {",
+                "            $scriptsDir = Join-Path $cepDir.FullName 'scripts'",
+                "            if (-not (Test-Path $scriptsDir)) { $scriptsDir = $null }",
+                "        }",
+                "        if ($scriptsDir) {",
+                "            $destScripts = Join-Path $targetDir 'scripts'",
+                "            if (-not (Test-Path $destScripts)) {",
+                "                New-Item -Path $destScripts -ItemType Directory -Force | Out-Null",
+                "            }",
+                "            Copy-Item -Path \"$($scriptsDir.FullName)\\*\" -Destination $destScripts -Recurse -Force",
+                "        }",
+                "        $topLibDir = Get-ChildItem -Path $tempDir -Recurse -Directory -Filter 'lib' -ErrorAction SilentlyContinue | Select-Object -First 1",
+                "        if ($topLibDir -and $scriptsDir) {",
+                "            $destLib = Join-Path (Join-Path $targetDir 'scripts') 'lib'",
+                "            if (-not (Test-Path $destLib)) { New-Item -Path $destLib -ItemType Directory -Force | Out-Null }",
+                "            Copy-Item -Path \"$($topLibDir.FullName)\\*\" -Destination $destLib -Recurse -Force -ErrorAction SilentlyContinue",
+                "        }",
+                "        try {",
+                "            if (Test-Path (Join-Path $targetDir '..\\..\\Script all')) {",
+                "                if ($scriptsDir) { Copy-Item -Path \"$($scriptsDir.FullName)\\*\" -Destination (Join-Path $targetDir '..\\..\\Script all') -Recurse -Force -ErrorAction SilentlyContinue }",
+                "            }",
+                "        } catch {}",
+                "    } catch {",
+                "        if (Test-Path $backupDir) {",
+                "            Remove-Item -Path $targetDir -Recurse -Force -ErrorAction SilentlyContinue",
+                "            Copy-Item -Path $backupDir -Destination $targetDir -Recurse -Force",
+                "        }",
+                "        throw",
+                "    } finally {",
+                "        Remove-Item -Path $backupDir -Recurse -Force -ErrorAction SilentlyContinue",
+                "    }",
                 "    $json = '{\"status\":\"success\",\"version\":\"' + $versionTag + '\"}'",
                 "    [System.IO.File]::WriteAllText($resultFile, $json, [System.Text.Encoding]::ASCII)",
                 "} catch {",
@@ -428,6 +596,7 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "} finally {",
                 "    try { Remove-Item -Path $tempZip -Force -ErrorAction SilentlyContinue } catch {}",
                 "    try { Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue } catch {}",
+                "    try { Remove-Item -Path $backupDir -Recurse -Force -ErrorAction SilentlyContinue } catch {}",
                 "}"
             ].join("\r\n");
 
@@ -470,28 +639,53 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "VERSION_TAG=\"" + cleanTag.replace(/"/g, '\\"') + "\"",
                 "TEMP_ZIP=\"/tmp/ozo_dl_" + timestamp + ".zip\"",
                 "TEMP_DIR=\"/tmp/ozo_ext_" + timestamp + "\"",
+                "BACKUP_DIR=\"/tmp/ozo_backup_" + timestamp + "\"",
+                "EXPECTED_VERSION=\"${VERSION_TAG#v}\"",
+                "write_error() {",
+                "    printf '{\"status\":\"error\",\"message\":\"%s\"}\\n' \"$1\" > \"$RESULT_FILE\"",
+                "    rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\" \"$BACKUP_DIR\"",
+                "}",
                 "mkdir -p \"$TEMP_DIR\"",
                 "curl -s -L -A \"OzoTools-Updater\" \"$ZIP_URL\" -o \"$TEMP_ZIP\"",
                 "if [ $? -ne 0 ] || [ ! -f \"$TEMP_ZIP\" ]; then",
-                "    echo '{\"status\":\"error\",\"message\":\"Failed to download update package\"}' > \"$RESULT_FILE\"",
-                "    rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\"",
+                "    write_error \"Failed to download update package\"",
                 "    exit 1",
                 "fi",
                 "unzip -q -o \"$TEMP_ZIP\" -d \"$TEMP_DIR\"",
                 "FOUND_CEP=$(find \"$TEMP_DIR\" -type d -name \"com.ozo.illustrator.tools\" | head -n 1)",
                 "FOUND_SCRIPTS=$(find \"$TEMP_DIR\" -type d -name \"Script all\" | head -n 1)",
-                "if [ -n \"$FOUND_CEP\" ]; then",
-                "    mkdir -p \"$TARGET_DIR\"",
-                "    cp -R \"$FOUND_CEP/\"* \"$TARGET_DIR/\"",
-                "    if [ -n \"$FOUND_SCRIPTS\" ]; then",
-                "        mkdir -p \"$TARGET_DIR/scripts\"",
-                "        cp -R \"$FOUND_SCRIPTS/\"* \"$TARGET_DIR/scripts/\"",
-                "    fi",
-                "    echo \"{\\\"status\\\":\\\"success\\\",\\\"version\\\":\\\"$VERSION_TAG\\\"}\" > \"$RESULT_FILE\"",
-                "else",
-                "    echo '{\"status\":\"error\",\"message\":\"com.ozo.illustrator.tools not found in package\"}' > \"$RESULT_FILE\"",
+                "FOUND_VERSION=$(find \"$TEMP_DIR\" -type f -name \"version.json\" | head -n 1)",
+                "if [ -z \"$FOUND_CEP\" ] || [ -z \"$FOUND_VERSION\" ]; then",
+                "    write_error \"Release package is invalid or missing version.json\"",
+                "    exit 1",
                 "fi",
-                "rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\""
+                "PKG_VERSION=$(sed -n 's/.*\"version\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' \"$FOUND_VERSION\" | head -n 1)",
+                "if [ \"$PKG_VERSION\" != \"$EXPECTED_VERSION\" ]; then",
+                "    write_error \"Package version $PKG_VERSION does not match release $EXPECTED_VERSION\"",
+                "    exit 1",
+                "fi",
+                "if [ -d \"$TARGET_DIR\" ]; then cp -R \"$TARGET_DIR\" \"$BACKUP_DIR\"; fi",
+                "if ! (",
+                "    mkdir -p \"$TARGET_DIR\" &&",
+                "    cd \"$TARGET_DIR\" &&",
+                "    find . -type f | while read -r REL; do",
+                "        [ -f \"$FOUND_CEP/$REL\" ] || rm -f \"$REL\"",
+                "    done &&",
+                "    cp -R \"$FOUND_CEP/\"* \"$TARGET_DIR/\"",
+                "); then",
+                "    if [ -d \"$BACKUP_DIR\" ]; then",
+                "        rm -rf \"$TARGET_DIR\"",
+                "        cp -R \"$BACKUP_DIR\" \"$TARGET_DIR\"",
+                "    fi",
+                "    write_error \"Failed to apply update package\"",
+                "    exit 1",
+                "fi",
+                "if [ -n \"$FOUND_SCRIPTS\" ]; then",
+                "    mkdir -p \"$TARGET_DIR/scripts\"",
+                "    cp -R \"$FOUND_SCRIPTS/\"* \"$TARGET_DIR/scripts/\"",
+                "fi",
+                "printf '{\"status\":\"success\",\"version\":\"%s\"}\\n' \"$VERSION_TAG\" > \"$RESULT_FILE\"",
+                "rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\" \"$BACKUP_DIR\""
             ].join("\n");
 
             runnerFile.encoding = "UTF-8";
@@ -687,9 +881,7 @@ function ozoExecuteBatchExport(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "Batch Production Exporter.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -723,9 +915,7 @@ function ozoExecuteGenerateQR(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "Generate QR Code.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -759,9 +949,7 @@ function ozoExecuteCutContour(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "CutContour Generator.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -795,9 +983,7 @@ function ozoExecuteSmartDimension(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "Smart Dimension.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -884,9 +1070,7 @@ function ozoExecutePrintJob(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "Print Job Info.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -987,9 +1171,7 @@ function ozoExecuteSequentialNumbering(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "Sequential Numbering.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -1026,9 +1208,7 @@ function ozoExecutePathfinder(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "Pathfinder.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -1065,9 +1245,7 @@ function ozoExecuteGuideLayout(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "New Guide Layout.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -1104,9 +1282,7 @@ function ozoExecuteObjectRepeat(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "Object Repeat.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -1143,9 +1319,7 @@ function ozoExecuteNesting(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "Nesting.jsx not found" });
         }
 
-        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessParams = ozoJsonParse(paramsJsonStr);
         __ozoHeadlessResult = null;
 
         var savedFolder = Folder.current;
@@ -1177,9 +1351,7 @@ function ozoImportIconSvg(paramsJsonStr) {
             return ozoJsonStringify({ status: "error", message: "No open document found. Please open or create a document first." });
         }
         var doc = app.activeDocument;
-        var params = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
-            ? JSON.parse(paramsJsonStr)
-            : (new Function("return " + paramsJsonStr))();
+        var params = ozoJsonParse(paramsJsonStr);
 
         var svgContent = params.svg;
         if (!svgContent) {

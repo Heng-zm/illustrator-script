@@ -4,7 +4,7 @@
   <img src="assets/logo.png" alt="Ozo Tools Logo" width="520">
 </p>
 
-> **Ozo Tools — Professional Adobe Illustrator Plugin & Automation Script Suite (v2.6.1)**  
+> **Ozo Tools — Professional Adobe Illustrator Plugin & Automation Script Suite (v2.6.2)**  
 > Production-ready ExtendScript (ES3) tools and dockable CEP extension panel for print shops, signage, vinyl cutters, packaging, and design automation.
 
 ---
@@ -42,26 +42,32 @@
 
 ## Installation
 
-### Method 1: Automatic Installer (Windows)
-1. Double-click `setup.bat` (or right-click and choose **Run as administrator**).
-2. Restart Adobe Illustrator.
-3. Access via:
-   - **Dockable Panel**: `Window > Extensions > Ozo Tools`
-   - **Menu Scripts**: `File > Scripts > Ozo Tools`
+### Method 1: Suite Manager (Recommended)
+- **Windows**: Double-click `setup.bat` and select `[1] Install Suite`.
+  - For full menu integration into `File > Scripts`, right-click `setup.bat` and choose **Run as administrator**.
+  - (User-level dock panel installation requires no admin privileges).
+- **macOS**: Double-click `setup.command` (or run `./setup.command` in Terminal) and select `[1] Install Suite`.
+- **Restart Adobe Illustrator**:
+  - **Dockable Panel**: `Window > Extensions > Ozo Tools`
+  - **Menu Scripts**: `File > Scripts > Ozo Tools`
 
-### Method 2: Check & Update from GitHub (Online Update)
-- **Automatic Online Update**: Double-click `setup.bat` and select `[3] Check & Update from GitHub`, or run:
-  ```cmd
-  setup.bat online-update
-  ```
-  This automatically checks GitHub for the latest release, downloads the `.zip` package, extracts it, and installs the updated panel & scripts.
+### Method 2: In-Illustrator Script Installer (Cross-Platform)
+1. In Adobe Illustrator, navigate to `File > Scripts > Other Script...` (or `Ctrl+F12` / `Cmd+F12`).
+2. Choose `Install as Plugin.jsx` and click **Open**.
+3. Choose installation options and click **Install Now**.
+4. Restart Illustrator.
 
-- **Local Update / Sync**: Double-click `setup.bat` and select `[2] Update`, or run:
-  ```cmd
-  setup.bat update
-  ```
+### Method 3: Check & Update from GitHub (Online Update)
+- **Automatic Online Update**:
+  - Windows: Double-click `setup.bat` and select `[3] Check & Update from GitHub`, or run `setup.bat online-update`.
+  - macOS: Double-click `setup.command` and select `[3] Download & Apply Latest Release from GitHub`.
+  This automatically checks GitHub for the latest release, downloads the `.zip` package, verifies version integrity, and updates the panel & scripts with automated backup/rollback protection.
 
-- **In-Panel Notification**: When inside Illustrator, the dockable panel (`Window > Extensions > Ozo Tools`) automatically checks GitHub for updates and displays a banner whenever a new release is available with a 1-click update button.
+- **Local Update / Sync**:
+  - Windows: Run `setup.bat update` (or option `[2]`).
+  - macOS: Run `setup.command` and select `[2]`.
+
+- **In-Panel Notification**: When inside Illustrator, the dockable panel (`Window > Extensions > Ozo Tools`) automatically queries GitHub for updates and displays a banner whenever a new release is available with a 1-click update button.
 
 ---
 
@@ -92,5 +98,5 @@ Double-click `setup.bat` and choose:
 ---
 
 ## License & Credits
-Created by **Ozo. Designer | CHUO Kimheng**.  
+Created by **Ozo. Designer | CHUO Kimheng**. Licensed under the [MIT License](LICENSE).  
 Distributed for Adobe Illustrator production automation.

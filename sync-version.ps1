@@ -64,6 +64,11 @@ $targets = @(
         Replacement = '${1}' + $version + '${2}'
     },
     @{
+        Path        = "Install as Plugin.jsx"
+        Pattern     = '("v)[0-9]+\.[0-9]+\.[0-9]+( \\u2022 Suite Setup)'
+        Replacement = '${1}' + $version + '${2}'
+    },
+    @{
         Path        = "lib\OzoShared.jsxinc"
         Pattern     = '(version:\s*")[0-9]+\.[0-9]+\.[0-9]+(")'
         Replacement = '${1}' + $version + '${2}'

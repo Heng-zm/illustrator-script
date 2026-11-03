@@ -2,12 +2,8 @@ name: Release Automation
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       version:
@@ -29,7 +25,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine Version
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Determine Version & Verify Tag Integrity
         id: get_version
         shell: pwsh
         run: |
@@ -52,8 +53,18 @@ jobs:
           # A v* tag must agree with version.json, otherwise the release would
           # publish one version while the panel reports another.
           $ref = "${{ github.ref_name }}"
-          if ($ref -match '^[vV](.+)$' -and $matches[1] -ne $ver) {
-            throw "Tag $ref does not match version.json ($ver). Bump version.json before tagging."
+          if ($ref -match '^[vV](.+)$') {
+            $tagVer = $matches[1]
+            if ($tagVer -ne $ver) {
+              throw "Tag $ref does not match version.json ($ver). Bump version.json before tagging."
+            }
+
+            # Verify the tag points to the checked out HEAD commit.
+            $tagSha = (& git rev-list -n 1 $ref).Trim()
+            $headSha = (& git rev-parse HEAD).Trim()
+            if ($tagSha -and $headSha -and $tagSha -ne $headSha) {
+              throw "Tag $ref ($tagSha) does not point to checked out commit ($headSha)."
+            }
           }
 
           Write-Host "Determined Version: $ver"
@@ -67,6 +78,10 @@ jobs:
       - name: Syntax Check (ExtendScript & panel)
         shell: pwsh
         run: node tools/check-syntax.js
+
+      - name: Host Bridge Unit Tests
+        shell: pwsh
+        run: node tools/test-hostscript.js
 
       - name: Build Release Package (.zip)
         shell: pwsh

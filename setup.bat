@@ -109,20 +109,35 @@ function Sync-PluginBundle {
 
 function Install-CepPanel {
     Write-Host "[*] Updating Dockable CEP Extension Panel..." -ForegroundColor Yellow
-    if (-not (Test-Path $cepTarget)) {
-        New-Item -Path $cepTarget -ItemType Directory -Force | Out-Null
-    }
+    $backupDir = Join-Path $env:TEMP ("ozo_cep_backup_" + [guid]::NewGuid().ToString("N"))
     try {
-        Get-ChildItem -Path $cepTarget -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
-            $rel = $_.FullName.Substring($cepTarget.Length)
-            $srcFile = $cepSource + $rel
-            if (-not (Test-Path $srcFile)) {
-                Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
-            }
+        if (Test-Path $cepTarget) {
+            Copy-Item -Path $cepTarget -Destination $backupDir -Recurse -Force
         }
-    } catch {}
+        if (-not (Test-Path $cepTarget)) {
+            New-Item -Path $cepTarget -ItemType Directory -Force | Out-Null
+        }
+        try {
+            Get-ChildItem -Path $cepTarget -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+                $rel = $_.FullName.Substring($cepTarget.Length)
+                $srcFile = $cepSource + $rel
+                if (-not (Test-Path $srcFile)) {
+                    Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
+                }
+            }
+        } catch {}
 
-    Copy-Item -Path "$cepSource\*" -Destination $cepTarget -Recurse -Force
+        Copy-Item -Path "$cepSource\*" -Destination $cepTarget -Recurse -Force
+    } catch {
+        if (Test-Path $backupDir) {
+            Write-Host "    [WARN] Panel update failed, restoring previous version..." -ForegroundColor Yellow
+            Remove-Item -Path $cepTarget -Recurse -Force -ErrorAction SilentlyContinue
+            Copy-Item -Path $backupDir -Destination $cepTarget -Recurse -Force
+        }
+        throw
+    } finally {
+        Remove-Item -Path $backupDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
     Write-Host "    [OK] Dockable panel installed/updated at:" -ForegroundColor Green
     Write-Host "         $cepTarget" -ForegroundColor Gray
     Write-Host "         (Access in Illustrator: Window -> Extensions -> Ozo Tools)" -ForegroundColor Green
@@ -254,6 +269,14 @@ function Do-OnlineUpdate {
         Write-Host "    Latest release  : $latestTag" -ForegroundColor Cyan
         Write-Host ""
 
+        $normalizedLatest = $latestTag.TrimStart('v', 'V')
+        $normalizedCurrent = $currentTag.TrimStart('v', 'V')
+        if ($normalizedCurrent -eq $normalizedLatest) {
+            Write-Host "    [OK] This installation is already up to date ($latestTag)." -ForegroundColor Green
+            Write-Host "         Use menu option [2] to re-sync local files without downloading." -ForegroundColor Gray
+            return
+        }
+
         $zipAsset = $release.assets | Where-Object { $_.name -like "*.zip" } | Select-Object -First 1
 
         if ($zipAsset) {
@@ -272,6 +295,16 @@ function Do-OnlineUpdate {
             $extractedContent = $tempDir
             $subFolder = Get-ChildItem -Path $tempDir -Directory | Where-Object { Test-Path (Join-Path $_.FullName "Script all") } | Select-Object -First 1
             if ($subFolder) { $extractedContent = $subFolder.FullName }
+
+            # Refuse a package whose internal version disagrees with the release tag.
+            $pkgVersionFile = Get-ChildItem -Path $tempDir -Recurse -File -Filter "version.json" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $pkgVersionFile) {
+                throw "Release package is missing version.json"
+            }
+            $pkgVersion = ([string]((Get-Content -LiteralPath $pkgVersionFile.FullName -Raw | ConvertFrom-Json).version)).Trim()
+            if ($pkgVersion -ne $normalizedLatest) {
+                throw "Package version $pkgVersion does not match release $latestTag"
+            }
 
             Write-Host "[*] Updating local scripts and extensions..." -ForegroundColor Yellow
             Get-ChildItem -Path $extractedContent | Where-Object { $_.Name -ne "setup.bat" -and $_.Name -ne "push.bat" } | ForEach-Object {
@@ -452,17 +485,15 @@ function Do-AutoPush {
         Write-Host "    [WARN] Nothing committed." -ForegroundColor Yellow
     }
 
-    # Automatically tag release if current version does not have a tag yet
-    $buildScript = Join-Path $ScriptRoot "build-release.ps1"
-    if (Test-Path $buildScript) {
-        $bContent = Get-Content $buildScript -Raw
-        if ($bContent -match 'param\(\s*\[string\]\$Version\s*=\s*"([^"]+)"') {
-            $curVerTag = "v" + $matches[1].TrimStart('v')
-            $existingTag = & git tag -l $curVerTag
-            if (-not $existingTag) {
-                Write-Host "    [*] Auto-tagging release $curVerTag..." -ForegroundColor Cyan
-                & git tag -a $curVerTag -m "Release $curVerTag"
-            }
+    # Automatically tag the release when version.json does not have a tag yet.
+    $versionFile = Join-Path $ScriptRoot "version.json"
+    if (Test-Path -LiteralPath $versionFile) {
+        $currentVersion = ([string]((Get-Content -LiteralPath $versionFile -Raw | ConvertFrom-Json).version)).Trim()
+        $curVerTag = "v" + ($currentVersion -replace '^[vV]', '')
+        $existingTag = & git tag -l $curVerTag
+        if (-not $existingTag) {
+            Write-Host "    [*] Auto-tagging release $curVerTag..." -ForegroundColor Cyan
+            & git tag -a $curVerTag -m "Release $curVerTag"
         }
     }
 

@@ -6,10 +6,11 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.6.1"; // keep in sync with CSXS/manifest.xml
+    var CURRENT_VERSION = "2.6.2"; // keep in sync with version.json
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
+    var UPDATE_POLL_INTERVAL = 30 * 60 * 1000; // re-apply the cached result; network still capped by UPDATE_CHECK_INTERVAL
     var SYNC_HOST_COLORS = true; // derive panel colours from Illustrator's actual UI brightness
     var TRUSTED_UPDATE_URL = /^https:\/\/(github\.com|api\.github\.com|codeload\.github\.com|objects\.githubusercontent\.com|release-assets\.githubusercontent\.com)\//i;
 
@@ -1053,8 +1054,8 @@
         html.push('  <span class="embed-doc-name" title="' + escapeHtml(meta.fullDocName) + '">' + escapeHtml(meta.fullDocName) + '</span>');
         html.push('  <div class="embed-doc-tags">');
         html.push('    <span class="embed-tag">' + escapeHtml(meta.colorSpace) + '</span>');
-        html.push('    <span class="embed-tag ' + (meta.isSaved ? "tag-saved" : "tag-unsaved") + '">' + (meta.isSaved ? "Saved" : "Unsaved") + '</span>');
-        html.push('    <span class="embed-tag">' + meta.totalArtboards + ' AB</span>');
+        html.push('    <span class="embed-tag ' + (meta.isSaved ? "tag-saved" : "tag-unsaved") + '">' + (meta.isSaved ? (isKhmer() ? "បានរក្សាទុក" : "Saved") : (isKhmer() ? "មិនបានរក្សាទុក" : "Unsaved")) + '</span>');
+        html.push('    <span class="embed-tag">' + meta.totalArtboards + (isKhmer() ? " ផ្ទាំង" : " AB") + '</span>');
         html.push('  </div>');
         html.push('</div>');
 
@@ -1089,8 +1090,8 @@
             html.push('          <option value="' + escapeHtml(pr) + '" ' + (state.pdfPreset === pr ? "selected" : "") + '>' + escapeHtml(pr) + '</option>');
         }
         html.push('        </select>');
-        html.push('        <label class="embed-check-row" style="margin-left:4px;"><input type="radio" name="pdfMode" id="rbPdfSep" value="sep" ' + (!state.pdfCombined ? "checked" : "") + '> Separate</label>');
-        html.push('        <label class="embed-check-row"><input type="radio" name="pdfMode" id="rbPdfComb" value="comb" ' + (state.pdfCombined ? "checked" : "") + '> Multi-page</label>');
+        html.push('        <label class="embed-check-row" style="margin-left:4px;"><input type="radio" name="pdfMode" id="rbPdfSep" value="sep" ' + (!state.pdfCombined ? "checked" : "") + '> ' + (isKhmer() ? "ដោយឡែក" : "Separate") + '</label>');
+        html.push('        <label class="embed-check-row"><input type="radio" name="pdfMode" id="rbPdfComb" value="comb" ' + (state.pdfCombined ? "checked" : "") + '> ' + (isKhmer() ? "ច្រើនទំព័រ" : "Multi-page") + '</label>');
         html.push('      </div>');
         html.push('    </div>');
 
@@ -1124,7 +1125,7 @@
         html.push('      </div>');
         html.push('      <div class="embed-format-options" id="optJpg" style="display:' + (state.jpg ? "flex" : "none") + ';">');
         html.push('        <select id="selJpgDpi" class="embed-select"><option value="300" ' + (state.jpgDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.jpgDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.jpgDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
-        html.push('        <span style="font-size:11px;color:var(--text-muted);">Quality 100% (Max)</span>');
+        html.push('        <span style="font-size:11px;color:var(--text-muted);">' + (isKhmer() ? "គុណភាព 100% (អតិបរមា)" : "Quality 100% (Max)") + '</span>');
         html.push('      </div>');
         html.push('    </div>');
         html.push('  </div>');
@@ -1172,7 +1173,7 @@
         html.push('    </select>');
         html.push('  </div>');
         html.push('  <input type="text" id="expTemplateInput" class="embed-input embed-input-mono" value="' + escapeHtml(state.template) + '">');
-        html.push('  <div class="embed-naming-preview" id="expNamingPreview">Sample filename preview</div>');
+        html.push('  <div class="embed-naming-preview" id="expNamingPreview">' + (isKhmer() ? "ឧទាហរណ៍ឈ្មោះឯកសារ" : "Sample filename preview") + '</div>');
         html.push('  <div class="embed-naming-info" id="expNamingInfo"></div>');
         html.push('</div>');
 
@@ -4693,6 +4694,18 @@
         });
     }
 
+    // A long-running panel never reloads, so a release published after launch
+    // would stay invisible. Re-apply the cached result periodically; the
+    // network request itself is still throttled by UPDATE_CHECK_INTERVAL.
+    var updatePollTimer = null;
+    function startUpdateMonitor() {
+        if (updatePollTimer) return;
+        updatePollTimer = setInterval(function () {
+            if (document.hidden || updateBusy) return;
+            checkForUpdates(false);
+        }, UPDATE_POLL_INTERVAL);
+    }
+
     function setUpdateBtn(state) {
         updateBtnState = state;
         updateNowBtn.classList.remove("updating", "updated");
@@ -4794,4 +4807,5 @@
     refreshDocumentStatus();
     startDocumentMonitor();
     checkForUpdates(false);
+    startUpdateMonitor();
 })();

@@ -62,17 +62,25 @@ if (Test-Path $launcherSource) {
 
 # 1b. Validate before packaging so a broken script can never be released.
 $syntaxCheck = Join-Path $ScriptRoot "tools\check-syntax.js"
-if (Test-Path -LiteralPath $syntaxCheck) {
-    $node = Get-Command node -ErrorAction SilentlyContinue
-    if ($node) {
+$unitTest = Join-Path $ScriptRoot "tools\test-hostscript.js"
+$node = Get-Command node -ErrorAction SilentlyContinue
+if ($node) {
+    if (Test-Path -LiteralPath $syntaxCheck) {
         Write-Host "[*] Validating ExtendScript and panel syntax..." -ForegroundColor Yellow
         & node $syntaxCheck
         if ($LASTEXITCODE -ne 0) {
             throw "Syntax validation failed. Fix the errors above before releasing."
         }
-    } else {
-        Write-Host "    [WARN] Node.js not found; skipping syntax validation." -ForegroundColor Yellow
     }
+    if (Test-Path -LiteralPath $unitTest) {
+        Write-Host "[*] Running host bridge unit tests..." -ForegroundColor Yellow
+        & node $unitTest
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unit tests failed. Fix the test failures before releasing."
+        }
+    }
+} else {
+    Write-Host "    [WARN] Node.js not found; skipping syntax and unit test validation." -ForegroundColor Yellow
 }
 
 # 2. Stage files
@@ -87,11 +95,14 @@ New-Item -Path $stageDir -ItemType Directory -Force | Out-Null
 
 $itemsToCopy = @(
     "setup.bat",
+    "setup.command",
     "push.bat",
     "Install as Plugin.jsx",
     "Script Launcher.jsx",
     "README.md",
     "README-PLUGIN.md",
+    "LICENSE",
+    "CHANGELOG.md",
     "version.json",
     "sync-version.ps1"
 )

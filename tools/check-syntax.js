@@ -65,6 +65,25 @@ function checkEscapes(name, code) {
     }
 }
 
+// ExtendScript is ES3: no native JSON and no eval-style Function constructor.
+// Both hide failures until a user clicks a tool, so reject them at build time.
+function lintExtendScript(name, code, allowNativeJsonGuard) {
+    var lines = code.split(/\r?\n/);
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var trimmed = line.replace(/^\s+/, "");
+        if (/^\/\//.test(trimmed) || /^\*/.test(trimmed) || /^\/\*/.test(trimmed)) continue;
+        if (/\bnew\s+Function\s*\(/.test(line)) {
+            fail(name + ":" + (i + 1) + " uses eval-style new Function(); parse JSON with ozoJsonParse/OZO.parseJson");
+            return;
+        }
+        if (!allowNativeJsonGuard && /\bJSON\s*\./.test(line)) {
+            fail(name + ":" + (i + 1) + " uses native JSON (ExtendScript has none); assign plain objects or use OZO.parseJson");
+            return;
+        }
+    }
+}
+
 function prepareExtendScript(file) {
     var code = read(file);
     var sharedFile = path.join(LIB_DIR, "OzoShared.jsxinc");
@@ -77,9 +96,10 @@ function prepareExtendScript(file) {
     return code.replace(/^[ \t]*#(?:target|targetengine)\b.*$/gm, "");
 }
 
-function parseExtendScript(label, file) {
+function parseExtendScript(label, file, allowNativeJsonGuard) {
     var code = prepareExtendScript(file);
     checkEscapes(label, code);
+    lintExtendScript(label, code, allowNativeJsonGuard);
     parse(label, code);
 }
 
@@ -106,6 +126,18 @@ fs.readdirSync(ROOT)
     .forEach(function (name) {
         parseExtendScript(name, path.join(ROOT, name));
     });
+
+// ------------------------------------------------------------------
+// 2b. CEP host bridge (runs in Illustrator's ExtendScript engine)
+// ------------------------------------------------------------------
+var hostScript = path.join(PLUGIN_DIR, "jsx", "hostscript.jsx");
+if (fs.existsSync(hostScript)) {
+    // The bridge may use native JSON when the host provides it; its serializer
+    // keeps a guarded fast path. The eval ban still applies.
+    parseExtendScript("jsx/hostscript.jsx", hostScript, true);
+} else {
+    fail("missing host bridge: " + path.relative(ROOT, hostScript));
+}
 
 // ------------------------------------------------------------------
 // 3. Panel JavaScript

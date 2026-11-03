@@ -1,4 +1,4 @@
-# Ozo Tools - Adobe Illustrator Plugin Suite (v2.6.1)
+# Ozo Tools - Adobe Illustrator Plugin Suite (v2.6.2)
 
 <p align="center">
   <img src="assets/logo.png" alt="Ozo Tools Logo" width="520">
@@ -39,11 +39,10 @@ Transform all your Illustrator scripts into an official, native Illustrator plug
 
 You have **3 simple installation methods**:
 
-### Method 1: One-Click Installer & Manager (Windows) — Recommended
-1. Double-click `setup.bat`.
-2. Choose **[1] Install** (or right-click `setup.bat` and choose **Run as administrator** to install into both `Window > Extensions` and `File > Scripts`).
-   - *Note*: If administrator elevation is declined, it automatically proceeds with user-level installation into `Window > Extensions > Ozo Tools`.
-3. Restart Adobe Illustrator.
+### Method 1: Suite Manager (Recommended)
+- **Windows**: Double-click `setup.bat` and select **[1] Install** (or right-click and choose **Run as administrator** for both Extensions and Scripts menu).
+- **macOS**: Double-click `setup.command` (or run `./setup.command` in Terminal) and select **[1] Install Suite**.
+- Restart Adobe Illustrator.
 
 ### Method 2: In-Illustrator Installer (Cross-Platform)
 1. Open Adobe Illustrator.
@@ -61,22 +60,18 @@ When running the dockable CEP panel in Illustrator (`Window > Extensions > Ozo T
 - An update banner appears at the top of the panel with a one-click **Update** button.
 - The version badge lights up as an indicator.
 
-### Option 2: Command-Line / One-Click Online Update (Windows)
-Double-click `setup.bat` and select **[3] Check & Update from GitHub**, or run:
-```cmd
-setup.bat online-update
-```
-This automatically fetches the latest release `.zip` from GitHub, updates your files, and reinstalls the CEP panel and native menu scripts.
+### Option 2: Command-Line / One-Click Online Update
+- Windows: Double-click `setup.bat` and select **[3] Check & Update from GitHub**, or run `setup.bat online-update`.
+- macOS: Double-click `setup.command` and select **[3] Download & Apply Latest Release from GitHub**.
+This automatically fetches the latest release `.zip` from GitHub, verifies version integrity, updates your files, and refreshes the installation with automated rollback protection.
 
 ### Option 3: Local Sync / Offline Update
 Whenever you make local edits to scripts:
-- Double-click `setup.bat` and choose **[2] Update** (or run `setup.bat update`).
-- This automatically synchronizes all local scripts to the CEP extension folder and native `File > Scripts` menu.
+- Windows: Double-click `setup.bat` and choose **[2] Update** (or run `setup.bat update`).
+- macOS: Run `setup.command` and select **[2] Update**.
 
 ### Inside Illustrator (Cross-Platform):
 - Run `Install as Plugin.jsx` from `File > Scripts > Other Script...` anytime to refresh the installed files.
-
----
 
 ---
 

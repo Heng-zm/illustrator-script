@@ -25,7 +25,7 @@
         }
         if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 1) {
             if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
-                __ozoHeadlessResult = JSON.stringify({ success: false, message: "No artwork found on active artboard to nest." });
+                __ozoHeadlessResult = { success: false, message: "No artwork found on active artboard to nest." };
             }
             return;
         }
@@ -618,7 +618,7 @@
 
     if (itemStates.length === 0) {
         if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
-            __ozoHeadlessResult = JSON.stringify({ success: false, message: "The selection has no visible, unlocked artwork with measurable bounds." });
+            __ozoHeadlessResult = { success: false, message: "The selection has no visible, unlocked artwork with measurable bounds." };
             return;
         }
         alert(OZO.isKhmer() ? "\u1787\u1798\u17d2\u179a\u17be\u179f\u1798\u17b7\u1793\u1798\u17b6\u1793\u1782\u17c6\u1793\u17bc\u179a\u178a\u17c2\u179b\u1798\u17be\u179b\u1783\u17be\u1789 \u1798\u17b7\u1793\u1785\u17b6\u1780\u17cb\u179f\u17c4 \u1793\u17b7\u1784\u17a2\u17b6\u1785\u179c\u17b6\u179f\u17cb\u1794\u17b6\u1793\u1791\u17c1\u17d4" :
@@ -1683,9 +1683,9 @@
     if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
         var hp = null;
         try {
-            hp = typeof __ozoHeadlessParams === "string" ? JSON.parse(__ozoHeadlessParams) : __ozoHeadlessParams;
+            hp = typeof __ozoHeadlessParams === "string" ? OZO.parseJson(__ozoHeadlessParams) : __ozoHeadlessParams;
         } catch (eJson) {
-            __ozoHeadlessResult = JSON.stringify({ success: false, message: "Invalid JSON params: " + eJson.message });
+            __ozoHeadlessResult = { success: false, message: "Invalid JSON params: " + eJson.message };
             return;
         }
 
@@ -1720,7 +1720,7 @@
         try {
             var finalResult = performNesting(true, headlessSettings);
             var sheetCount = countSheets(finalResult.bins) || 1;
-            __ozoHeadlessResult = JSON.stringify({
+            __ozoHeadlessResult = {
                 success: true,
                 placed: finalResult.plan.length,
                 total: finalResult.sourceCount,
@@ -1728,11 +1728,11 @@
                 utilization: finalResult.utilization,
                 sheets: sheetCount,
                 fixed: finalResult.fixedCount
-            });
+            };
             return;
         } catch (nestErr) {
             restoreItems();
-            __ozoHeadlessResult = JSON.stringify({ success: false, message: errorMessage(nestErr) });
+            __ozoHeadlessResult = { success: false, message: errorMessage(nestErr) };
             return;
         }
     }
