@@ -91,7 +91,9 @@
             "preview.open": "Open Tool",
             "preview.run": "Quick Run",
             "preview.close": "Back",
-            "preview.btn": "Preview"
+            "preview.btn": "Preview",
+            "splash.subtitle": "Illustrator Automation Suite",
+            "splash.status": "Ready \u2022 13 tools available"
         },
         km: {
             "cat.all": "ទាំងអស់", "cat.favorites": "សំណព្វ", "cat.prepress": "មុនបោះពុម្ព",
@@ -159,7 +161,9 @@
             "preview.open": "បើកឡបករណ៍",
             "preview.run": "តំណើរការភ្លាម",
             "preview.close": "ត្រជល័ប",
-            "preview.btn": "មើលព័តឹម័ន"
+            "preview.btn": "មើលព័តឹម័ន",
+            "splash.subtitle": "កញ្ចប់ឧបករណ៍ជំនួយការងារ Illustrator",
+            "splash.status": "រួចរាល់ \u2022 មាន ១៣ ឧបករណ៍"
         }
     };
 
@@ -5019,7 +5023,36 @@ function closeEmbeddedView() {
     // ------------------------------------------------------------------
     // Init
     // ------------------------------------------------------------------
-    brandBadge.textContent = "v" + CURRENT_VERSION;
+
+    // ------------------------------------------------------------------
+    // Welcome Splash Screen Animation
+    // ------------------------------------------------------------------
+    function initWelcomeSplash() {
+        var splash = $("welcomeSplash");
+        if (!splash) return;
+
+        var splashVer = $("splashVersion");
+        if (splashVer) splashVer.textContent = "v" + CURRENT_VERSION;
+
+        var dismissed = false;
+        function dismissSplash() {
+            if (dismissed) return;
+            dismissed = true;
+            splash.classList.add("is-leaving");
+            setTimeout(function () {
+                splash.style.display = "none";
+            }, 400);
+        }
+
+        splash.addEventListener("click", dismissSplash);
+        window.addEventListener("keydown", function () {
+            if (!dismissed && splash.style.display !== "none") dismissSplash();
+        });
+
+        setTimeout(dismissSplash, 1200);
+    }
+
+        brandBadge.textContent = "v" + CURRENT_VERSION;
 
     if (csInterface) {
         csInterface.addEventListener(CSInterface.THEME_COLOR_CHANGED_EVENT, updateTheme);
@@ -5038,5 +5071,6 @@ function closeEmbeddedView() {
     refreshDocumentStatus();
     startDocumentMonitor();
     checkForUpdates(false);
+    initWelcomeSplash();
     startUpdateMonitor();
 })();

@@ -8,6 +8,25 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Welcome Splash Screen (initial launch animation) -->
+    <div id="welcomeSplash" class="welcome-splash" role="dialog" aria-modal="true" aria-label="Welcome to Ozo Tools">
+        <div class="splash-card">
+            <div class="splash-logo-wrap">
+                <div class="splash-logo-glow"></div>
+                <img src="assets/logo-square.png" class="splash-logo" alt="Ozo Tools">
+            </div>
+            <div class="splash-brand">
+                <span class="splash-title">OZO TOOLS</span>
+                <span id="splashVersion" class="splash-badge"></span>
+            </div>
+            <p class="splash-subtitle" data-i18n="splash.subtitle">Illustrator Automation Suite</p>
+            <div class="splash-progress-track">
+                <div class="splash-progress-bar"></div>
+            </div>
+            <div class="splash-status" data-i18n="splash.status">Ready &bull; 13 tools available</div>
+        </div>
+    </div>
+
     <!-- All visible text is owned by js/main.js (data-i18n* attributes); the English below is the no-JS fallback. -->
 
     <!-- Top Header -->
