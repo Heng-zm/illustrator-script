@@ -15,7 +15,7 @@
         <div class="brand">
             <img src="assets/logo-square.png" class="brand-logo" alt="Ozo Tools">
             <span class="brand-title">OZO TOOLS</span>
-            <button type="button" id="brandBadge" class="brand-badge" data-i18n-title="badge.title">v2.3.0</button>
+            <button type="button" id="brandBadge" class="brand-badge" data-i18n-title="badge.title">v2.6.1</button>
         </div>
         <div class="header-actions">
             <button type="button" id="viewToggleBtn" class="icon-btn" aria-pressed="false" data-i18n-title="view.toggle" title="Toggle Grid / List View">
@@ -51,7 +51,9 @@
     <!-- Update Notification Banner -->
     <div id="updateBanner" class="update-banner" hidden>
         <div class="update-banner-content">
-            <span class="update-icon" aria-hidden="true">&#9889;</span>
+            <span class="update-icon" aria-hidden="true">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </span>
             <span class="update-text" id="updateBannerText"></span>
         </div>
         <div class="update-banner-actions">
@@ -86,7 +88,7 @@
         <!-- Category Tabs -->
         <div id="tabs" class="tabs-container" role="tablist">
             <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-category="all"><span data-i18n="cat.all">All</span> <span class="tab-count" data-count="all"></span></button>
-            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="favorites"><span class="tab-star" aria-hidden="true">&#9733;</span> <span data-i18n="cat.favorites">Favorites</span> <span class="tab-count" data-count="favorites"></span></button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="favorites"><span class="tab-star" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:-1px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span> <span data-i18n="cat.favorites">Favorites</span> <span class="tab-count" data-count="favorites"></span></button>
             <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="prepress"><span data-i18n="cat.prepress">Prepress</span> <span class="tab-count" data-count="prepress"></span></button>
             <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="layout"><span data-i18n="cat.layout">Layout</span> <span class="tab-count" data-count="layout"></span></button>
             <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="utilities"><span data-i18n="cat.utilities">Utilities</span> <span class="tab-count" data-count="utilities"></span></button>
@@ -140,7 +142,7 @@
         </div>
         <div class="footer-links">
             <button type="button" id="donateBtn" class="donate-link" data-i18n-title="donate.title" title="Support developer via ABA Pay">
-                <span aria-hidden="true">&#10084;&#65039;</span> <span data-i18n="donate.text">Donate</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="#e0245e" stroke="none" style="vertical-align:-1px;margin-right:2px;" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><span data-i18n="donate.text">Donate</span>
             </button>
         </div>
     </footer>

@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.6.0"; // keep in sync with CSXS/manifest.xml
+    var CURRENT_VERSION = "2.6.1"; // keep in sync with CSXS/manifest.xml
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
@@ -155,6 +155,58 @@
     // ------------------------------------------------------------------
     function svgIcon(inner) {
         return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + inner + "</svg>";
+    }
+
+    function uiIcon(name, size) {
+        size = size || 14;
+        var paths = {
+            export: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+            scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>',
+            ruler: '<path d="M2 12h20M2 5v14M22 5v14M6 9v6M10 9v6M14 9v6M18 9v6"/>',
+            printer: '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+            refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+            hash: '<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>',
+            grid: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>',
+            trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+            repeat: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+            nest: '<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="5" height="5"/><rect x="13" y="6" width="5" height="8"/><rect x="6" y="13" width="5" height="5"/>',
+            download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+            folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+            play: '<polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>',
+            file: '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>',
+            radial: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>',
+            check: '<polyline points="20 6 9 17 4 12"/>',
+            unite: '<rect x="3" y="3" width="11" height="11" rx="1"/><rect x="10" y="10" width="11" height="11" rx="1"/>',
+            minusfront: '<rect x="3" y="3" width="11" height="11" rx="1"/><path d="M14 10h7v11H10v-7"/>',
+            intersect: '<rect x="3" y="3" width="11" height="11" rx="1" stroke-dasharray="2 2"/><rect x="10" y="10" width="11" height="11" rx="1" stroke-dasharray="2 2"/><rect x="10" y="10" width="4" height="4" fill="currentColor"/>',
+            exclude: '<rect x="3" y="3" width="11" height="11" rx="1" fill="currentColor"/><rect x="10" y="10" width="11" height="11" rx="1" fill="currentColor"/>',
+            divide: '<line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/>',
+            trim: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/>',
+            merge: '<path d="M8 3v18M16 3v18M3 8h18M3 16h18"/>',
+            crop: '<rect x="7" y="7" width="10" height="10" rx="1"/><path d="M3 7h4v14M7 3v4h14"/>',
+            outline: '<polygon points="12 2 2 22 22 22"/>',
+            minusback: '<rect x="10" y="10" width="11" height="11" rx="1"/><path d="M3 3h11v7H10v4H3z"/>',
+            roundrect: '<rect x="3" y="3" width="18" height="18" rx="5"/>',
+            rect: '<rect x="3" y="5" width="18" height="14"/>',
+            circle: '<circle cx="12" cy="12" r="9"/>',
+            capsule: '<rect x="2" y="6" width="20" height="12" rx="6"/>',
+            hexagon: '<polygon points="12 2 21 7 21 17 12 22 3 17 3 7"/>',
+            octagon: '<polygon points="7.8 2 16.2 2 22 7.8 22 16.2 16.2 22 7.8 22 2 16.2 2 7.8"/>',
+            plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+            x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+            select: '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>',
+            text: '<polyline points="4 7 4 4 20 4 20 7"/><line x1="12" y1="4" x2="12" y2="20"/>',
+            image: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+            path: '<circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>',
+            compound: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/>',
+            dots: '<circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/>',
+            dimboth: '<polyline points="15 3 21 3 21 9"/><line x1="21" y1="3" x2="14" y2="10"/><polyline points="9 21 3 21 3 15"/><line x1="3" y1="21" x2="10" y2="14"/>',
+            dimwidth: '<line x1="3" y1="12" x2="21" y2="12"/><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/>',
+            dimheight: '<line x1="12" y1="3" x2="12" y2="21"/><polyline points="8 7 12 3 16 7"/><polyline points="8 17 12 21 16 17"/>',
+            dimbox: '<rect x="3" y="3" width="18" height="18" rx="2"/>'
+        };
+        var inner = paths[name] || '<circle cx="12" cy="12" r="9"/>';
+        return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-svg-icon" aria-hidden="true">' + inner + '</svg>';
     }
 
     var TOOLS = [
@@ -1046,7 +1098,7 @@
         }
         html.push('    </select>');
         html.push('    <select id="selNamingTag" class="embed-select" style="width:85px;">');
-        html.push('      <option value="">+ Tag... ▾</option>');
+        html.push('      <option value="">+ Add Tag...</option>');
         html.push('      <option value="[doc]">[doc] Document</option>');
         html.push('      <option value="[ab]">[ab] Artboard</option>');
         html.push('      <option value="[w]">[w] Width</option>');
@@ -1061,7 +1113,7 @@
         html.push('    </select>');
         html.push('  </div>');
         html.push('  <input type="text" id="expTemplateInput" class="embed-input embed-input-mono" value="' + escapeHtml(state.template) + '">');
-        html.push('  <div class="embed-naming-preview" id="expNamingPreview">→ Preview</div>');
+        html.push('  <div class="embed-naming-preview" id="expNamingPreview">Sample filename preview</div>');
         html.push('  <div class="embed-naming-info" id="expNamingInfo"></div>');
         html.push('</div>');
 
@@ -1081,7 +1133,7 @@
 
         // 7. Sticky Action Footer
         html.push('<div class="embed-action-wrap">');
-        html.push('  <button type="button" id="btnExportSubmit" class="btn-action-primary">🚀 ' + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now") + '</button>');
+        html.push('  <button type="button" id="btnExportSubmit" class="btn-action-primary">' + uiIcon("export") + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -1127,7 +1179,7 @@
             var abIndex = state.scope === "active" ? meta.activeArtboardIndex : 0;
             var ab = meta.artboards && meta.artboards[abIndex] ? meta.artboards[abIndex] : null;
             var sampleName = buildPreviewSample(expTemplateInput.value, meta.docName, ab, ext, selNamingUnit.value, isComb);
-            expNamingPreview.textContent = "→ " + sampleName;
+            expNamingPreview.textContent = sampleName;
 
             var abCount = 0;
             if (state.scope === "all") {
@@ -1293,7 +1345,7 @@
 
             hideError();
             btnExportSubmit.disabled = true;
-            btnExportSubmit.textContent = isKhmer() ? "⏳ កំពុងនាំចេញ..." : "⏳ Exporting...";
+            btnExportSubmit.innerHTML = uiIcon("refresh") + (isKhmer() ? "កំពុងនាំចេញ..." : "Exporting...");
             setStatus(isKhmer() ? "កំពុងនាំចេញឯកសារ..." : "Batch exporting artboards...", "running");
 
             var exportConfig = {
@@ -1317,7 +1369,7 @@
             if (!csInterface) {
                 setTimeout(function () {
                     btnExportSubmit.disabled = false;
-                    btnExportSubmit.textContent = "🚀 " + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now");
+                    btnExportSubmit.innerHTML = uiIcon("export") + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now");
                     setStatus("Simulated Export Complete (2 files)", "success", 4000);
                 }, 1200);
                 return;
@@ -1325,12 +1377,12 @@
 
             csInterface.evalScript("ozoExecuteBatchExport(" + JSON.stringify(JSON.stringify(exportConfig)) + ")", function (raw) {
                 btnExportSubmit.disabled = false;
-                btnExportSubmit.textContent = "🚀 " + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now");
+                btnExportSubmit.innerHTML = uiIcon("export") + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
                 if (res && res.status === "success") {
-                    var successMsg = (isKhmer() ? "នាំចេញបានជោគជ័យ៖ " : "Export complete: ") + res.count + " " + (isKhmer() ? "ឯកសារ" : "file(s)") + " → " + res.folder;
+                    var successMsg = (isKhmer() ? "នាំចេញបានជោគជ័យ៖ " : "Export complete: ") + res.count + " " + (isKhmer() ? "ឯកសារ" : "file(s)") + " : " + res.folder;
                     setStatus(successMsg, "success", 6000);
                 } else {
                     var errMsg = (res && res.message) || String(raw || "Export failed");
@@ -1448,7 +1500,7 @@
 
         // 5. Sticky Action Button
         html.push('<div class="embed-action-wrap">');
-        html.push('  <button type="button" id="btnQrSubmit" class="btn-action-primary">➕ ' + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code") + '</button>');
+        html.push('  <button type="button" id="btnQrSubmit" class="btn-action-primary">' + uiIcon("plus") + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -1534,7 +1586,7 @@
 
             hideError();
             btnQrSubmit.disabled = true;
-            btnQrSubmit.textContent = isKhmer() ? "⏳ កំពុងបង្កើត..." : "⏳ Generating...";
+            btnQrSubmit.innerHTML = uiIcon("refresh") + (isKhmer() ? "កំពុងបង្កើត..." : "Generating...");
             setStatus(isKhmer() ? "កំពុងបង្កើតកូដ QR..." : "Generating vector QR code...", "running");
 
             var qrParams = {
@@ -1554,7 +1606,7 @@
             if (!csInterface) {
                 setTimeout(function () {
                     btnQrSubmit.disabled = false;
-                    btnQrSubmit.textContent = "➕ " + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code");
+                    btnQrSubmit.innerHTML = uiIcon("plus") + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code");
                     setStatus("Simulated QR Inserted (Browser Preview)", "success", 4000);
                 }, 1000);
                 return;
@@ -1562,7 +1614,7 @@
 
             csInterface.evalScript("ozoExecuteGenerateQR(" + JSON.stringify(JSON.stringify(qrParams)) + ")", function (raw) {
                 btnQrSubmit.disabled = false;
-                btnQrSubmit.textContent = "➕ " + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code");
+                btnQrSubmit.innerHTML = uiIcon("plus") + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -1596,13 +1648,13 @@
         ];
 
         var SHAPES_LIST = [
-            { id: 4, name: isKhmer() ? "រាងតាមរូប" : "Tight Silhouette", icon: "✂" },
-            { id: 0, name: isKhmer() ? "ចតុកោណមូល" : "Rounded Rect", icon: "▢" },
-            { id: 1, name: isKhmer() ? "ចតុកោណកែង" : "Rectangle", icon: "▭" },
-            { id: 2, name: isKhmer() ? "រង្វង់ / ពងក្រពើ" : "Circle / Oval", icon: "○" },
-            { id: 3, name: isKhmer() ? "កន្សោមថ្នាំ" : "Capsule", icon: "⬭" },
-            { id: 5, name: isKhmer() ? "ប្រាំមួយជ្រុង" : "Hexagon", icon: "⬡" },
-            { id: 6, name: isKhmer() ? "ប្រាំបីជ្រុង" : "Octagon", icon: "⯃" }
+            { id: 4, name: isKhmer() ? "រាងតាមរូប" : "Tight Silhouette", icon: uiIcon("scissors", 13) },
+            { id: 0, name: isKhmer() ? "ចតុកោណមូល" : "Rounded Rect", icon: uiIcon("roundrect", 13) },
+            { id: 1, name: isKhmer() ? "ចតុកោណកែង" : "Rectangle", icon: uiIcon("rect", 13) },
+            { id: 2, name: isKhmer() ? "រង្វង់ / ពងក្រពើ" : "Circle / Oval", icon: uiIcon("circle", 13) },
+            { id: 3, name: isKhmer() ? "កន្សោមថ្នាំ" : "Capsule", icon: uiIcon("capsule", 13) },
+            { id: 5, name: isKhmer() ? "ប្រាំមួយជ្រុង" : "Hexagon", icon: uiIcon("hexagon", 13) },
+            { id: 6, name: isKhmer() ? "ប្រាំបីជ្រុង" : "Octagon", icon: uiIcon("octagon", 13) }
         ];
 
         var state = {
@@ -1718,7 +1770,7 @@
 
         // 6. Action Wrap
         html.push('<div class="embed-action-wrap">');
-        html.push('  <button type="button" id="btnCutSubmit" class="btn-action-primary">✂ ' + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now") + '</button>');
+        html.push('  <button type="button" id="btnCutSubmit" class="btn-action-primary">' + uiIcon("scissors") + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -1814,7 +1866,7 @@
 
             hideError();
             btnCutSubmit.disabled = true;
-            btnCutSubmit.textContent = isKhmer() ? "⏳ កំពុងបង្កើត..." : "⏳ Generating...";
+            btnCutSubmit.innerHTML = uiIcon("refresh") + (isKhmer() ? "កំពុងបង្កើត..." : "Generating...");
             setStatus(isKhmer() ? "កំពុងបង្កើតបន្ទាត់កាត់ CutContour..." : "Generating CutContour paths...", "running");
 
             var pObj = PRESETS_LIST[state.preset] || PRESETS_LIST[0];
@@ -1842,7 +1894,7 @@
             if (!csInterface) {
                 setTimeout(function () {
                     btnCutSubmit.disabled = false;
-                    btnCutSubmit.textContent = "✂ " + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now");
+                    btnCutSubmit.innerHTML = uiIcon("scissors") + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now");
                     setStatus("Simulated CutContour Generated (Browser Preview)", "success", 4000);
                 }, 1000);
                 return;
@@ -1850,7 +1902,7 @@
 
             csInterface.evalScript("ozoExecuteCutContour(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
                 btnCutSubmit.disabled = false;
-                btnCutSubmit.textContent = "✂ " + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now");
+                btnCutSubmit.innerHTML = uiIcon("scissors") + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -1894,10 +1946,10 @@
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទិសដៅវាស់ (Direction)" : "Dimension Direction") + '</span></div>');
         html.push('  <div class="embed-segmented" id="dimModeSegmented">');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 0 ? "active" : "") + '" data-mode="0">⤢ ' + (isKhmer() ? "ទទឹង & កម្ពស់" : "Both (W+H)") + '</button>');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 1 ? "active" : "") + '" data-mode="1">↔ ' + (isKhmer() ? "ទទឹង" : "Width") + '</button>');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 2 ? "active" : "") + '" data-mode="2">↕ ' + (isKhmer() ? "កម្ពស់" : "Height") + '</button>');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 3 ? "active" : "") + '" data-mode="3">▢ ' + (isKhmer() ? "ប្រអប់" : "Box") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 0 ? "active" : "") + '" data-mode="0">' + uiIcon("dimboth", 12) + (isKhmer() ? "ទទឹង & កម្ពស់" : "Both (W+H)") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 1 ? "active" : "") + '" data-mode="1">' + uiIcon("dimwidth", 12) + (isKhmer() ? "ទទឹង" : "Width") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 2 ? "active" : "") + '" data-mode="2">' + uiIcon("dimheight", 12) + (isKhmer() ? "កម្ពស់" : "Height") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 3 ? "active" : "") + '" data-mode="3">' + uiIcon("dimbox", 12) + (isKhmer() ? "ប្រអប់" : "Box") + '</button>');
         html.push('  </div>');
         html.push('</div>');
 
@@ -1954,7 +2006,7 @@
 
         // 4. Action Wrap
         html.push('<div class="embed-action-wrap">');
-        html.push('  <button type="button" id="btnDimSubmit" class="btn-action-primary">📏 ' + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now") + '</button>');
+        html.push('  <button type="button" id="btnDimSubmit" class="btn-action-primary">' + uiIcon("ruler") + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -2001,7 +2053,7 @@
         btnDimSubmit.addEventListener("click", function () {
             hideError();
             btnDimSubmit.disabled = true;
-            btnDimSubmit.textContent = isKhmer() ? "⏳ កំពុងគណនា..." : "⏳ Adding dimensions...";
+            btnDimSubmit.innerHTML = uiIcon("refresh") + (isKhmer() ? "កំពុងគណនា..." : "Adding dimensions...");
             setStatus(isKhmer() ? "កំពុងដាក់វិមាត្រទំហំ..." : "Adding dimensions to artwork...", "running");
 
             var params = {
@@ -2021,7 +2073,7 @@
             if (!csInterface) {
                 setTimeout(function () {
                     btnDimSubmit.disabled = false;
-                    btnDimSubmit.textContent = "📏 " + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now");
+                    btnDimSubmit.innerHTML = uiIcon("ruler") + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now");
                     setStatus("Simulated Dimensions Placed (Browser Preview)", "success", 4000);
                 }, 1000);
                 return;
@@ -2029,7 +2081,7 @@
 
             csInterface.evalScript("ozoExecuteSmartDimension(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
                 btnDimSubmit.disabled = false;
-                btnDimSubmit.textContent = "📏 " + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now");
+                btnDimSubmit.innerHTML = uiIcon("ruler") + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -2140,7 +2192,7 @@
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header">');
         html.push('    <span>' + (isKhmer() ? "ទំហំបោះពុម្ព (Print Dimensions)" : "Print Dimensions") + '</span>');
-        html.push('    <button type="button" id="btnPjSyncAb" class="embed-preset-btn" style="padding:2px 8px;font-size:10.5px;">📐 ' + (isKhmer() ? "យកទំហំ Artboard" : "Sync Artboard") + '</button>');
+        html.push('    <button type="button" id="btnPjSyncAb" class="embed-preset-btn" style="padding:2px 8px;font-size:10.5px;">' + uiIcon("grid", 11) + (isKhmer() ? "យកទំហំ Artboard" : "Sync Artboard") + '</button>');
         html.push('  </div>');
         html.push('  <div class="embed-row-3col">');
         html.push('    <div>');
@@ -2216,7 +2268,7 @@
 
         // 5. Submit Wrap
         html.push('<div class="embed-action-wrap">');
-        html.push('  <button type="button" id="btnPjSubmit" class="btn-action-primary">🖨️ ' + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header") + '</button>');
+        html.push('  <button type="button" id="btnPjSubmit" class="btn-action-primary">' + uiIcon("printer") + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -2370,7 +2422,7 @@
             }
 
             btnPjSubmit.disabled = true;
-            btnPjSubmit.textContent = isKhmer() ? "⏳ កំពុងបង្កើត..." : "⏳ Generating Header...";
+            btnPjSubmit.innerHTML = uiIcon("refresh") + (isKhmer() ? "កំពុងបង្កើត..." : "Generating Header...");
             setStatus(isKhmer() ? "កំពុងបង្កើតក្បាល File Print..." : "Creating print production header...", "running");
 
             var params = {
@@ -2392,7 +2444,7 @@
             if (!csInterface) {
                 setTimeout(function() {
                     btnPjSubmit.disabled = false;
-                    btnPjSubmit.textContent = "🖨️ " + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header");
+                    btnPjSubmit.innerHTML = uiIcon("printer") + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header");
                     setStatus("Simulated Print Job Header Created (Browser Preview)", "success", 4000);
                 }, 1000);
                 return;
@@ -2400,7 +2452,7 @@
 
             csInterface.evalScript("ozoExecutePrintJob(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
                 btnPjSubmit.disabled = false;
-                btnPjSubmit.textContent = "🖨️ " + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header");
+                btnPjSubmit.innerHTML = uiIcon("printer") + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -2427,7 +2479,7 @@
     // In-Dock Object Count & Prepress Inspector View
     // -------------------------------------------------------------
     function renderEmbeddedCount() {
-        embeddedContent.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--text-muted);font-size:12px;">⏳ ' + (isKhmer() ? "កំពុងវិភាគឯកសារ..." : "Analyzing artwork...") + '</div>';
+        embeddedContent.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--text-muted);font-size:12px;">' + uiIcon("refresh", 16) + ' ' + (isKhmer() ? "កំពុងវិភាគឯកសារ..." : "Analyzing artwork...") + '</div>';
 
         function loadStats() {
             if (!csInterface) {
@@ -2516,21 +2568,21 @@
             html.push('<div class="embed-card">');
             html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ប្រភេទវត្ថុក្នុង Layer សកម្ម (Active Layer Types)" : "Active Layer Type Breakdown") + '</span></div>');
             html.push('  <div class="stat-pill-list">');
-            html.push('    <div class="stat-pill"><span>☡ ' + (isKhmer() ? "Paths:" : "Paths:") + '</span><span class="stat-pill-val">' + act.paths + '</span></div>');
-            html.push('    <div class="stat-pill"><span>📁 ' + (isKhmer() ? "Groups:" : "Groups:") + '</span><span class="stat-pill-val">' + act.groups + '</span></div>');
-            html.push('    <div class="stat-pill"><span>🔤 ' + (isKhmer() ? "Text:" : "Text:") + '</span><span class="stat-pill-val">' + act.texts + '</span></div>');
-            html.push('    <div class="stat-pill"' + (act.images > 0 ? ' style="border-color:#e6a23c;"' : '') + '><span>🖼️ ' + (isKhmer() ? "Images:" : "Images:") + '</span><span class="stat-pill-val"' + (act.images > 0 ? ' style="color:#e6a23c;"' : '') + '>' + act.images + '</span></div>');
-            html.push('    <div class="stat-pill"><span>⯃ ' + (isKhmer() ? "Compounds:" : "Compounds:") + '</span><span class="stat-pill-val">' + act.compounds + '</span></div>');
-            html.push('    <div class="stat-pill"><span>⋯ ' + (isKhmer() ? "Other:" : "Other:") + '</span><span class="stat-pill-val">' + act.other + '</span></div>');
+            html.push('    <div class="stat-pill"><span>' + uiIcon("path", 12) + (isKhmer() ? "Paths:" : "Paths:") + '</span><span class="stat-pill-val">' + act.paths + '</span></div>');
+            html.push('    <div class="stat-pill"><span>' + uiIcon("folder", 12) + (isKhmer() ? "Groups:" : "Groups:") + '</span><span class="stat-pill-val">' + act.groups + '</span></div>');
+            html.push('    <div class="stat-pill"><span>' + uiIcon("text", 12) + (isKhmer() ? "Text:" : "Text:") + '</span><span class="stat-pill-val">' + act.texts + '</span></div>');
+            html.push('    <div class="stat-pill"' + (act.images > 0 ? ' style="border-color:#e6a23c;"' : '') + '><span>' + uiIcon("image", 12) + (isKhmer() ? "Images:" : "Images:") + '</span><span class="stat-pill-val"' + (act.images > 0 ? ' style="color:#e6a23c;"' : '') + '>' + act.images + '</span></div>');
+            html.push('    <div class="stat-pill"><span>' + uiIcon("compound", 12) + (isKhmer() ? "Compounds:" : "Compounds:") + '</span><span class="stat-pill-val">' + act.compounds + '</span></div>');
+            html.push('    <div class="stat-pill"><span>' + uiIcon("dots", 12) + (isKhmer() ? "Other:" : "Other:") + '</span><span class="stat-pill-val">' + act.other + '</span></div>');
             html.push('  </div>');
             html.push('</div>');
 
             // 4. Quick Actions
             html.push('<div class="embed-action-wrap" style="gap:8px;">');
-            html.push('  <button type="button" id="btnCountRefresh" class="btn-action-primary">🔄 ' + (isKhmer() ? "វិភាគម្ដងទៀត (Refresh)" : "Refresh Statistics") + '</button>');
+            html.push('  <button type="button" id="btnCountRefresh" class="btn-action-primary">' + uiIcon("refresh") + (isKhmer() ? "វិភាគម្ដងទៀត (Refresh)" : "Refresh Statistics") + '</button>');
             html.push('  <div style="display:flex;gap:8px;width:100%;">');
-            html.push('    <button type="button" id="btnCountSelectAb" class="btn-action-secondary" style="flex:1;">⤢ ' + (isKhmer() ? "ជ្រើសលើ Artboard" : "Select Artboard") + '</button>');
-            html.push('    <button type="button" id="btnCountDeselect" class="btn-action-secondary" style="flex:1;">✕ ' + (isKhmer() ? "ដោះការជ្រើសរើស" : "Deselect") + '</button>');
+            html.push('    <button type="button" id="btnCountSelectAb" class="btn-action-secondary" style="flex:1;">' + uiIcon("select", 12) + (isKhmer() ? "ជ្រើសលើ Artboard" : "Select Artboard") + '</button>');
+            html.push('    <button type="button" id="btnCountDeselect" class="btn-action-secondary" style="flex:1;">' + uiIcon("x", 12) + (isKhmer() ? "ដោះការជ្រើសរើស" : "Deselect") + '</button>');
             html.push('  </div>');
             html.push('</div>');
 
@@ -2643,8 +2695,8 @@
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់នៃការរៀបចំ (Placement)" : "Placement Mode") + '</span></div>');
         html.push('  <div class="embed-segmented" id="numLayoutSegmented">');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.layout === 0 ? "active" : "") + '" data-layout="0">⊞ ' + (isKhmer() ? "ក្រឡាចត្រង្គ (Grid Repeat)" : "Grid Repeat") + '</button>');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.layout === 1 ? "active" : "") + '" data-layout="1">📑 ' + (isKhmer() ? "តាម Artboards" : "Across Artboards") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.layout === 0 ? "active" : "") + '" data-layout="0">' + uiIcon("grid", 12) + (isKhmer() ? "ក្រឡាចត្រង្គ (Grid Repeat)" : "Grid Repeat") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.layout === 1 ? "active" : "") + '" data-layout="1">' + uiIcon("file", 12) + (isKhmer() ? "តាម Artboards" : "Across Artboards") + '</button>');
         html.push('  </div>');
 
         html.push('  <div id="numGridOptions" style="margin-top:10px;' + (state.layout === 0 ? "" : "display:none;") + '">');
@@ -2695,7 +2747,7 @@
 
         // 6. Action Wrap
         html.push('<div class="embed-action-wrap">');
-        html.push('  <button type="button" id="btnNumSubmit" class="btn-action-primary">🔢 ' + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers") + '</button>');
+        html.push('  <button type="button" id="btnNumSubmit" class="btn-action-primary">' + uiIcon("hash") + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -2776,7 +2828,7 @@
         btnNumSubmit.addEventListener("click", function() {
             hideError();
             btnNumSubmit.disabled = true;
-            btnNumSubmit.textContent = isKhmer() ? "⏳ កំពុងដំណើរការ..." : "⏳ Generating...";
+            btnNumSubmit.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងដំណើរការ..." : "Generating...");
             setStatus(isKhmer() ? "កំពុងបង្កើតលេខរៀង..." : "Generating sequential numbers...", "running");
 
             var params = {
@@ -2796,7 +2848,7 @@
             if (!csInterface) {
                 setTimeout(function() {
                     btnNumSubmit.disabled = false;
-                    btnNumSubmit.textContent = "🔢 " + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers");
+                    btnNumSubmit.innerHTML = uiIcon("hash") + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers");
                     setStatus("Simulated Numbers Generated (Browser Preview)", "success", 4000);
                 }, 1000);
                 return;
@@ -2804,7 +2856,7 @@
 
             csInterface.evalScript("ozoExecuteSequentialNumbering(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
                 btnNumSubmit.disabled = false;
-                btnNumSubmit.textContent = "🔢 " + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers");
+                btnNumSubmit.innerHTML = uiIcon("hash") + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -2838,16 +2890,16 @@
         };
 
         var operations = [
-            { id: 0, name: "Unite", nameKm: "ផ្គុំចូលគ្នា", icon: "⧉", desc: "Combine overlapping objects into one shape" },
-            { id: 1, name: "Minus Front", nameKm: "ដកខាងមុខ", icon: "◩", desc: "Subtract front objects from back object" },
-            { id: 2, name: "Intersect", nameKm: "កាត់យកចំណុចប្រសព្វ", icon: "⧆", desc: "Keep only overlapping areas" },
-            { id: 3, name: "Exclude", nameKm: "ដកចំណុចប្រសព្វ", icon: "⧇", desc: "Remove overlapping regions" },
-            { id: 4, name: "Divide", nameKm: "ពុះបំបែក", icon: "◫", desc: "Split artwork where objects overlap" },
-            { id: 5, name: "Trim", nameKm: "កាត់តម្រឹម", icon: "✂", desc: "Remove hidden portions" },
-            { id: 6, name: "Merge", nameKm: "ច្របាច់បញ្ចូល", icon: "⚯", desc: "Merge adjoining objects with same fill" },
-            { id: 7, name: "Crop", nameKm: "កាត់យកទំហំ", icon: "⧈", desc: "Crop to boundary of front object" },
-            { id: 8, name: "Outline", nameKm: "បន្ទាត់គ្រោង", icon: "⬡", desc: "Convert overlaps into outlined edges" },
-            { id: 9, name: "Minus Back", nameKm: "ដកខាងក្រោយ", icon: "◪", desc: "Subtract back objects from front object" }
+            { id: 0, name: "Unite", nameKm: "ផ្គុំចូលគ្នា", icon: uiIcon("unite", 20), desc: "Combine overlapping objects into one shape" },
+            { id: 1, name: "Minus Front", nameKm: "ដកខាងមុខ", icon: uiIcon("minusfront", 20), desc: "Subtract front objects from back object" },
+            { id: 2, name: "Intersect", nameKm: "កាត់យកចំណុចប្រសព្វ", icon: uiIcon("intersect", 20), desc: "Keep only overlapping areas" },
+            { id: 3, name: "Exclude", nameKm: "ដកចំណុចប្រសព្វ", icon: uiIcon("exclude", 20), desc: "Remove overlapping regions" },
+            { id: 4, name: "Divide", nameKm: "ពុះបំបែក", icon: uiIcon("divide", 20), desc: "Split artwork where objects overlap" },
+            { id: 5, name: "Trim", nameKm: "កាត់តម្រឹម", icon: uiIcon("trim", 20), desc: "Remove hidden portions" },
+            { id: 6, name: "Merge", nameKm: "ច្របាច់បញ្ចូល", icon: uiIcon("merge", 20), desc: "Merge adjoining objects with same fill" },
+            { id: 7, name: "Crop", nameKm: "កាត់យកទំហំ", icon: uiIcon("crop", 20), desc: "Crop to boundary of front object" },
+            { id: 8, name: "Outline", nameKm: "បន្ទាត់គ្រោង", icon: uiIcon("outline", 20), desc: "Convert overlaps into outlined edges" },
+            { id: 9, name: "Minus Back", nameKm: "ដកខាងក្រោយ", icon: uiIcon("minusback", 20), desc: "Subtract back objects from front object" }
         ];
 
         var html = [];
@@ -3105,8 +3157,8 @@
 
         // 6. Action Wrap
         html.push('<div class="embed-action-wrap" style="gap:8px;">');
-        html.push('  <button type="button" id="btnGlSubmit" class="btn-action-primary">📐 ' + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout") + '</button>');
-        html.push('  <button type="button" id="btnGlClearOnly" class="btn-action-secondary">🗑️ ' + (isKhmer() ? "លុបបន្ទាត់ណែនាំចេញ (Clear Guides Only)" : "Clear Guides Only") + '</button>');
+        html.push('  <button type="button" id="btnGlSubmit" class="btn-action-primary">' + uiIcon("grid") + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout") + '</button>');
+        html.push('  <button type="button" id="btnGlClearOnly" class="btn-action-secondary">' + uiIcon("trash") + (isKhmer() ? "លុបបន្ទាត់ណែនាំចេញ (Clear Guides Only)" : "Clear Guides Only") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -3224,7 +3276,7 @@
         function dispatchGuides(clearOnly) {
             hideError();
             btnGlSubmit.disabled = true;
-            btnGlSubmit.textContent = isKhmer() ? "⏳ កំពុងដំណើរការ..." : "⏳ Building Guides...";
+            btnGlSubmit.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងដំណើរការ..." : "Building Guides...");
             setStatus(isKhmer() ? "កំពុងបង្កើតបន្ទាត់ណែនាំ..." : "Building guide layout...", "running");
 
             var params = {
@@ -3255,7 +3307,7 @@
             if (!csInterface) {
                 setTimeout(function() {
                     btnGlSubmit.disabled = false;
-                    btnGlSubmit.textContent = "📐 " + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout");
+                    btnGlSubmit.innerHTML = uiIcon("grid") + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout");
                     setStatus("Simulated Guides Generated (Browser Preview)", "success", 3000);
                 }, 1000);
                 return;
@@ -3263,7 +3315,7 @@
 
             csInterface.evalScript("ozoExecuteGuideLayout(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
                 btnGlSubmit.disabled = false;
-                btnGlSubmit.textContent = "📐 " + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout");
+                btnGlSubmit.innerHTML = uiIcon("grid") + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -3314,9 +3366,9 @@
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់ចម្លង (Repeat Mode)" : "Repeat Mode") + '</span></div>');
         html.push('  <div class="embed-segmented" id="repModeSegmented">');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 0 ? "active" : "") + '" data-mode="0">⊞ ' + (isKhmer() ? "ពេញ Artboard (Fit)" : "Fit Artboard") + '</button>');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 1 ? "active" : "") + '" data-mode="1">⊞ ' + (isKhmer() ? "ក្រឡាចត្រង្គ (Fixed)" : "Step & Repeat") + '</button>');
-        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 2 ? "active" : "") + '" data-mode="2">○ ' + (isKhmer() ? "រង្វង់មូល (Radial)" : "Radial Array") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 0 ? "active" : "") + '" data-mode="0">' + uiIcon("grid", 12) + (isKhmer() ? "ពេញ Artboard (Fit)" : "Fit Artboard") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 1 ? "active" : "") + '" data-mode="1">' + uiIcon("grid", 12) + (isKhmer() ? "ក្រឡាចត្រង្គ (Fixed)" : "Step & Repeat") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 2 ? "active" : "") + '" data-mode="2">' + uiIcon("radial", 12) + (isKhmer() ? "រង្វង់មូល (Radial)" : "Radial Array") + '</button>');
         html.push('  </div>');
         html.push('</div>');
 
@@ -3397,7 +3449,7 @@
 
         // 5. Submit Wrap
         html.push('<div class="embed-action-wrap">');
-        html.push('  <button type="button" id="btnRepSubmit" class="btn-action-primary">🔁 ' + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now") + '</button>');
+        html.push('  <button type="button" id="btnRepSubmit" class="btn-action-primary">' + uiIcon("repeat") + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -3470,7 +3522,7 @@
         btnRepSubmit.addEventListener("click", function() {
             hideError();
             btnRepSubmit.disabled = true;
-            btnRepSubmit.textContent = isKhmer() ? "⏳ កំពុងចម្លង..." : "⏳ Repeating Artwork...";
+            btnRepSubmit.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងចម្លង..." : "Repeating Artwork...");
             setStatus(isKhmer() ? "កំពុងចម្លងវត្ថុតាមប្លង់..." : "Generating repeated artwork...", "running");
 
             var params = {
@@ -3492,7 +3544,7 @@
             if (!csInterface) {
                 setTimeout(function() {
                     btnRepSubmit.disabled = false;
-                    btnRepSubmit.textContent = "🔁 " + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now");
+                    btnRepSubmit.innerHTML = uiIcon("repeat") + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now");
                     setStatus("Simulated Repeat Applied (Browser Preview)", "success", 3000);
                 }, 1000);
                 return;
@@ -3500,7 +3552,7 @@
 
             csInterface.evalScript("ozoExecuteObjectRepeat(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
                 btnRepSubmit.disabled = false;
-                btnRepSubmit.textContent = "🔁 " + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now");
+                btnRepSubmit.innerHTML = uiIcon("repeat") + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -3647,7 +3699,7 @@
         html.push('</div>');
 
         html.push('<div class="embed-action-footer">');
-        html.push('  <button type="button" id="btnNestSubmit" class="btn-action-primary">🧩 ' + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting") + '</button>');
+        html.push('  <button type="button" id="btnNestSubmit" class="btn-action-primary">' + uiIcon("nest") + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -3724,7 +3776,7 @@
             hideError();
             saveNestingState();
             btnNestSubmit.disabled = true;
-            btnNestSubmit.textContent = isKhmer() ? "⏳ កំពុងគណនា..." : "⏳ Optimizing Nesting...";
+            btnNestSubmit.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងគណនា..." : "Optimizing Nesting...");
             setStatus(isKhmer() ? "កំពុងរៀបចំទីតាំង Artwork..." : "Calculating sheet layout...", "running");
 
             var params = {
@@ -3752,7 +3804,7 @@
             if (!csInterface) {
                 setTimeout(function () {
                     btnNestSubmit.disabled = false;
-                    btnNestSubmit.textContent = "🧩 " + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting");
+                    btnNestSubmit.innerHTML = uiIcon("nest") + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting");
                     nestResultCard.style.display = "block";
                     nestUtilVal.textContent = "84.5%";
                     nestUtilFill.style.width = "84.5%";
@@ -3766,7 +3818,7 @@
 
             csInterface.evalScript("ozoExecuteNesting(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
                 btnNestSubmit.disabled = false;
-                btnNestSubmit.textContent = "🧩 " + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting");
+                btnNestSubmit.innerHTML = uiIcon("nest") + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -3837,7 +3889,7 @@
         var html = [];
 
         html.push('<div class="embed-card">');
-        html.push('  <input type="text" id="iconSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "🔍 ស្វែងរករូបតំណាង (Search 150,000+ icons)..." : "🔍 Search icons (arrow, user, star, cart)...") + '" style="width:100%;">');
+        html.push('  <input type="text" id="iconSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "ស្វែងរករូបតំណាង (Search 150,000+ icons)..." : "Search icons (arrow, user, star, cart)...") + '" style="width:100%;">');
         html.push('  <div class="icon-cat-bar" id="iconCatBar" style="margin-top:8px;">');
         html.push('    <span class="icon-cat-chip active" data-cat="all">All</span>');
         html.push('    <span class="icon-cat-chip" data-cat="interface">Interface</span>');
@@ -3873,7 +3925,7 @@
         html.push('</div>');
 
         html.push('<div class="embed-action-footer">');
-        html.push('  <button type="button" id="btnIconInsert" class="btn-action-primary">📥 ' + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon") + '</button>');
+        html.push('  <button type="button" id="btnIconInsert" class="btn-action-primary">' + uiIcon("download") + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon") + '</button>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
@@ -3974,7 +4026,7 @@
             if (!selectedIcon) return;
             hideError();
             btnIconInsert.disabled = true;
-            btnIconInsert.textContent = isKhmer() ? "⏳ កំពុងបញ្ចូល..." : "⏳ Inserting Icon...";
+            btnIconInsert.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងបញ្ចូល..." : "Inserting Icon...");
             setStatus(isKhmer() ? "កំពុងបញ្ចូលរូបតំណាង..." : "Placing vector icon into document...", "running");
 
             var fullSvg = '<?xml version="1.0" encoding="utf-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + selectedIcon.svg + '</svg>';
@@ -3988,7 +4040,7 @@
             if (!csInterface) {
                 setTimeout(function () {
                     btnIconInsert.disabled = false;
-                    btnIconInsert.textContent = "📥 " + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon");
+                    btnIconInsert.innerHTML = uiIcon("download") + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon");
                     setStatus("Simulated Icon Inserted: " + selectedIcon.name, "success", 3000);
                 }, 800);
                 return;
@@ -3996,7 +4048,7 @@
 
             csInterface.evalScript("ozoImportIconSvg(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
                 btnIconInsert.disabled = false;
-                btnIconInsert.textContent = "📥 " + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon");
+                btnIconInsert.innerHTML = uiIcon("download") + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -4023,12 +4075,12 @@
 
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-row-2col">');
-        html.push('    <input type="text" id="launcherSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "🔍 ស្វែងរកស្គ្រីប..." : "🔍 Search scripts...") + '" style="width:100%;">');
-        html.push('    <button type="button" id="btnLauncherRefresh" class="btn-action-secondary" style="padding:4px 8px;">🔄 ' + (isKhmer() ? "ផ្ទុកឡើងវិញ" : "Refresh") + '</button>');
+        html.push('    <input type="text" id="launcherSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "ស្វែងរកស្គ្រីប..." : "Search scripts...") + '" style="width:100%;">');
+        html.push('    <button type="button" id="btnLauncherRefresh" class="btn-action-secondary" style="padding:4px 8px;">' + uiIcon("refresh", 12) + (isKhmer() ? "ផ្ទុកឡើងវិញ" : "Refresh") + '</button>');
         html.push('  </div>');
         html.push('  <div class="script-folder-bar" style="margin-top:8px;">');
         html.push('    <span class="script-folder-path" id="launcherFolderPath">Scanning scripts...</span>');
-        html.push('    <button type="button" id="btnLauncherBrowse" class="btn-action-secondary" style="padding:2px 8px;font-size:10px;white-space:nowrap;">📂 ' + (isKhmer() ? "ជ្រើស Folder" : "Browse...") + '</button>');
+        html.push('    <button type="button" id="btnLauncherBrowse" class="btn-action-secondary" style="padding:2px 8px;font-size:10px;white-space:nowrap;">' + uiIcon("folder", 12) + (isKhmer() ? "ជ្រើស Folder" : "Browse...") + '</button>');
         html.push('  </div>');
         html.push('</div>');
 
@@ -4068,10 +4120,10 @@
                 var kb = Math.round((script.size || 0) / 1024);
                 sHtml.push('<div class="script-item">');
                 sHtml.push('  <div class="script-info">');
-                sHtml.push('    <div class="script-name" title="' + escapeHtml(script.path) + '">📜 ' + escapeHtml(script.name) + '</div>');
+                sHtml.push('    <div class="script-name" title="' + escapeHtml(script.path) + '">' + uiIcon("file", 12) + escapeHtml(script.name) + '</div>');
                 sHtml.push('    <div class="script-meta"><span>' + kb + ' KB</span><span>•</span><span>' + escapeHtml(script.fileName) + '</span></div>');
                 sHtml.push('  </div>');
-                sHtml.push('  <button type="button" class="script-run-btn" data-path="' + escapeHtml(script.path) + '">▶ ' + (isKhmer() ? "រត់" : "Run") + '</button>');
+                sHtml.push('  <button type="button" class="script-run-btn" data-path="' + escapeHtml(script.path) + '">' + uiIcon("play", 10) + (isKhmer() ? "រត់" : "Run") + '</button>');
                 sHtml.push('</div>');
             });
             launcherScriptList.innerHTML = sHtml.join("");
@@ -4141,13 +4193,13 @@
 
             hideError();
             btn.disabled = true;
-            btn.textContent = "⏳";
+            btn.innerHTML = uiIcon("refresh", 10);
             setStatus(isKhmer() ? "កំពុងដំណើរការស្គ្រីប..." : "Executing script...", "running");
 
             if (!csInterface) {
                 setTimeout(function () {
                     btn.disabled = false;
-                    btn.textContent = "▶ " + (isKhmer() ? "រត់" : "Run");
+                    btn.innerHTML = uiIcon("play", 10) + (isKhmer() ? "រត់" : "Run");
                     setStatus("Simulated Script Executed: " + scriptPath, "success", 3000);
                 }, 800);
                 return;
@@ -4155,7 +4207,7 @@
 
             csInterface.evalScript("ozoRunLauncherScript(" + JSON.stringify(scriptPath) + ")", function (raw) {
                 btn.disabled = false;
-                btn.textContent = "▶ " + (isKhmer() ? "រត់" : "Run");
+                btn.innerHTML = uiIcon("play", 10) + (isKhmer() ? "រត់" : "Run");
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
@@ -4187,8 +4239,8 @@
         html.push('  <div class="embed-generic-desc">' + escapeHtml(desc) + '</div>');
         html.push('  <div style="font-size:10.5px;color:var(--text-muted);font-family:monospace;">' + escapeHtml(tool.file) + '</div>');
         html.push('  <div class="embed-generic-actions">');
-        html.push('    <button type="button" id="btnGenericRun" class="btn-action-primary">▶ ' + (isKhmer() ? "ដំណើរការក្នុង Illustrator" : "Run in Illustrator") + '</button>');
-        html.push('    <button type="button" id="btnGenericDialog" class="btn-action-secondary">↗ ' + (isKhmer() ? "បើកផ្ទាំងបញ្ជា (Dialog)" : "Open Dialog Window") + '</button>');
+        html.push('    <button type="button" id="btnGenericRun" class="btn-action-primary">' + uiIcon("play") + (isKhmer() ? "ដំណើរការក្នុង Illustrator" : "Run in Illustrator") + '</button>');
+        html.push('    <button type="button" id="btnGenericDialog" class="btn-action-secondary">' + uiIcon("export") + (isKhmer() ? "បើកផ្ទាំងបញ្ជា (Dialog)" : "Open Dialog Window") + '</button>');
         html.push('  </div>');
         html.push('</div>');
 

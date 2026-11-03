@@ -1784,8 +1784,47 @@ body.theme-light {
     opacity: 0.9;
     transform: scale(1.03);
 }
-.script-run-btn:active {
-    transform: scale(0.98);
+.btn-svg-icon {
+    display: inline-block;
+    vertical-align: -2px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    stroke: currentColor;
+}
+.btn-action-primary .btn-svg-icon,
+.btn-action-secondary .btn-svg-icon,
+.script-run-btn .btn-svg-icon {
+    stroke: currentColor;
+}
+.embed-pf-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+}
+.embed-pf-icon .btn-svg-icon {
+    margin-right: 0;
+}
+.embed-seg-btn .btn-svg-icon {
+    margin-right: 4px;
+    vertical-align: -2px;
+}
+.stat-pill .btn-svg-icon {
+    margin-right: 4px;
+    vertical-align: -2px;
+}
+.script-name .btn-svg-icon {
+    margin-right: 6px;
+    vertical-align: -2px;
+}
+.script-run-btn svg:last-child {
+    margin-right: 0;
+}
+.shape-pill-icon svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 /* Scrollbar and Performance Optimization */
