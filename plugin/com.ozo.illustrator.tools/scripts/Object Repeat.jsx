@@ -10,6 +10,10 @@
     var MAX_REPEAT_COPIES = 10000;
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("No Illustrator document is open."));
         return;
     }
@@ -876,6 +880,87 @@
         previewButton.enabled = true;
     };
 
+    function executeRepeatCore(finalSettings) {
+        cleanupPreview(true);
+        var finalResult = generateRepeat(finalSettings, false);
+        doc.selection = null;
+        if (finalSettings.selectResult) {
+            try { finalResult.group.selected = true; } catch (eSel) {}
+        }
+        app.redraw();
+        return {
+            status: "success",
+            count: finalResult.count,
+            layer: finalResult.layer.name
+        };
+    }
+
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        try {
+            var hp = __ozoHeadlessParams;
+            var uIdx = typeof hp.unitIndex === "number" ? hp.unitIndex : 0;
+            var factor = UNIT_FACTORS[uIdx] || MM_TO_PT;
+
+            if (originalSelection.length === 0) {
+                doc.selectObjectsOnActiveArtboard();
+                var freshSel = doc.selection;
+                if (freshSel && freshSel.length > 0) {
+                    for (var fi = 0; fi < freshSel.length; fi++) originalSelection.push(freshSel[fi]);
+                }
+            }
+            if (originalSelection.length === 0) {
+                __ozoHeadlessResult = { status: "error", message: "Please select artwork in Illustrator to repeat." };
+                return;
+            }
+
+            var abIdx = doc.artboards.getActiveArtboardIndex();
+            var actAbRect = doc.artboards[abIdx].artboardRect;
+
+            var headlessSettings = {
+                mode: typeof hp.mode === "number" ? hp.mode : 0,
+                sourceIndex: typeof hp.sourceIndex === "number" ? hp.sourceIndex : 0,
+                scale: typeof hp.scale === "number" ? hp.scale : 100,
+                unitIndex: uIdx,
+                fixedCols: parseInt(hp.columns, 10) || 5,
+                fixedRows: parseInt(hp.rows, 10) || 5,
+                distributeEvenly: hp.distributeEvenly !== false,
+                horizontalGap: (parseFloat(hp.horizontalGap) || 5) * factor,
+                verticalGap: (parseFloat(hp.verticalGap) || 5) * factor,
+                pattern: typeof hp.pattern === "number" ? hp.pattern : 0,
+                stagger: typeof hp.stagger === "number" ? hp.stagger : 0,
+                alternating: typeof hp.alternating === "number" ? hp.alternating : 0,
+                center: hp.center !== false,
+                autoFit: hp.autoFit !== false,
+
+                radialCopies: parseInt(hp.radialCopies, 10) || 12,
+                radialRadius: (parseFloat(hp.radialRadius) || 50) * factor,
+                radialTotalAngle: parseFloat(hp.radialTotalAngle) || 360,
+                radialStartAngle: parseFloat(hp.radialStartAngle) || 0,
+                radialRotate: hp.radialRotate !== false,
+                radialCenter: typeof hp.radialCenter === "number" ? hp.radialCenter : 0,
+
+                artboardMode: 0,
+                placementIndex: 0,
+                artboardGap: 0,
+                artboardWidth: Math.abs(actAbRect[2] - actAbRect[0]),
+                artboardHeight: Math.abs(actAbRect[1] - actAbRect[3]),
+                layerName: hp.layerName || "Object Repeat",
+                selectResult: hp.selectResult !== false,
+                clip: hp.clip === true
+            };
+
+            __ozoHeadlessResult = executeRepeatCore(headlessSettings);
+            return;
+        } catch (eRepHeadless) {
+            cleanupPreview();
+            __ozoHeadlessResult = {
+                status: "error",
+                message: eRepHeadless && eRepHeadless.message ? eRepHeadless.message : String(eRepHeadless)
+            };
+            return;
+        }
+    }
+
     dialog.center();
     var dialogResult = dialog.show();
     if (dialogResult !== 1) {
@@ -885,22 +970,10 @@
 
     try {
         var finalSettings = readSettings();
-        cleanupPreview(true); // Remove temporary preview before applying final repeat
-
-        var finalResult = generateRepeat(finalSettings, false);
-
-        doc.selection = null;
-        if (finalSettings.selectResult) {
-            finalResult.group.selected = true;
-        } else {
-            restoreSelection();
-        }
-
+        var repRes = executeRepeatCore(finalSettings);
         OZO.saveWindowState(dialog, STATE_NAMESPACE);
-        app.redraw();
-
-        alert(OZO.tr(SCRIPT_NAME) + "\n\n" + OZO.tr("Created") + " " + finalResult.count + " " +
-            OZO.tr("repeated object(s) on layer") + " \"" + finalResult.layer.name + "\".\n\n" +
+        alert(OZO.tr(SCRIPT_NAME) + "\n\n" + OZO.tr("Created") + " " + repRes.count + " " +
+            OZO.tr("repeated object(s) on layer") + " \"" + repRes.layer + "\".\n\n" +
             OZO.credit());
     } catch (error) {
         cleanupPreview();

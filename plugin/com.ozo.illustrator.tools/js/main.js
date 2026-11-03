@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.4.2"; // keep in sync with CSXS/manifest.xml
+    var CURRENT_VERSION = "2.5.0"; // keep in sync with CSXS/manifest.xml
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
@@ -780,6 +780,12 @@
             renderEmbeddedCount();
         } else if (tool.id === "numbering") {
             renderEmbeddedNumbering();
+        } else if (tool.id === "pathfinder") {
+            renderEmbeddedPathfinder();
+        } else if (tool.id === "guide" || tool.id === "guides") {
+            renderEmbeddedGuides();
+        } else if (tool.id === "repeat") {
+            renderEmbeddedRepeat();
         } else {
             renderEmbeddedGeneric(tool);
         }
@@ -2811,6 +2817,700 @@
     }
 
     // -------------------------------------------------------------
+    // In-Dock Pathfinder View
+    // -------------------------------------------------------------
+    function renderEmbeddedPathfinder() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_pathfinder_settings", "{}")); } catch (e) {}
+
+        var state = {
+            expandResult: saved.expandResult !== false,
+            ungroupResult: saved.ungroupResult !== false,
+            cleanGroups: saved.cleanGroups !== false,
+            keepOriginals: saved.keepOriginals === true,
+            pairwise: saved.pairwise === true
+        };
+
+        var operations = [
+            { id: 0, name: "Unite", nameKm: "ផ្គុំចូលគ្នា", icon: "⧉", desc: "Combine overlapping objects into one shape" },
+            { id: 1, name: "Minus Front", nameKm: "ដកខាងមុខ", icon: "◩", desc: "Subtract front objects from back object" },
+            { id: 2, name: "Intersect", nameKm: "កាត់យកចំណុចប្រសព្វ", icon: "⧆", desc: "Keep only overlapping areas" },
+            { id: 3, name: "Exclude", nameKm: "ដកចំណុចប្រសព្វ", icon: "⧇", desc: "Remove overlapping regions" },
+            { id: 4, name: "Divide", nameKm: "ពុះបំបែក", icon: "◫", desc: "Split artwork where objects overlap" },
+            { id: 5, name: "Trim", nameKm: "កាត់តម្រឹម", icon: "✂", desc: "Remove hidden portions" },
+            { id: 6, name: "Merge", nameKm: "ច្របាច់បញ្ចូល", icon: "⚯", desc: "Merge adjoining objects with same fill" },
+            { id: 7, name: "Crop", nameKm: "កាត់យកទំហំ", icon: "⧈", desc: "Crop to boundary of front object" },
+            { id: 8, name: "Outline", nameKm: "បន្ទាត់គ្រោង", icon: "⬡", desc: "Convert overlaps into outlined edges" },
+            { id: 9, name: "Minus Back", nameKm: "ដកខាងក្រោយ", icon: "◪", desc: "Subtract back objects from front object" }
+        ];
+
+        var html = [];
+
+        // 1. Shape Modes Grid
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ប្រតិបត្តិការរូបរាង (Pathfinder Modes)" : "Pathfinder Operations") + '</span></div>');
+        html.push('  <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:6px;">' + (isKhmer() ? "ចុចប៊ូតុងណាមួយដើម្បីអនុវត្តលើ Artwork ដែលបានជ្រើសរើស៖" : "Click an operation button to apply instantly to selected artwork:") + '</div>');
+        html.push('  <div class="embed-pf-grid">');
+        for (var oi = 0; oi < operations.length; oi++) {
+            var op = operations[oi];
+            html.push('    <button type="button" class="embed-pf-btn" data-op="' + op.id + '" title="' + escapeHtml(op.desc) + '">');
+            html.push('      <span class="embed-pf-icon">' + op.icon + '</span>');
+            html.push('      <span class="embed-pf-name">' + (isKhmer() ? escapeHtml(op.nameKm) : escapeHtml(op.name)) + '</span>');
+            html.push('    </button>');
+        }
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Options Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ជម្រើសកែសម្រួល (Options)" : "Execution Options") + '</span></div>');
+        html.push('  <div style="display:flex;flex-direction:column;gap:6px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPfExpand" ' + (state.expandResult ? "checked" : "") + '> ' + (isKhmer() ? "ពង្រីករូបរាងលទ្ធផល (Expand Result)" : "Expand Pathfinder effects to editable shapes") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPfUngroup" ' + (state.ungroupResult ? "checked" : "") + '> ' + (isKhmer() ? "ពន្លា Group ស្វ័យប្រវត្តិ (Ungroup)" : "Ungroup result items automatically") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPfClean" ' + (state.cleanGroups ? "checked" : "") + '> ' + (isKhmer() ? "សម្អាត Group ទទេ (Clean Empty Groups)" : "Clean unpainted and empty groups") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPfKeep" ' + (state.keepOriginals ? "checked" : "") + '> ' + (isKhmer() ? "រក្សាទុកវត្ថុដើម (Keep Original Objects)" : "Keep original objects untouched (Duplicate)") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var chkPfExpand = $("chkPfExpand");
+        var chkPfUngroup = $("chkPfUngroup");
+        var chkPfClean = $("chkPfClean");
+        var chkPfKeep = $("chkPfKeep");
+        var pfBtns = embeddedContent.querySelectorAll(".embed-pf-btn");
+
+        function savePfState() {
+            state.expandResult = chkPfExpand.checked;
+            state.ungroupResult = chkPfUngroup.checked;
+            state.cleanGroups = chkPfClean.checked;
+            state.keepOriginals = chkPfKeep.checked;
+            store.setDebounced("ozo_pathfinder_settings", JSON.stringify(state), 250);
+        }
+
+        chkPfExpand.addEventListener("change", savePfState);
+        chkPfUngroup.addEventListener("change", savePfState);
+        chkPfClean.addEventListener("change", savePfState);
+        chkPfKeep.addEventListener("change", savePfState);
+
+        for (var bi = 0; bi < pfBtns.length; bi++) {
+            pfBtns[bi].addEventListener("click", function() {
+                var opId = parseInt(this.getAttribute("data-op"), 10);
+                var opObj = operations[opId] || operations[0];
+                hideError();
+                setStatus((isKhmer() ? "កំពុងអនុវត្ត " + opObj.nameKm + "..." : "Applying " + opObj.name + "..."), "running");
+
+                var params = {
+                    operation: opId,
+                    expandResult: chkPfExpand.checked,
+                    ungroupResult: chkPfUngroup.checked,
+                    cleanGroups: chkPfClean.checked,
+                    keepOriginals: chkPfKeep.checked,
+                    pairwise: false
+                };
+
+                if (!csInterface) {
+                    setStatus("Simulated " + opObj.name + " applied (Browser Preview)", "success", 3000);
+                    return;
+                }
+
+                csInterface.evalScript("ozoExecutePathfinder(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
+                    var res = null;
+                    try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                    if (res && res.status === "success") {
+                        var okMsg = isKhmer() ? "បានអនុវត្ត " + opObj.nameKm + " ដោយជោគជ័យលើ Artwork" : "Successfully applied " + opObj.name + " (" + res.resultCount + " result objects)";
+                        setStatus(okMsg, "success", 4000);
+                    } else {
+                        var errMsg = (res && res.message) || String(raw || "Failed to execute Pathfinder");
+                        showError(isKhmer() ? "Pathfinder បរាជ័យ" : "Pathfinder Failed", errMsg);
+                        setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                    }
+                });
+            });
+        }
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock New Guide Layout View
+    // -------------------------------------------------------------
+    function renderEmbeddedGuides() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_guidelayout_settings", "{}")); } catch (e) {}
+
+        var state = {
+            targetIndex: saved.targetIndex !== undefined ? saved.targetIndex : 0, // 0: Active AB, 1: All ABs, 2: Selection
+            useColumns: saved.useColumns !== false,
+            colCount: saved.colCount !== undefined ? saved.colCount : 12,
+            colGutter: saved.colGutter !== undefined ? saved.colGutter : 5,
+            colWidth: saved.colWidth || "",
+            centerColumns: saved.centerColumns !== false,
+
+            useRows: saved.useRows === true,
+            rowCount: saved.rowCount !== undefined ? saved.rowCount : 4,
+            rowGutter: saved.rowGutter !== undefined ? saved.rowGutter : 5,
+            rowHeight: saved.rowHeight || "",
+            centerRows: saved.centerRows !== false,
+
+            useMargin: saved.useMargin === true,
+            marginTop: saved.marginTop !== undefined ? saved.marginTop : 10,
+            marginLeft: saved.marginLeft !== undefined ? saved.marginLeft : 10,
+            marginBottom: saved.marginBottom !== undefined ? saved.marginBottom : 10,
+            marginRight: saved.marginRight !== undefined ? saved.marginRight : 10,
+
+            unit: saved.unit || "mm",
+            clearGuides: saved.clearGuides !== false,
+            colorIndex: saved.colorIndex !== undefined ? saved.colorIndex : 0
+        };
+
+        var guideColors = [
+            { name: "Cyan", hex: "#00ffff" },
+            { name: "Light Blue", hex: "#4da6ff" },
+            { name: "Magenta", hex: "#ff00ff" },
+            { name: "Yellow", hex: "#ffff00" },
+            { name: "Green", hex: "#00ff00" },
+            { name: "Red", hex: "#ff0000" }
+        ];
+
+        var html = [];
+
+        // 1. Presets & Target Bar
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "គោលដៅ និងទម្រង់គំរូ (Target & Presets)" : "Target & Presets") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "អនុវត្តលើ (Target):" : "Target:") + '</label>');
+        html.push('      <select id="glTargetSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('        <option value="0" ' + (state.targetIndex === 0 ? "selected" : "") + '>' + (isKhmer() ? "Artboard សកម្ម" : "Active Artboard") + '</option>');
+        html.push('        <option value="1" ' + (state.targetIndex === 1 ? "selected" : "") + '>' + (isKhmer() ? "គ្រប់ Artboards ទាំងអស់" : "All Artboards") + '</option>');
+        html.push('        <option value="2" ' + (state.targetIndex === 2 ? "selected" : "") + '>' + (isKhmer() ? "Artwork ដែលបានជ្រើស" : "Selected Artwork") + '</option>');
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទម្រង់គំរូ (Preset):" : "Preset:") + '</label>');
+        html.push('      <select id="glPresetSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('        <option value="custom">' + (isKhmer() ? "កំណត់ដោយខ្លួនឯង" : "Custom Layout") + '</option>');
+        html.push('        <option value="col12">12-Column Grid (5mm)</option>');
+        html.push('        <option value="col8">8-Column Grid (5mm)</option>');
+        html.push('        <option value="col3">3-Column Grid</option>');
+        html.push('        <option value="grid2x2">2x2 Grid (Quarter)</option>');
+        html.push('        <option value="crosshair">Center Crosshair</option>');
+        html.push('        <option value="margin5">Prepress Margin (5mm)</option>');
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Columns Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <label class="embed-check-row" style="font-weight:700;"><input type="checkbox" id="chkGlColumns" ' + (state.useColumns ? "checked" : "") + '> ' + (isKhmer() ? "ជួរឈរ (Columns)" : "Columns") + '</label>');
+        html.push('  </div>');
+        html.push('  <div id="glColsBody" class="embed-row-3col" style="' + (state.useColumns ? "" : "opacity:0.4;pointer-events:none;") + '">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួន:" : "Count:") + '</label>');
+        html.push('      <input type="number" id="glColCountInput" class="embed-input" value="' + state.colCount + '" min="1" max="100" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាត (Gutter):" : "Gutter:") + '</label>');
+        html.push('      <input type="number" id="glColGutterInput" class="embed-input" value="' + state.colGutter + '" step="0.5" min="0" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទទឹង (Width):" : "Width:") + '</label>');
+        html.push('      <input type="number" id="glColWidthInput" class="embed-input" value="' + state.colWidth + '" placeholder="Auto" step="0.5" min="0" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Rows Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <label class="embed-check-row" style="font-weight:700;"><input type="checkbox" id="chkGlRows" ' + (state.useRows ? "checked" : "") + '> ' + (isKhmer() ? "ជួរដេក (Rows)" : "Rows") + '</label>');
+        html.push('  </div>');
+        html.push('  <div id="glRowsBody" class="embed-row-3col" style="' + (state.useRows ? "" : "opacity:0.4;pointer-events:none;") + '">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួន:" : "Count:") + '</label>');
+        html.push('      <input type="number" id="glRowCountInput" class="embed-input" value="' + state.rowCount + '" min="1" max="100" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាត (Gutter):" : "Gutter:") + '</label>');
+        html.push('      <input type="number" id="glRowGutterInput" class="embed-input" value="' + state.rowGutter + '" step="0.5" min="0" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "កម្ពស់ (Height):" : "Height:") + '</label>');
+        html.push('      <input type="number" id="glRowHeightInput" class="embed-input" value="' + state.rowHeight + '" placeholder="Auto" step="0.5" min="0" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Margins Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <label class="embed-check-row" style="font-weight:700;"><input type="checkbox" id="chkGlMargin" ' + (state.useMargin ? "checked" : "") + '> ' + (isKhmer() ? "គែមសងខាង (Margins)" : "Margins") + '</label>');
+        html.push('  </div>');
+        html.push('  <div id="glMarginsBody" style="' + (state.useMargin ? "" : "opacity:0.4;pointer-events:none;") + '">');
+        html.push('    <div class="embed-row-2col">');
+        html.push('      <div>');
+        html.push('        <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "លើ (Top):" : "Top:") + '</label>');
+        html.push('        <input type="number" id="glMarginTopInput" class="embed-input" value="' + state.marginTop + '" step="0.5" min="0" style="width:100%;margin-top:2px;">');
+        html.push('      </div>');
+        html.push('      <div>');
+        html.push('        <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ឆ្វេង (Left):" : "Left:") + '</label>');
+        html.push('        <input type="number" id="glMarginLeftInput" class="embed-input" value="' + state.marginLeft + '" step="0.5" min="0" style="width:100%;margin-top:2px;">');
+        html.push('      </div>');
+        html.push('    </div>');
+        html.push('    <div class="embed-row-2col" style="margin-top:4px;">');
+        html.push('      <div>');
+        html.push('        <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ក្រោម (Bottom):" : "Bottom:") + '</label>');
+        html.push('        <input type="number" id="glMarginBottomInput" class="embed-input" value="' + state.marginBottom + '" step="0.5" min="0" style="width:100%;margin-top:2px;">');
+        html.push('      </div>');
+        html.push('      <div>');
+        html.push('        <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ស្តាំ (Right):" : "Right:") + '</label>');
+        html.push('        <input type="number" id="glMarginRightInput" class="embed-input" value="' + state.marginRight + '" step="0.5" min="0" style="width:100%;margin-top:2px;">');
+        html.push('      </div>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 5. Guide Options & Color
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ពណ៌បន្ទាត់ និងជម្រើស" : "Guide Color & Options") + '</span></div>');
+        html.push('  <div style="display:flex;justify-content:space-between;align-items:center;">');
+        html.push('    <div class="guide-swatch-list" id="glColorSwatches">');
+        for (var ci = 0; ci < guideColors.length; ci++) {
+            var gc = guideColors[ci];
+            html.push('      <span class="guide-swatch-dot ' + (state.colorIndex === ci ? "active" : "") + '" data-color="' + ci + '" style="background:' + gc.hex + ';" title="' + gc.name + '"></span>');
+        }
+        html.push('    </div>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ខ្នាត:" : "Unit:") + '</label>');
+        html.push('      <select id="glUnitSelect" class="embed-select" style="width:75px;">');
+        var glUnits = ["mm", "cm", "in", "pt"];
+        for (var glu = 0; glu < glUnits.length; glu++) {
+            html.push('        <option value="' + glUnits[glu] + '" ' + (state.unit === glUnits[glu] ? "selected" : "") + '>' + glUnits[glu] + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div style="margin-top:8px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkGlClear" ' + (state.clearGuides ? "checked" : "") + '> ' + (isKhmer() ? "លុបបន្ទាត់ចាស់ៗចេញមុន (Clear existing guides)" : "Clear existing guides in target area first") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 6. Action Wrap
+        html.push('<div class="embed-action-wrap" style="gap:8px;">');
+        html.push('  <button type="button" id="btnGlSubmit" class="btn-action-primary">📐 ' + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout") + '</button>');
+        html.push('  <button type="button" id="btnGlClearOnly" class="btn-action-secondary">🗑️ ' + (isKhmer() ? "លុបបន្ទាត់ណែនាំចេញ (Clear Guides Only)" : "Clear Guides Only") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var glTargetSelect = $("glTargetSelect");
+        var glPresetSelect = $("glPresetSelect");
+        var chkGlColumns = $("chkGlColumns");
+        var glColsBody = $("glColsBody");
+        var glColCountInput = $("glColCountInput");
+        var glColGutterInput = $("glColGutterInput");
+        var glColWidthInput = $("glColWidthInput");
+        var chkGlRows = $("chkGlRows");
+        var glRowsBody = $("glRowsBody");
+        var glRowCountInput = $("glRowCountInput");
+        var glRowGutterInput = $("glRowGutterInput");
+        var glRowHeightInput = $("glRowHeightInput");
+        var chkGlMargin = $("chkGlMargin");
+        var glMarginsBody = $("glMarginsBody");
+        var glMarginTopInput = $("glMarginTopInput");
+        var glMarginLeftInput = $("glMarginLeftInput");
+        var glMarginBottomInput = $("glMarginBottomInput");
+        var glMarginRightInput = $("glMarginRightInput");
+        var glUnitSelect = $("glUnitSelect");
+        var chkGlClear = $("chkGlClear");
+        var btnGlSubmit = $("btnGlSubmit");
+        var btnGlClearOnly = $("btnGlClearOnly");
+        var swatchDots = embeddedContent.querySelectorAll("#glColorSwatches .guide-swatch-dot");
+
+        function saveGlState() {
+            state.targetIndex = parseInt(glTargetSelect.value, 10) || 0;
+            state.useColumns = chkGlColumns.checked;
+            state.colCount = parseInt(glColCountInput.value, 10) || 0;
+            state.colGutter = parseFloat(glColGutterInput.value) || 0;
+            state.colWidth = glColWidthInput.value;
+            state.useRows = chkGlRows.checked;
+            state.rowCount = parseInt(glRowCountInput.value, 10) || 0;
+            state.rowGutter = parseFloat(glRowGutterInput.value) || 0;
+            state.rowHeight = glRowHeightInput.value;
+            state.useMargin = chkGlMargin.checked;
+            state.marginTop = parseFloat(glMarginTopInput.value) || 0;
+            state.marginLeft = parseFloat(glMarginLeftInput.value) || 0;
+            state.marginBottom = parseFloat(glMarginBottomInput.value) || 0;
+            state.marginRight = parseFloat(glMarginRightInput.value) || 0;
+            state.unit = glUnitSelect.value;
+            state.clearGuides = chkGlClear.checked;
+            store.setDebounced("ozo_guidelayout_settings", JSON.stringify(state), 250);
+        }
+
+        chkGlColumns.addEventListener("change", function() {
+            glColsBody.style.opacity = this.checked ? "1" : "0.4";
+            glColsBody.style.pointerEvents = this.checked ? "auto" : "none";
+            saveGlState();
+        });
+        chkGlRows.addEventListener("change", function() {
+            glRowsBody.style.opacity = this.checked ? "1" : "0.4";
+            glRowsBody.style.pointerEvents = this.checked ? "auto" : "none";
+            saveGlState();
+        });
+        chkGlMargin.addEventListener("change", function() {
+            glMarginsBody.style.opacity = this.checked ? "1" : "0.4";
+            glMarginsBody.style.pointerEvents = this.checked ? "auto" : "none";
+            saveGlState();
+        });
+
+        glPresetSelect.addEventListener("change", function() {
+            var p = this.value;
+            if (p === "col12") {
+                chkGlColumns.checked = true; glColCountInput.value = "12"; glColGutterInput.value = "5"; glColWidthInput.value = "";
+                chkGlRows.checked = false; chkGlMargin.checked = false;
+            } else if (p === "col8") {
+                chkGlColumns.checked = true; glColCountInput.value = "8"; glColGutterInput.value = "5"; glColWidthInput.value = "";
+                chkGlRows.checked = false; chkGlMargin.checked = false;
+            } else if (p === "col3") {
+                chkGlColumns.checked = true; glColCountInput.value = "3"; glColGutterInput.value = "10"; glColWidthInput.value = "";
+                chkGlRows.checked = false; chkGlMargin.checked = false;
+            } else if (p === "grid2x2") {
+                chkGlColumns.checked = true; glColCountInput.value = "2"; glColGutterInput.value = "0"; glColWidthInput.value = "";
+                chkGlRows.checked = true; glRowCountInput.value = "2"; glRowGutterInput.value = "0"; glRowHeightInput.value = "";
+            } else if (p === "crosshair") {
+                chkGlColumns.checked = true; glColCountInput.value = "2"; glColGutterInput.value = "0"; glColWidthInput.value = "";
+                chkGlRows.checked = true; glRowCountInput.value = "2"; glRowGutterInput.value = "0"; glRowHeightInput.value = "";
+                chkGlMargin.checked = false;
+            } else if (p === "margin5") {
+                chkGlColumns.checked = false; chkGlRows.checked = false;
+                chkGlMargin.checked = true; glMarginTopInput.value = "5"; glMarginLeftInput.value = "5"; glMarginBottomInput.value = "5"; glMarginRightInput.value = "5";
+            }
+            chkGlColumns.dispatchEvent(new Event("change"));
+            chkGlRows.dispatchEvent(new Event("change"));
+            chkGlMargin.dispatchEvent(new Event("change"));
+        });
+
+        for (var di = 0; di < swatchDots.length; di++) {
+            swatchDots[di].addEventListener("click", function() {
+                for (var sd = 0; sd < swatchDots.length; sd++) swatchDots[sd].classList.remove("active");
+                this.classList.add("active");
+                state.colorIndex = parseInt(this.getAttribute("data-color"), 10);
+                saveGlState();
+            });
+        }
+
+        glTargetSelect.addEventListener("change", saveGlState);
+        glColCountInput.addEventListener("input", saveGlState);
+        glColGutterInput.addEventListener("input", saveGlState);
+        glColWidthInput.addEventListener("input", saveGlState);
+        glRowCountInput.addEventListener("input", saveGlState);
+        glRowGutterInput.addEventListener("input", saveGlState);
+        glRowHeightInput.addEventListener("input", saveGlState);
+        glMarginTopInput.addEventListener("input", saveGlState);
+        glMarginLeftInput.addEventListener("input", saveGlState);
+        glMarginBottomInput.addEventListener("input", saveGlState);
+        glMarginRightInput.addEventListener("input", saveGlState);
+        glUnitSelect.addEventListener("change", saveGlState);
+        chkGlClear.addEventListener("change", saveGlState);
+
+        function dispatchGuides(clearOnly) {
+            hideError();
+            btnGlSubmit.disabled = true;
+            btnGlSubmit.textContent = isKhmer() ? "⏳ កំពុងដំណើរការ..." : "⏳ Building Guides...";
+            setStatus(isKhmer() ? "កំពុងបង្កើតបន្ទាត់ណែនាំ..." : "Building guide layout...", "running");
+
+            var params = {
+                targetIndex: parseInt(glTargetSelect.value, 10) || 0,
+                useColumns: clearOnly ? false : chkGlColumns.checked,
+                colCount: parseInt(glColCountInput.value, 10) || 0,
+                colGutter: parseFloat(glColGutterInput.value) || 0,
+                colWidth: glColWidthInput.value ? parseFloat(glColWidthInput.value) : null,
+                centerColumns: true,
+
+                useRows: clearOnly ? false : chkGlRows.checked,
+                rowCount: parseInt(glRowCountInput.value, 10) || 0,
+                rowGutter: parseFloat(glRowGutterInput.value) || 0,
+                rowHeight: glRowHeightInput.value ? parseFloat(glRowHeightInput.value) : null,
+                centerRows: true,
+
+                useMargin: clearOnly ? false : chkGlMargin.checked,
+                marginTop: parseFloat(glMarginTopInput.value) || 0,
+                marginLeft: parseFloat(glMarginLeftInput.value) || 0,
+                marginBottom: parseFloat(glMarginBottomInput.value) || 0,
+                marginRight: parseFloat(glMarginRightInput.value) || 0,
+
+                unit: glUnitSelect.value,
+                clearGuides: clearOnly ? true : chkGlClear.checked,
+                colorIndex: state.colorIndex
+            };
+
+            if (!csInterface) {
+                setTimeout(function() {
+                    btnGlSubmit.disabled = false;
+                    btnGlSubmit.textContent = "📐 " + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout");
+                    setStatus("Simulated Guides Generated (Browser Preview)", "success", 3000);
+                }, 1000);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteGuideLayout(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
+                btnGlSubmit.disabled = false;
+                btnGlSubmit.textContent = "📐 " + (isKhmer() ? "បង្កើតបន្ទាត់ណែនាំ (Generate Guides)" : "Generate Guide Layout");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "success") {
+                    var okMsg = clearOnly ? (isKhmer() ? "បានលុបបន្ទាត់ណែនាំចាស់ៗដោយជោគជ័យ" : "Cleared existing guides in target area.") : (isKhmer() ? "បានបង្កើតបន្ទាត់ណែនាំ " + res.count + " ដោយជោគជ័យ" : "Created " + res.count + " native guides in target area.");
+                    setStatus(okMsg, "success", 4000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to generate guides");
+                    showError(isKhmer() ? "ការបង្កើតបន្ទាត់បរាជ័យ" : "Guide Layout Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        }
+
+        btnGlSubmit.addEventListener("click", function() { dispatchGuides(false); });
+        btnGlClearOnly.addEventListener("click", function() { dispatchGuides(true); });
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock Object Repeat View
+    // -------------------------------------------------------------
+    function renderEmbeddedRepeat() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_repeat_settings", "{}")); } catch (e) {}
+
+        var state = {
+            mode: saved.mode !== undefined ? saved.mode : 0, // 0: Fit Artboard, 1: Fixed Step & Repeat, 2: Radial
+            columns: saved.columns !== undefined ? saved.columns : 5,
+            rows: saved.rows !== undefined ? saved.rows : 5,
+            horizontalGap: saved.horizontalGap !== undefined ? saved.horizontalGap : 5,
+            verticalGap: saved.verticalGap !== undefined ? saved.verticalGap : 5,
+            unitIndex: saved.unitIndex !== undefined ? saved.unitIndex : 0, // 0: mm, 1: cm, 2: in, 3: pt, 4: px
+            alternating: saved.alternating !== undefined ? saved.alternating : 0, // 0: None, 1: Flip X, 2: Flip Y, 3: Rotate 180
+            distributeEvenly: saved.distributeEvenly !== false,
+
+            radialCopies: saved.radialCopies !== undefined ? saved.radialCopies : 12,
+            radialRadius: saved.radialRadius !== undefined ? saved.radialRadius : 50,
+            radialTotalAngle: saved.radialTotalAngle !== undefined ? saved.radialTotalAngle : 360,
+            radialRotate: saved.radialRotate !== false,
+
+            layerName: saved.layerName || "Object Repeat",
+            selectResult: saved.selectResult !== false
+        };
+
+        var html = [];
+
+        // 1. Mode Segmented
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់ចម្លង (Repeat Mode)" : "Repeat Mode") + '</span></div>');
+        html.push('  <div class="embed-segmented" id="repModeSegmented">');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 0 ? "active" : "") + '" data-mode="0">⊞ ' + (isKhmer() ? "ពេញ Artboard (Fit)" : "Fit Artboard") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 1 ? "active" : "") + '" data-mode="1">⊞ ' + (isKhmer() ? "ក្រឡាចត្រង្គ (Fixed)" : "Step & Repeat") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 2 ? "active" : "") + '" data-mode="2">○ ' + (isKhmer() ? "រង្វង់មូល (Radial)" : "Radial Array") + '</button>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Grid Parameters
+        html.push('<div class="embed-card" id="repGridCard" style="' + (state.mode === 2 ? "display:none;" : "") + '">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ការកំណត់ក្រឡាចត្រង្គ (Grid Settings)" : "Grid Settings") + '</span></div>');
+        html.push('  <div class="embed-row-2col" id="repFixedCountsRow" style="' + (state.mode === 1 ? "" : "display:none;") + '">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួនជួរឈរ (Cols):" : "Columns:") + '</label>');
+        html.push('      <input type="number" id="repColsInput" class="embed-input" value="' + state.columns + '" min="1" max="1000" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួនជួរដេក (Rows):" : "Rows:") + '</label>');
+        html.push('      <input type="number" id="repRowsInput" class="embed-input" value="' + state.rows + '" min="1" max="1000" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div class="embed-row-3col" style="margin-top:6px;">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាតដេក (X):" : "Gap X:") + '</label>');
+        html.push('      <input type="number" id="repGapXInput" class="embed-input" value="' + state.horizontalGap + '" step="1" min="0" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាតឈរ (Y):" : "Gap Y:") + '</label>');
+        html.push('      <input type="number" id="repGapYInput" class="embed-input" value="' + state.verticalGap + '" step="1" min="0" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ខ្នាត:" : "Unit:") + '</label>');
+        html.push('      <select id="repUnitSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        var repUnits = ["mm", "cm", "in", "pt", "px"];
+        for (var rui = 0; rui < repUnits.length; rui++) {
+            html.push('        <option value="' + rui + '" ' + (state.unitIndex === rui ? "selected" : "") + '>' + repUnits[rui] + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div style="margin-top:8px;">');
+        html.push('    <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទម្រង់ឆ្លាស់ (Alternating Pattern):" : "Alternating Pattern:") + '</label>');
+        html.push('    <select id="repAltSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('      <option value="0" ' + (state.alternating === 0 ? "selected" : "") + '>' + (isKhmer() ? "គ្មាន (ធម្មតា)" : "None (Standard)") + '</option>');
+        html.push('      <option value="1" ' + (state.alternating === 1 ? "selected" : "") + '>' + (isKhmer() ? "ត្រឡប់ឆ្វេងស្តាំ (Flip Horizontal X)" : "Flip Horizontal (X)") + '</option>');
+        html.push('      <option value="2" ' + (state.alternating === 2 ? "selected" : "") + '>' + (isKhmer() ? "ត្រឡប់លើក្រោម (Flip Vertical Y)" : "Flip Vertical (Y)") + '</option>');
+        html.push('      <option value="3" ' + (state.alternating === 3 ? "selected" : "") + '>' + (isKhmer() ? "បង្វិល 180 ដឺក្រេ (Rotate 180°)" : "Rotate 180° Checkerboard") + '</option>');
+        html.push('    </select>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Radial Parameters
+        html.push('<div class="embed-card" id="repRadialCard" style="' + (state.mode === 2 ? "" : "display:none;") + '">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ការកំណត់រង្វង់មូល (Radial Array)" : "Radial Settings") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួនចម្លង (Copies):" : "Copies:") + '</label>');
+        html.push('      <input type="number" id="repRadialCopiesInput" class="embed-input" value="' + state.radialCopies + '" min="2" max="1000" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "កាំរង្វង់ (Radius):" : "Radius:") + '</label>');
+        html.push('      <input type="number" id="repRadialRadiusInput" class="embed-input" value="' + state.radialRadius + '" min="0" step="5" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div style="margin-top:6px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkRepRadialRotate" ' + (state.radialRotate ? "checked" : "") + '> ' + (isKhmer() ? "បង្វិលវត្ថុតាមគន្លងរង្វង់ (Rotate With Circle)" : "Rotate objects along circular path") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Output Options
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ស្រទាប់លទ្ធផល (Output)" : "Output Layer") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ឈ្មោះ Layer:" : "Layer Name:") + '</label>');
+        html.push('      <input type="text" id="repLayerInput" class="embed-input" value="' + escapeHtml(state.layerName) + '" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div style="display:flex;align-items:flex-end;padding-bottom:5px;">');
+        html.push('      <label class="embed-check-row"><input type="checkbox" id="chkRepSelect" ' + (state.selectResult ? "checked" : "") + '> ' + (isKhmer() ? "ជ្រើសរើសលទ្ធផល" : "Select result group") + '</label>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 5. Submit Wrap
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnRepSubmit" class="btn-action-primary">🔁 ' + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var modeBtns = embeddedContent.querySelectorAll("#repModeSegmented .embed-seg-btn");
+        var repGridCard = $("repGridCard");
+        var repRadialCard = $("repRadialCard");
+        var repFixedCountsRow = $("repFixedCountsRow");
+        var repColsInput = $("repColsInput");
+        var repRowsInput = $("repRowsInput");
+        var repGapXInput = $("repGapXInput");
+        var repGapYInput = $("repGapYInput");
+        var repUnitSelect = $("repUnitSelect");
+        var repAltSelect = $("repAltSelect");
+        var repRadialCopiesInput = $("repRadialCopiesInput");
+        var repRadialRadiusInput = $("repRadialRadiusInput");
+        var chkRepRadialRotate = $("chkRepRadialRotate");
+        var repLayerInput = $("repLayerInput");
+        var chkRepSelect = $("chkRepSelect");
+        var btnRepSubmit = $("btnRepSubmit");
+
+        function saveRepState() {
+            state.columns = parseInt(repColsInput.value, 10) || 5;
+            state.rows = parseInt(repRowsInput.value, 10) || 5;
+            state.horizontalGap = parseFloat(repGapXInput.value) || 5;
+            state.verticalGap = parseFloat(repGapYInput.value) || 5;
+            state.unitIndex = parseInt(repUnitSelect.value, 10) || 0;
+            state.alternating = parseInt(repAltSelect.value, 10) || 0;
+            state.radialCopies = parseInt(repRadialCopiesInput.value, 10) || 12;
+            state.radialRadius = parseFloat(repRadialRadiusInput.value) || 50;
+            state.radialRotate = chkRepRadialRotate.checked;
+            state.layerName = repLayerInput.value.trim() || "Object Repeat";
+            state.selectResult = chkRepSelect.checked;
+            store.setDebounced("ozo_repeat_settings", JSON.stringify(state), 250);
+        }
+
+        for (var mi = 0; mi < modeBtns.length; mi++) {
+            modeBtns[mi].addEventListener("click", function() {
+                for (var mb = 0; mb < modeBtns.length; mb++) modeBtns[mb].classList.remove("active");
+                this.classList.add("active");
+                state.mode = parseInt(this.getAttribute("data-mode"), 10);
+                if (state.mode === 0) { // Fit Artboard
+                    repGridCard.style.display = "block";
+                    repRadialCard.style.display = "none";
+                    repFixedCountsRow.style.display = "none";
+                } else if (state.mode === 1) { // Fixed Step & Repeat
+                    repGridCard.style.display = "block";
+                    repRadialCard.style.display = "none";
+                    repFixedCountsRow.style.display = "flex";
+                } else { // Radial
+                    repGridCard.style.display = "none";
+                    repRadialCard.style.display = "block";
+                }
+                saveRepState();
+            });
+        }
+
+        repColsInput.addEventListener("input", saveRepState);
+        repRowsInput.addEventListener("input", saveRepState);
+        repGapXInput.addEventListener("input", saveRepState);
+        repGapYInput.addEventListener("input", saveRepState);
+        repUnitSelect.addEventListener("change", saveRepState);
+        repAltSelect.addEventListener("change", saveRepState);
+        repRadialCopiesInput.addEventListener("input", saveRepState);
+        repRadialRadiusInput.addEventListener("input", saveRepState);
+        chkRepRadialRotate.addEventListener("change", saveRepState);
+        repLayerInput.addEventListener("input", saveRepState);
+        chkRepSelect.addEventListener("change", saveRepState);
+
+        btnRepSubmit.addEventListener("click", function() {
+            hideError();
+            btnRepSubmit.disabled = true;
+            btnRepSubmit.textContent = isKhmer() ? "⏳ កំពុងចម្លង..." : "⏳ Repeating Artwork...";
+            setStatus(isKhmer() ? "កំពុងចម្លងវត្ថុតាមប្លង់..." : "Generating repeated artwork...", "running");
+
+            var params = {
+                mode: state.mode,
+                columns: parseInt(repColsInput.value, 10) || 5,
+                rows: parseInt(repRowsInput.value, 10) || 5,
+                horizontalGap: parseFloat(repGapXInput.value) || 5,
+                verticalGap: parseFloat(repGapYInput.value) || 5,
+                unitIndex: parseInt(repUnitSelect.value, 10) || 0,
+                alternating: parseInt(repAltSelect.value, 10) || 0,
+                radialCopies: parseInt(repRadialCopiesInput.value, 10) || 12,
+                radialRadius: parseFloat(repRadialRadiusInput.value) || 50,
+                radialTotalAngle: 360,
+                radialRotate: chkRepRadialRotate.checked,
+                layerName: repLayerInput.value.trim() || "Object Repeat",
+                selectResult: chkRepSelect.checked
+            };
+
+            if (!csInterface) {
+                setTimeout(function() {
+                    btnRepSubmit.disabled = false;
+                    btnRepSubmit.textContent = "🔁 " + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now");
+                    setStatus("Simulated Repeat Applied (Browser Preview)", "success", 3000);
+                }, 1000);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteObjectRepeat(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
+                btnRepSubmit.disabled = false;
+                btnRepSubmit.textContent = "🔁 " + (isKhmer() ? "ចម្លងវត្ថុឥឡូវនេះ" : "Repeat Artwork Now");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "success") {
+                    var okMsg = isKhmer() ? "បានបង្កើតវត្ថុចម្លង " + res.count + " ដោយជោគជ័យលើ Layer " + res.layer : "Created " + res.count + " repeated objects on layer " + res.layer;
+                    setStatus(okMsg, "success", 4000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to repeat artwork");
+                    showError(isKhmer() ? "ការចម្លងវត្ថុបរាជ័យ" : "Repeat Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        });
+    }
+
+    // -------------------------------------------------------------
     // Generic In-Dock View (for other tools)
     // -------------------------------------------------------------
     function renderEmbeddedGeneric(tool) {
@@ -2993,6 +3693,9 @@
             else if (activeEmbeddedTool.id === "printjob") renderEmbeddedPrintJob();
             else if (activeEmbeddedTool.id === "count") renderEmbeddedCount();
             else if (activeEmbeddedTool.id === "numbering") renderEmbeddedNumbering();
+            else if (activeEmbeddedTool.id === "pathfinder") renderEmbeddedPathfinder();
+            else if (activeEmbeddedTool.id === "guide" || activeEmbeddedTool.id === "guides") renderEmbeddedGuides();
+            else if (activeEmbeddedTool.id === "repeat") renderEmbeddedRepeat();
             else renderEmbeddedGeneric(activeEmbeddedTool);
         } else {
             renderTools();

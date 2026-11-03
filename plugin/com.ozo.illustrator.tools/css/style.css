@@ -1487,3 +1487,68 @@ body.theme-light {
     font-weight: 700;
     color: var(--text-primary);
 }
+
+/* Pathfinder Grid */
+.embed-pf-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+}
+.embed-pf-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: var(--text-primary);
+}
+.embed-pf-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+    transform: translateY(-1px);
+}
+.embed-pf-btn:active {
+    transform: translateY(0);
+}
+.embed-pf-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+.embed-pf-name {
+    font-size: 9.5px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+/* Guide Swatch Dots */
+.guide-swatch-list {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+}
+.guide-swatch-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+}
+.guide-swatch-dot:hover {
+    transform: scale(1.15);
+}
+.guide-swatch-dot.active {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px var(--accent);
+}

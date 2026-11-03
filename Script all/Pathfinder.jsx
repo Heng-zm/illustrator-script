@@ -6,6 +6,10 @@
     var PREVIEW_LAYER_NAME = "__Pathfinder Preview__";
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("Open a document and select artwork before running Pathfinder."));
         return;
     }
@@ -13,14 +17,23 @@
     var doc = app.activeDocument;
     var selectionValue = doc.selection;
     if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 2) {
-        if (confirm(OZO.isKhmer() ?
-            "Pathfinder \u178f\u17d2\u179a\u17bc\u179c\u1780\u17b6\u179a\u179c\u178f\u17d2\u1790\u1799\u17c9\u17b6\u1784\u17a0\u17c4\u1785\u178e\u17b6\u179f\u17cb \u17e2\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
-            "Pathfinder requires at least 2 objects. Would you like to select all items on the active artboard automatically?")) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
             doc.selectObjectsOnActiveArtboard();
             selectionValue = doc.selection;
-        }
-        if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 2) {
-            return;
+            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 2) {
+                __ozoHeadlessResult = { status: "error", message: "Pathfinder requires at least 2 selected vector objects in Illustrator." };
+                return;
+            }
+        } else {
+            if (confirm(OZO.isKhmer() ?
+                "Pathfinder \u178f\u17d2\u179a\u17bc\u179c\u1780\u17b6\u179a\u179c\u178f\u17d2\u1790\u1799\u17c9\u17b6\u1784\u17a0\u17c4\u1785\u178e\u17b6\u179f\u17cb \u17e2\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
+                "Pathfinder requires at least 2 objects. Would you like to select all items on the active artboard automatically?")) {
+                doc.selectObjectsOnActiveArtboard();
+                selectionValue = doc.selection;
+            }
+            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 2) {
+                return;
+            }
         }
     }
 
@@ -147,6 +160,7 @@
     }
 
     function startProgress(title, total) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) return;
         closeProgress();
         progressWindow = new Window("palette", SCRIPT_NAME + " - Working");
         progressWindow.orientation = "column";
@@ -160,6 +174,7 @@
     }
 
     function updateProgress(value, message) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) return;
         if (!progressWindow) {
             return;
         }
@@ -435,7 +450,7 @@
         ].join(":");
     }
 
-    function commitWorkingResult() {
+    function commitWorkingResult(keepOriginals) {
         var produced = selectedItemsSnapshot();
         var usableCount = 0;
         for (var producedIndex = 0; producedIndex < produced.length; producedIndex++) {
@@ -461,32 +476,38 @@
         var deleted = [];
         var index;
         try {
-            backupLayer = doc.layers.add();
-            backupLayer.name = "__Pathfinder Rollback Backup__";
-            backupLayer.locked = false;
-            backupLayer.visible = true;
-            for (index = 0; index < sourceItems.length; index++) {
-                var backupCopy = sourceItems[index].duplicate(
-                    backupLayer,
-                    ElementPlacement.PLACEATEND
-                );
-                backupCopy.hidden = false;
-                backupCopies.push(backupCopy);
-                deleted.push(false);
-            }
-            backupLayer.visible = false;
+            if (keepOriginals) {
+                for (index = 0; index < sourceItems.length; index++) {
+                    try { sourceItems[index].hidden = sourceHidden[index]; } catch (eH) {}
+                }
+            } else {
+                backupLayer = doc.layers.add();
+                backupLayer.name = "__Pathfinder Rollback Backup__";
+                backupLayer.locked = false;
+                backupLayer.visible = true;
+                for (index = 0; index < sourceItems.length; index++) {
+                    var backupCopy = sourceItems[index].duplicate(
+                        backupLayer,
+                        ElementPlacement.PLACEATEND
+                    );
+                    backupCopy.hidden = false;
+                    backupCopies.push(backupCopy);
+                    deleted.push(false);
+                }
+                backupLayer.visible = false;
 
-            for (index = sourceItems.length - 1; index >= 0; index--) {
-                sourceItems[index].remove();
-                deleted[index] = true;
-                updateProgress(
-                    sourceItems.length - index,
-                    "Committing object " + (sourceItems.length - index) +
-                        " of " + sourceItems.length + "..."
-                );
+                for (index = sourceItems.length - 1; index >= 0; index--) {
+                    sourceItems[index].remove();
+                    deleted[index] = true;
+                    updateProgress(
+                        sourceItems.length - index,
+                        "Committing object " + (sourceItems.length - index) +
+                            " of " + sourceItems.length + "..."
+                    );
+                }
+                backupLayer.visible = true;
+                backupLayer.remove();
             }
-            backupLayer.visible = true;
-            backupLayer.remove();
         } catch (commitError) {
             var recoveryFailed = false;
             if (backupLayer) {
@@ -884,6 +905,56 @@
         applyButton.enabled = true;
     };
 
+    function executePathfinderCore(opIndex, expandRes, ungroupRes, cleanRes, pairwise, keepOriginals) {
+        cleanupPreview(true);
+        selectedOperationIndex = typeof opIndex === "number" ? opIndex : 0;
+        var op = operations[selectedOperationIndex];
+        var resultCopies = createWorkingCopies("Pathfinder Result");
+        if (op.supportsPairs && pairwise) {
+            executePairwiseOperation(resultCopies, op, expandRes, ungroupRes, cleanRes);
+        } else {
+            selectItems(resultCopies);
+            executeOperation(op, expandRes, ungroupRes, cleanRes);
+        }
+        var resultCount = commitWorkingResult(keepOriginals);
+        app.redraw();
+        return {
+            status: "success",
+            operation: op.name,
+            resultCount: resultCount
+        };
+    }
+
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        try {
+            var hp = __ozoHeadlessParams;
+            var opIdx = 0;
+            if (typeof hp.operation === "number") opIdx = hp.operation;
+            else if (typeof hp.operation === "string") {
+                for (var oi = 0; oi < operations.length; oi++) {
+                    if (operations[oi].name.toLowerCase() === hp.operation.toLowerCase()) {
+                        opIdx = oi;
+                        break;
+                    }
+                }
+            }
+            var expandRes = hp.expandResult !== false;
+            var ungroupRes = hp.ungroupResult !== false;
+            var cleanRes = hp.cleanGroups !== false;
+            var pairw = hp.pairwise === true;
+            var keepOrig = hp.keepOriginals === true;
+            __ozoHeadlessResult = executePathfinderCore(opIdx, expandRes, ungroupRes, cleanRes, pairw, keepOrig);
+            return;
+        } catch (ePathHeadless) {
+            cleanupPreview();
+            __ozoHeadlessResult = {
+                status: "error",
+                message: ePathHeadless && ePathHeadless.message ? ePathHeadless.message : String(ePathHeadless)
+            };
+            return;
+        }
+    }
+
     applyButton.active = true;
     var dialogResult = dialog.show();
     if (dialogResult !== 1) {
@@ -905,7 +976,7 @@
             );
             executeSelectedOperation(resultCopies);
         }
-        var resultCount = commitWorkingResult();
+        var resultCount = commitWorkingResult(false);
         OZO.saveWindowState(dialog, "pathfinder", {
             operation: selectedOperationIndex
         });

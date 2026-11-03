@@ -14,6 +14,10 @@
     var PREVIEW_LAYER_NAME = "__GuideLayout_Preview__";
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("No Illustrator document is open."));
         return;
     }
@@ -827,21 +831,8 @@
         renderPreview(readCurrentSettings());
     }
 
-    colNumInput.active = true;
-
-    var dialogResult = dialog.show();
-    if (dialogResult !== 1) {
+    function executeGuideLayoutCore(finalSettings) {
         cleanupPreview();
-        app.redraw();
-        return;
-    }
-
-    // -------------------------------------------------------------
-    // Apply Final Native Guides
-    // -------------------------------------------------------------
-    try {
-        cleanupPreview();
-        var finalSettings = readCurrentSettings();
         var targets = getTargetRects(finalSettings.targetIndex);
 
         if (finalSettings.clearGuides) {
@@ -868,10 +859,78 @@
             createdGuides += generateGuidesForRect(targetLayer, targets[t], finalSettings, true);
         }
 
-        OZO.saveWindowState(dialog, STATE_NAMESPACE);
         app.redraw();
+        return {
+            status: "success",
+            count: createdGuides,
+            targetCount: targets.length
+        };
+    }
 
-        if (createdGuides === 0) {
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        try {
+            var hp = __ozoHeadlessParams;
+            var u = hp.unit || defaultDocUnit;
+            var factor = OZO.toPoints(1, u);
+            var colorIdx = typeof hp.colorIndex === "number" ? hp.colorIndex : 0;
+            var chosenColor = COLOR_PRESETS[colorIdx] || COLOR_PRESETS[0];
+
+            var headlessSettings = {
+                targetIndex: typeof hp.targetIndex === "number" ? hp.targetIndex : 0,
+                useColumns: hp.useColumns !== false,
+                colCount: parseInt(hp.colCount, 10) || 0,
+                colWidth: hp.colWidth ? parseFloat(hp.colWidth) * factor : null,
+                colGutter: hp.colGutter !== undefined ? parseFloat(hp.colGutter) * factor : 0,
+                centerColumns: hp.centerColumns === true,
+
+                useRows: hp.useRows === true,
+                rowCount: parseInt(hp.rowCount, 10) || 0,
+                rowHeight: hp.rowHeight ? parseFloat(hp.rowHeight) * factor : null,
+                rowGutter: hp.rowGutter !== undefined ? parseFloat(hp.rowGutter) * factor : 0,
+                centerRows: hp.centerRows === true,
+
+                useMargin: hp.useMargin === true,
+                marginTop: hp.marginTop !== undefined ? parseFloat(hp.marginTop) * factor : 0,
+                marginLeft: hp.marginLeft !== undefined ? parseFloat(hp.marginLeft) * factor : 0,
+                marginBottom: hp.marginBottom !== undefined ? parseFloat(hp.marginBottom) * factor : 0,
+                marginRight: hp.marginRight !== undefined ? parseFloat(hp.marginRight) * factor : 0,
+
+                clearGuides: hp.clearGuides === true,
+                colorIndex: colorIdx,
+                colorRgb: chosenColor.rgb,
+                colorNorm: chosenColor.norm
+            };
+
+            __ozoHeadlessResult = executeGuideLayoutCore(headlessSettings);
+            return;
+        } catch (eGuidesHeadless) {
+            cleanupPreview();
+            __ozoHeadlessResult = {
+                status: "error",
+                message: eGuidesHeadless && eGuidesHeadless.message ? eGuidesHeadless.message : String(eGuidesHeadless)
+            };
+            return;
+        }
+    }
+
+    colNumInput.active = true;
+
+    var dialogResult = dialog.show();
+    if (dialogResult !== 1) {
+        cleanupPreview();
+        app.redraw();
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // Apply Final Native Guides
+    // -------------------------------------------------------------
+    try {
+        var finalSettings = readCurrentSettings();
+        var guideRes = executeGuideLayoutCore(finalSettings);
+        OZO.saveWindowState(dialog, STATE_NAMESPACE);
+
+        if (guideRes.count === 0) {
             alert(SCRIPT_NAME + "\n\nNo guides were created. Check the margin, " +
                 "column, and row settings." +
                 (finalSettings.clearGuides ?
