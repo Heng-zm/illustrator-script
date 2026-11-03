@@ -18,22 +18,6 @@
             <button type="button" id="brandBadge" class="brand-badge" data-i18n-title="badge.title">v2.6.3</button>
         </div>
         <div class="header-actions">
-            <button type="button" id="viewToggleBtn" class="icon-btn" aria-pressed="false" data-i18n-title="view.toggle" title="Toggle Grid / List View">
-                <svg id="viewIconGrid" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <svg id="viewIconList" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-            </button>
             <button type="button" id="langToggleBtn" class="lang-btn" data-i18n-title="lang.toggle" title="Switch language">EN</button>
             <button type="button" id="openFolderBtn" class="icon-btn" data-i18n-title="folder" title="Open Scripts Directory">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -83,10 +67,27 @@
                 <kbd id="searchKbdHint" aria-hidden="true" class="search-kbd" data-i18n-title="search.hint" title="Press / to search">/</kbd>
                 <button type="button" id="searchClearBtn" class="search-clear" data-i18n-title="search.clear" title="Clear search">&times;</button>
             </div>
+            <button type="button" id="viewToggleBtn" class="icon-btn view-toggle" aria-pressed="false" data-i18n-title="view.toggle" title="Toggle Grid / List View">
+            <svg id="viewIconGrid" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <svg id="viewIconList" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+        </button>
         </div>
 
         <!-- Category Tabs -->
         <div id="tabs" class="tabs-container" role="tablist">
+            <span id="tabIndicator" class="tab-indicator" aria-hidden="true"></span>
             <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-category="all"><span data-i18n="cat.all">All</span> <span class="tab-count" data-count="all"></span></button>
             <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="favorites"><span class="tab-star" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:-1px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span> <span data-i18n="cat.favorites">Favorites</span> <span class="tab-count" data-count="favorites"></span></button>
             <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="prepress"><span data-i18n="cat.prepress">Prepress</span> <span class="tab-count" data-count="prepress"></span></button>

@@ -1,4 +1,4 @@
-/* Ozo Tools – Illustrator panel theme (v2.3)
+/* Ozo Tools – Illustrator panel theme (v2.7)
    Colours below are the fallback tiers; js/main.js overrides the background ramp
    on <body> from Illustrator's real UI colour when SYNC_HOST_COLORS is true. */
 
@@ -29,6 +29,13 @@
     --danger: #ef5350;
     --star-active: #fbbf24;
     --star-inactive: #5f5f5f;
+
+    --accent-subtle: rgba(var(--accent-rgb), 0.14);
+    --bg-app: var(--bg-main);
+    --font-family: var(--font-stack);
+
+    --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+    --ease-spring: cubic-bezier(0.3, 1.4, 0.5, 1);
 
     --radius-sm: 4px;
     --radius-md: 6px;
@@ -266,10 +273,8 @@ button:focus-visible,
 .tab-btn {
     background: none;
     border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
     color: var(--text-secondary);
-    padding: 6px 0 6px;
+    padding: 8px 0 9px;
     font-size: 12px;
     font-weight: 500; /* constant weight so tabs don't shift when selected */
     white-space: nowrap;
@@ -280,7 +285,7 @@ button:focus-visible,
     transition: color 0.15s, border-color 0.15s;
 }
 .tab-btn:hover { color: var(--text-primary); }
-.tab-btn.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+.tab-btn.active { color: var(--text-primary); }
 .tab-btn:focus-visible { outline-offset: -2px; border-radius: 2px; }
 
 .tab-star { color: var(--star-active); font-size: 12px; }
@@ -978,11 +983,9 @@ body.theme-light {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
 .embed-doc-bar {
@@ -1464,8 +1467,6 @@ body.theme-light {
 .stat-box-lbl {
     font-size: 10px;
     color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
 }
 .stat-pill-list {
     display: flex;
@@ -1897,11 +1898,9 @@ body.theme-light {
 .preview-back-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
 .preview-back-btn:active { background: var(--bg-surface-active); }
 .preview-header-title {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
     flex: 1;
     text-align: center;
 }
@@ -1915,7 +1914,7 @@ body.theme-light {
 .preview-body::-webkit-scrollbar-track { background: transparent; }
 .preview-body::-webkit-scrollbar-thumb { background-color: var(--border-strong); border-radius: 3px; }
 .preview-hero {
-    background: linear-gradient(160deg, var(--bg-surface) 0%, var(--bg-main) 100%);
+    background: var(--bg-surface);
     border-bottom: 1px solid var(--border-color);
     padding: 20px 16px 18px;
     display: flex;
@@ -1924,16 +1923,6 @@ body.theme-light {
     gap: 10px;
     position: relative;
     overflow: hidden;
-}
-.preview-hero::before {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--accent-rgb),0.1) 0%, transparent 70%);
-    pointer-events: none;
 }
 .preview-icon-wrap {
     width: 52px; height: 52px;
@@ -1960,8 +1949,6 @@ body.theme-light {
     font-weight: 600;
     padding: 2px 8px;
     border-radius: 99px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 .preview-tool-badge.badge-prepress { background: rgba(var(--prepress-rgb),0.18); color: rgb(var(--prepress-rgb)); }
 .preview-tool-badge.badge-layout   { background: rgba(var(--layout-rgb),0.18);   color: rgb(var(--layout-rgb)); }
@@ -1991,11 +1978,9 @@ body.theme-light {
 }
 .preview-section:last-of-type { border-bottom: none; }
 .preview-section-title {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
     margin-bottom: 10px;
 }
 .preview-features { list-style: none; display: flex; flex-direction: column; gap: 7px; }
@@ -2076,3 +2061,167 @@ body.theme-light {
 .preview-illustration.illu-prepress svg { color: rgb(var(--prepress-rgb)); }
 .preview-illustration.illu-layout svg   { color: rgb(var(--layout-rgb)); }
 .preview-illustration.illu-utilities svg{ color: rgb(var(--util-rgb)); }
+
+
+/* ==================================================================
+   v2.7 – layout + motion refinements
+   ================================================================== */
+
+/* ---------- Header: identity + app-level actions only ---------- */
+.panel-header { padding: 7px 10px 7px 12px; }
+
+/* ---------- Search row now also holds the grid/list switch ---------- */
+.search-container { gap: 6px; padding: 10px 12px 8px; }
+.search-input-wrap { flex: 1; min-width: 0; width: auto; }
+.view-toggle {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+}
+.view-toggle:hover { border-color: var(--border-strong); }
+.view-toggle svg { transition: transform 0.25s var(--ease-spring); }
+.view-toggle:active svg { transform: scale(0.82) rotate(-8deg); }
+
+/* ---------- Tabs: one sliding indicator, soft edge fade when they overflow ---------- */
+.tabs-container {
+    position: relative;
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 18px), transparent 100%);
+            mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 18px), transparent 100%);
+}
+.tab-indicator {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    width: 0;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+    pointer-events: none;
+}
+.tab-indicator.ready { transition: transform 0.28s var(--ease-out), width 0.28s var(--ease-out); }
+
+/* ---------- List view: quieter rows ---------- */
+.tool-list { padding: 10px 12px 14px; }
+.tool-badge { display: none; }          /* the tinted icon tile already carries the category */
+.tool-desc { margin-top: 1px; }
+.tool-card { transition: background-color 0.12s, border-color 0.12s, transform 0.12s var(--ease-out); }
+.tool-card:active { transform: scale(0.985); }
+.tool-icon-wrap { transition: transform 0.2s var(--ease-spring); }
+.tool-card:hover .tool-icon-wrap { transform: scale(1.06); }
+
+/* Info is secondary: appears on hover / focus, but keeps its space so names never jump */
+.preview-card-btn { opacity: 0; transition: opacity 0.12s, background-color 0.12s, color 0.12s; }
+.tool-card:hover .preview-card-btn,
+.tool-card:focus-visible .preview-card-btn,
+.preview-card-btn:focus-visible { opacity: 1; }
+
+/* Divider between starred tools and the rest */
+.list-sep { height: 1px; background: var(--border-color); margin: 4px 2px; flex-shrink: 0; }
+.view-grid .list-sep { grid-column: 1 / -1; margin: 0 2px; }
+
+/* ---------- Grid view ---------- */
+.view-grid .tool-card { padding: 16px 6px 10px; }
+.view-grid .tool-icon-wrap { width: 44px; height: 44px; border-radius: var(--radius-md); }
+.view-grid .tool-icon-wrap svg { width: 22px; height: 22px; }
+.view-grid .tool-actions { gap: 0; }
+
+/* ---------- Motion: one orchestrated entrance, and motion that answers actions ---------- */
+.tool-list.is-entering .tool-card {
+    animation: cardIn 0.26s var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 22ms);
+}
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Views: tool opens from the right, returning slides back from the left */
+.view-catalog { animation: viewFade 0.18s ease-out; }
+.view-catalog.slide-back { animation: viewBack 0.24s var(--ease-out); }
+.view-embedded { animation: viewForward 0.24s var(--ease-out); }
+.view-preview { animation: viewForward 0.24s var(--ease-out); }
+@keyframes viewFade    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes viewForward { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+@keyframes viewBack    { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: none; } }
+
+/* Running: progress sweep stays; Run button gets a spinner */
+.run-btn.running::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border: 2px solid rgba(var(--accent-rgb), 0.3);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: ozoSpin 0.7s linear infinite;
+}
+
+/* Finished: a green wash that fades out, so success is seen without reading the footer */
+.tool-card.run-done { animation: runDone 1s ease-out; }
+@keyframes runDone {
+    0%   { border-color: var(--success); background-color: rgba(52, 201, 139, 0.18); }
+    100% { border-color: var(--border-color); background-color: var(--bg-surface); }
+}
+
+/* Status dot: a ring only while work is running */
+.status-dot.running { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.55); animation: dotRing 1.2s ease-out infinite; }
+@keyframes dotRing {
+    to { box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0); }
+}
+.status-dot.success { animation: dotPop 0.35s var(--ease-spring); }
+@keyframes dotPop { from { transform: scale(0.4); } to { transform: scale(1); } }
+
+/* Banners drop in rather than appearing */
+.update-banner, .error-banner { animation: bannerIn 0.22s var(--ease-out); }
+@keyframes bannerIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+/* Search highlight settles in */
+mark.search-match { animation: markIn 0.18s ease-out; }
+@keyframes markIn { from { background-color: rgba(var(--accent-rgb), 0); } }
+
+/* ---------- Embedded tool header ---------- */
+.embedded-header { padding: 7px 10px; }
+.embedded-title-wrap { flex: 1; justify-content: center; }
+.embedded-back-btn { padding: 4px 8px 4px 4px; }
+.embedded-back-btn svg { transition: transform 0.15s var(--ease-out); }
+.embedded-back-btn:hover svg { transform: translateX(-2px); }
+.embed-card { gap: 8px; }
+.embed-card-header { font-size: 11px; }
+
+/* Primary action keeps its place and gets a clear press state */
+.btn-action-primary:active { transform: scale(0.985); }
+
+/* ---------- Preview panel: compact, left-aligned header ---------- */
+.preview-hero {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    column-gap: 12px;
+    row-gap: 4px;
+    align-items: center;
+    justify-items: start;
+    padding: 16px 14px 14px;
+}
+.preview-icon-wrap { grid-row: 1 / span 2; }
+.preview-tool-name { text-align: left; align-self: end; }
+.preview-tool-badge { align-self: start; }
+.preview-tool-desc { grid-column: 1 / -1; text-align: left; max-width: none; margin-top: 8px; }
+.preview-illustration { grid-column: 1 / -1; width: 100%; max-width: none; margin-top: 8px; opacity: 1; }
+.preview-actions { position: sticky; bottom: 0; }
+.preview-open-btn:active, .preview-run-btn:active { transform: scale(0.985); }
+
+/* ---------- Narrow dock ---------- */
+@media (max-width: 260px) {
+    .search-container { gap: 5px; }
+    .view-toggle { width: 28px; height: 28px; }
+    .embedded-dialog-btn span { display: none; }
+}
+
+/* ---------- Reduced motion (extends the block above) ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .tool-list.is-entering .tool-card { animation: none; }
+    .tab-indicator.ready { transition: none; }
+    .tool-card.run-done { animation: none; }
+}

@@ -556,6 +556,7 @@
         });
 
         langToggleBtn.textContent = isKhmer() ? "KM" : "EN";
+        moveTabIndicator();
         setUpdateBtn(updateBtnState);
         updateUpdateUI(); // banner/badge text depends on the language
     }
@@ -570,6 +571,7 @@
             el.textContent = n > 0 ? n : "";
             el.classList.toggle("has-count", n > 0);
         });
+        moveTabIndicator();
     }
 
     // ------------------------------------------------------------------
@@ -744,6 +746,47 @@
     // ------------------------------------------------------------------
     // Rendering
     // ------------------------------------------------------------------
+    // ------------------------------------------------------------------
+    // Motion helpers (v2.7)
+    // ------------------------------------------------------------------
+    var enterTimer = null;
+    // One staggered entrance, only when the list context changes (load, tab, view mode, return from a tool).
+    // Never on search keystrokes or star toggles, which re-render constantly.
+    function playEnter() {
+        toolList.classList.remove("is-entering");
+        void toolList.offsetWidth; // restart the animation if it is already running
+        toolList.classList.add("is-entering");
+        clearTimeout(enterTimer);
+        enterTimer = setTimeout(function () { toolList.classList.remove("is-entering"); }, 600);
+    }
+
+    function goBackToCatalog() {
+        viewCatalog.classList.add("slide-back");
+        setTimeout(function () { viewCatalog.classList.remove("slide-back"); }, 300);
+    }
+
+    var tabIndicator = $("tabIndicator");
+    var tabIndicatorReady = false;
+    function moveTabIndicator() {
+        var active = tabsContainer.querySelector(".tab-btn.active");
+        if (!tabIndicator || !active || !active.offsetWidth) return;
+        tabIndicator.style.width = active.offsetWidth + "px";
+        tabIndicator.style.transform = "translateX(" + active.offsetLeft + "px)";
+        if (!tabIndicatorReady) { // first placement must not slide in from x = 0
+            tabIndicatorReady = true;
+            requestAnimationFrame(function () { tabIndicator.classList.add("ready"); });
+        }
+    }
+
+    function flashDone(id) {
+        var card = toolList.querySelector('.tool-card[data-id="' + id + '"]');
+        if (!card) return;
+        card.classList.remove("run-done");
+        void card.offsetWidth;
+        card.classList.add("run-done");
+        setTimeout(function () { card.classList.remove("run-done"); }, 1100);
+    }
+
     function getVisibleTools() {
         var favs = [];
         var rest = [];
@@ -821,7 +864,18 @@
 
         var visible = getVisibleTools();
         var frag = document.createDocumentFragment();
-        for (var i = 0; i < visible.length; i++) frag.appendChild(buildCard(visible[i]));
+        for (var i = 0; i < visible.length; i++) {
+            // thin divider between starred tools and the rest
+            if (i > 0 && currentCategory !== "favorites" && isFav(visible[i - 1].id) && !isFav(visible[i].id)) {
+                var sep = document.createElement("div");
+                sep.className = "list-sep";
+                sep.setAttribute("role", "separator");
+                frag.appendChild(sep);
+            }
+            var card = buildCard(visible[i]);
+            card.style.setProperty("--i", Math.min(i, 9));
+            frag.appendChild(card);
+        }
 
         toolList.innerHTML = "";
         toolList.appendChild(frag);
@@ -866,6 +920,8 @@
             b.setAttribute("aria-selected", on ? "true" : "false");
         });
         currentCategory = btn.getAttribute("data-category");
+        moveTabIndicator();
+        playEnter();
         renderTools();
     }
 
@@ -917,6 +973,7 @@
 
         if (res && typeof res === "object") {
             if (res.status === "success") {
+                flashDone(tool.id);
                 setStatus(res.message || t("run.done", { name: name }), "success", 4000);
             } else {
                 var msg = res.message || t("run.failed");
@@ -1061,6 +1118,8 @@
         viewPreview.innerHTML = '';
         viewEmbedded.style.display = 'none';
         viewCatalog.style.display = 'flex';
+        goBackToCatalog();
+        playEnter();
         renderTools();
     }
 
@@ -1068,7 +1127,10 @@ function closeEmbeddedView() {
         activeEmbeddedTool = null;
         viewEmbedded.style.display = "none";
         viewCatalog.style.display = "flex";
+        goBackToCatalog();
+        playEnter();
         renderTools();
+        moveTabIndicator();
     }
 
     function buildPreviewSample(template, docName, ab, formatExt, unit, isCombined) {
@@ -4498,9 +4560,11 @@ function closeEmbeddedView() {
         } else if (key === "ArrowDown" || key === "ArrowRight") {
             e.preventDefault();
             target = card.nextElementSibling;
+            if (target && target.classList.contains("list-sep")) target = target.nextElementSibling;
         } else if (key === "ArrowUp" || key === "ArrowLeft") {
             e.preventDefault();
             target = card.previousElementSibling;
+            if (target && target.classList.contains("list-sep")) target = target.previousElementSibling;
             if (!target) { searchInput.focus(); searchInput.select(); return; }
         } else if (key === "Home") {
             e.preventDefault();
@@ -4579,6 +4643,7 @@ function closeEmbeddedView() {
         viewMode = viewMode === "grid" ? "list" : "grid";
         store.set("ozo_view_mode", viewMode);
         updateViewMode();
+        playEnter();
         setStatus(t(viewMode === "grid" ? "view.grid" : "view.list"), "ready", 1500);
     });
 
@@ -4965,7 +5030,11 @@ function closeEmbeddedView() {
     applyI18n();
     updateCounts();
     updateViewMode();
+    playEnter();
     renderTools();
+    moveTabIndicator();
+    window.addEventListener("resize", moveTabIndicator);
+    window.addEventListener("load", moveTabIndicator);
     refreshDocumentStatus();
     startDocumentMonitor();
     checkForUpdates(false);
