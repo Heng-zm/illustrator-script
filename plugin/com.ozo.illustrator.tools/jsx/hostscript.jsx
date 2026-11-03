@@ -843,7 +843,13 @@ function ozoGetPrintJobDefaults() {
             else if (doc.rulerUnits === RulerUnits.Meters) ru = "m";
         } catch (eRu) {}
 
-        var factor = (typeof OZO !== "undefined" && OZO.toPoints) ? OZO.toPoints(1, ru) : 28.3464567;
+        // Do not depend on the optional OZO shared library here: this bridge can
+        // run before any tool script has been evaluated in the host engine.
+        var factor = 72 / 2.54; // points per centimetre (matches the ru default)
+        if (ru === "mm") factor = 72 / 25.4;
+        else if (ru === "in") factor = 72;
+        else if (ru === "pt") factor = 1;
+        else if (ru === "m") factor = 72000 / 25.4;
         var w = Math.round((widthPt / factor) * 100) / 100;
         var h = Math.round((heightPt / factor) * 100) / 100;
 

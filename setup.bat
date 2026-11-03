@@ -91,6 +91,18 @@ function Sync-PluginBundle {
     if (Test-Path $launcherSource) {
         Copy-Item -Path $launcherSource -Destination (Join-Path $pluginScripts "Script Launcher.jsx") -Force
     }
+
+    # Keep manifest/index/main.js/README in step with version.json before copying.
+    $versionSync = Join-Path $ScriptRoot "sync-version.ps1"
+    if (Test-Path -LiteralPath $versionSync) {
+        try {
+            & $versionSync | Out-Null
+            Write-Host "    [OK] Version metadata synchronized." -ForegroundColor Green
+        } catch {
+            Write-Host "    [WARN] Version sync failed: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+
     Write-Host "    [OK] Plugin script bundle synchronized." -ForegroundColor Green
     return $true
 }
@@ -229,7 +241,14 @@ function Do-OnlineUpdate {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $release = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "OzoTools-Setup" } -TimeoutSec 10
         $latestTag = $release.tag_name
-        $currentTag = "v2.3.0"
+        $currentTag = "unknown"
+        $versionFile = Join-Path $ScriptRoot "version.json"
+        if (Test-Path -LiteralPath $versionFile) {
+            try {
+                $currentVersion = ([string]((Get-Content -LiteralPath $versionFile -Raw | ConvertFrom-Json).version)).Trim()
+                $currentTag = "v" + ($currentVersion -replace '^[vV]', '')
+            } catch {}
+        }
 
         Write-Host "    Current version : $currentTag" -ForegroundColor Gray
         Write-Host "    Latest release  : $latestTag" -ForegroundColor Cyan

@@ -1,14 +1,42 @@
 # Ozo Tools - Release Packaging Script
 param(
-    [string]$Version = "2.6.1"
+    [string]$Version
 )
 
 $ErrorActionPreference = "Stop"
-if ($Version.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
-    $Version = $Version.Substring(1)
-}
+
 $ScriptRoot = $PSScriptRoot
 if (-not $ScriptRoot) { $ScriptRoot = (Get-Location).Path }
+
+# version.json is the single source of truth. -Version is accepted only for
+# backwards compatibility and must match it.
+$versionFile = Join-Path $ScriptRoot "version.json"
+if (-not (Test-Path -LiteralPath $versionFile)) {
+    throw "version.json not found at $versionFile"
+}
+
+$jsonVersion = [string]((Get-Content -LiteralPath $versionFile -Raw | ConvertFrom-Json).version)
+$jsonVersion = $jsonVersion.Trim()
+if ($jsonVersion.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
+    $jsonVersion = $jsonVersion.Substring(1)
+}
+
+if ($Version) {
+    $requested = $Version.Trim()
+    if ($requested.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $requested = $requested.Substring(1)
+    }
+    if ($requested -ne $jsonVersion) {
+        throw "Requested version $requested does not match version.json ($jsonVersion). Update version.json instead of passing -Version."
+    }
+}
+$Version = $jsonVersion
+
+$versionSync = Join-Path $ScriptRoot "sync-version.ps1"
+if (Test-Path -LiteralPath $versionSync) {
+    Write-Host "[*] Synchronizing version metadata..." -ForegroundColor Yellow
+    & $versionSync
+}
 
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "     Building Ozo Tools Release Package v$Version         " -ForegroundColor Cyan
@@ -32,6 +60,21 @@ if (Test-Path $launcherSource) {
     Copy-Item -Path $launcherSource -Destination (Join-Path $pluginScripts "Script Launcher.jsx") -Force
 }
 
+# 1b. Validate before packaging so a broken script can never be released.
+$syntaxCheck = Join-Path $ScriptRoot "tools\check-syntax.js"
+if (Test-Path -LiteralPath $syntaxCheck) {
+    $node = Get-Command node -ErrorAction SilentlyContinue
+    if ($node) {
+        Write-Host "[*] Validating ExtendScript and panel syntax..." -ForegroundColor Yellow
+        & node $syntaxCheck
+        if ($LASTEXITCODE -ne 0) {
+            throw "Syntax validation failed. Fix the errors above before releasing."
+        }
+    } else {
+        Write-Host "    [WARN] Node.js not found; skipping syntax validation." -ForegroundColor Yellow
+    }
+}
+
 # 2. Stage files
 $releaseDir = Join-Path $ScriptRoot "release"
 $pkgFolder = "Ozo-Tools-v$Version"
@@ -48,7 +91,9 @@ $itemsToCopy = @(
     "Install as Plugin.jsx",
     "Script Launcher.jsx",
     "README.md",
-    "README-PLUGIN.md"
+    "README-PLUGIN.md",
+    "version.json",
+    "sync-version.ps1"
 )
 
 foreach ($item in $itemsToCopy) {
@@ -70,7 +115,7 @@ foreach ($dir in $dirsToCopy) {
 }
 
 # Remove unwanted temporary/junk files
-Get-ChildItem -Path $stageDir -Recurse -Include ".DS_Store", "Thumbs.db", "*.tmp", "*.log", "*.bak", "*~" -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+Get-ChildItem -Path $stageDir -Recurse -Include ".DS_Store", "Thumbs.db", ".debug", "*.tmp", "*.log", "*.bak", "*~" -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 Get-ChildItem -Path $stageDir -Recurse -Hidden -ErrorAction SilentlyContinue | Where-Object { $_.Name -like ".git*" } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
 # 3. Create zip

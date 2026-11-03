@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 2.2.4 or v2.2.4)'
+        description: 'Optional override; must match version.json'
         required: false
-        default: '2.4.0'
+        default: ''
 
 permissions:
   contents: write
@@ -33,26 +33,40 @@ jobs:
         id: get_version
         shell: pwsh
         run: |
-          $ver = "${{ github.event.inputs.version }}"
-          if (-not $ver -or $ver -eq "main") {
-            $ref = "${{ github.ref_name }}"
-            if ($ref -and $ref -ne "main" -and $ref.StartsWith("v")) {
-              $ver = $ref
-            } else {
-              $content = Get-Content "build-release.ps1" -Raw
-              if ($content -match 'param\(\s*\[string\]\$Version\s*=\s*"([^"]+)"') {
-                $ver = $matches[1]
-              } else {
-                $ver = "2.2.4"
-              }
-            }
+          # version.json is the single source of truth.
+          $versionFile = "version.json"
+          if (-not (Test-Path -LiteralPath $versionFile)) {
+            throw "version.json not found"
           }
+          $ver = [string]((Get-Content -LiteralPath $versionFile -Raw | ConvertFrom-Json).version)
+          $inputVersion = "${{ github.event.inputs.version }}"
+          if ($inputVersion) { $ver = $inputVersion }
+          $ver = $ver.Trim()
           if ($ver.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
             $ver = $ver.Substring(1)
           }
+          if ($ver -notmatch '^\d+\.\d+\.\d+$') {
+            throw "version.json must contain a semantic version (found '$ver')"
+          }
+
+          # A v* tag must agree with version.json, otherwise the release would
+          # publish one version while the panel reports another.
+          $ref = "${{ github.ref_name }}"
+          if ($ref -match '^[vV](.+)$' -and $matches[1] -ne $ver) {
+            throw "Tag $ref does not match version.json ($ver). Bump version.json before tagging."
+          }
+
           Write-Host "Determined Version: $ver"
           "version=$ver" >> $env:GITHUB_OUTPUT
           "tag_name=v$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Verify Version Consistency
+        shell: pwsh
+        run: .\sync-version.ps1 -Check
+
+      - name: Syntax Check (ExtendScript & panel)
+        shell: pwsh
+        run: node tools/check-syntax.js
 
       - name: Build Release Package (.zip)
         shell: pwsh

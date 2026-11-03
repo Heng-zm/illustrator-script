@@ -374,7 +374,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             "Width [w]": "\u1791\u1791\u17b7\u1784 [w]",
             "Height [h]": "\u1780\u1798\u17d2\u1796\u179f\u17cb [h]",
             "Unit [unit]": "\u1781\u17d2\u1793\u17b6\u178f [unit]",
-            "Number [num]": "\u179b\u17c1\u1781\u179a\u17c切\u1784 [num]",
+            "Number [num]": "\u179b\u17c1\u1781\u179a\u17c0\u1784 [num]",
             "Date [date]": "\u1780\u17b6\u179b\u1794\u179a\u17b7\u1785\u17d2\u1786\u17c1\u1791 [date]",
             "Time [time]": "\u1796\u17c1\u179b\u179c\u17c1\u179b\u17b6 [time]",
             "Color [color]": "\u1791\u1798\u17d2\u179a\u1784\u17cb\u1796\u178e\u17cc [color]",
@@ -1021,7 +1021,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         }
 
         return {
-            version: "2.4.0",
+            version: "2.6.1",
             addLanguageSelector: addLanguageSelector,
             addDonateButton: addDonateButton,
             addDialogHeader: addDialogHeader,
