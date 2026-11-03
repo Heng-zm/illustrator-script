@@ -2,6 +2,8 @@ name: Release Automation
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   release:
@@ -9,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 2.2.0 or v2.2.0)'
+        description: 'Release version (e.g. 2.2.4 or v2.2.4)'
         required: false
-        default: '2.2.0'
+        default: '2.2.4'
 
 permissions:
   contents: write
@@ -32,9 +34,18 @@ jobs:
         shell: pwsh
         run: |
           $ver = "${{ github.event.inputs.version }}"
-          if (-not $ver) {
+          if (-not $ver -or $ver -eq "main") {
             $ref = "${{ github.ref_name }}"
-            if ($ref) { $ver = $ref } else { $ver = "2.2.0" }
+            if ($ref -and $ref -ne "main" -and $ref.StartsWith("v")) {
+              $ver = $ref
+            } else {
+              $content = Get-Content "build-release.ps1" -Raw
+              if ($content -match 'param\(\s*\[string\]\$Version\s*=\s*"([^"]+)"') {
+                $ver = $matches[1]
+              } else {
+                $ver = "2.2.4"
+              }
+            }
           }
           if ($ver.StartsWith('v', [System.StringComparison]::OrdinalIgnoreCase)) {
             $ver = $ver.Substring(1)
@@ -67,5 +78,6 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -229,7 +229,7 @@ function Do-OnlineUpdate {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $release = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "OzoTools-Setup" } -TimeoutSec 10
         $latestTag = $release.tag_name
-        $currentTag = "v2.2.3"
+        $currentTag = "v2.2.4"
 
         Write-Host "    Current version : $currentTag" -ForegroundColor Gray
         Write-Host "    Latest release  : $latestTag" -ForegroundColor Cyan
@@ -433,8 +433,22 @@ function Do-AutoPush {
         Write-Host "    [WARN] Nothing committed." -ForegroundColor Yellow
     }
 
-    Write-Host "[3/3] Pushing to GitHub (origin/main)..." -ForegroundColor Yellow
-    & git push origin main
+    # Automatically tag release if current version does not have a tag yet
+    $buildScript = Join-Path $ScriptRoot "build-release.ps1"
+    if (Test-Path $buildScript) {
+        $bContent = Get-Content $buildScript -Raw
+        if ($bContent -match 'param\(\s*\[string\]\$Version\s*=\s*"([^"]+)"') {
+            $curVerTag = "v" + $matches[1].TrimStart('v')
+            $existingTag = & git tag -l $curVerTag
+            if (-not $existingTag) {
+                Write-Host "    [*] Auto-tagging release $curVerTag..." -ForegroundColor Cyan
+                & git tag -a $curVerTag -m "Release $curVerTag"
+            }
+        }
+    }
+
+    Write-Host "[3/3] Pushing commits & release tags to GitHub..." -ForegroundColor Yellow
+    & git push origin main --tags
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
         Write-Host "==========================================================" -ForegroundColor Green
