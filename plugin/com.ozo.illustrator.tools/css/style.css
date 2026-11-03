@@ -1552,3 +1552,238 @@ body.theme-light {
     border-color: #ffffff;
     box-shadow: 0 0 0 2px var(--accent);
 }
+
+/* ------------------------------------------------------------- */
+/* In-Dock Nesting Styles                                        */
+/* ------------------------------------------------------------- */
+.nest-util-wrap {
+    margin-top: 6px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+}
+.nest-util-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+.nest-util-bar {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.nest-util-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    width: 0%;
+    transition: width 0.4s ease;
+}
+
+/* ------------------------------------------------------------- */
+/* In-Dock Icon Importer Styles                                  */
+/* ------------------------------------------------------------- */
+.icon-cat-bar {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    scrollbar-width: thin;
+}
+.icon-cat-chip {
+    padding: 3px 8px;
+    font-size: 10.5px;
+    border-radius: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+.icon-cat-chip:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+.icon-cat-chip.active {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    font-weight: 600;
+}
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px 2px;
+    margin-top: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+}
+.icon-tile {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-app);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    padding: 4px;
+    transition: all 0.15s ease;
+    color: var(--text-primary);
+}
+.icon-tile:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    background: var(--bg-surface-hover);
+}
+.icon-tile.selected {
+    border-color: var(--accent);
+    background: rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+.icon-svg-wrap {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.icon-svg-wrap svg {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+    fill: none;
+}
+.icon-tile-name {
+    font-size: 8.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    text-align: center;
+    margin-top: 2px;
+}
+.icon-preview-hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-top: 8px;
+}
+.icon-preview-box {
+    width: 44px;
+    height: 44px;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.icon-preview-box svg {
+    width: 28px;
+    height: 28px;
+}
+
+/* ------------------------------------------------------------- */
+/* In-Dock Script Launcher Styles                                */
+/* ------------------------------------------------------------- */
+.script-folder-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    font-size: 10.5px;
+}
+.script-folder-path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    direction: rtl;
+    text-align: left;
+}
+.script-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+.script-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: all 0.15s ease;
+    gap: 8px;
+}
+.script-item:hover {
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+}
+.script-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    flex: 1;
+}
+.script-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.script-meta {
+    font-size: 9.5px;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 8px;
+}
+.script-run-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.script-run-btn:hover {
+    opacity: 0.9;
+    transform: scale(1.03);
+}
+.script-run-btn:active {
+    transform: scale(0.98);
+}

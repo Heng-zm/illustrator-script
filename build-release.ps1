@@ -1,6 +1,6 @@
 # Ozo Tools - Release Packaging Script
 param(
-    [string]$Version = "2.5.0"
+    [string]$Version = "2.6.0"
 )
 
 $ErrorActionPreference = "Stop"

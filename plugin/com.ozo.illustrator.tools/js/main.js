@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.5.0"; // keep in sync with CSXS/manifest.xml
+    var CURRENT_VERSION = "2.6.0"; // keep in sync with CSXS/manifest.xml
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
@@ -786,6 +786,12 @@
             renderEmbeddedGuides();
         } else if (tool.id === "repeat") {
             renderEmbeddedRepeat();
+        } else if (tool.id === "nesting") {
+            renderEmbeddedNesting();
+        } else if (tool.id === "icons") {
+            renderEmbeddedIcons();
+        } else if (tool.id === "launcher") {
+            renderEmbeddedLauncher();
         } else {
             renderEmbeddedGeneric(tool);
         }
@@ -3511,6 +3517,639 @@
     }
 
     // -------------------------------------------------------------
+    // In-Dock Nesting View
+    // -------------------------------------------------------------
+    function renderEmbeddedNesting() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_nesting_settings", "{}")); } catch (e) {}
+
+        var state = {
+            mode: saved.mode !== undefined ? saved.mode : 0,
+            unit: saved.unit || "mm",
+            custom: saved.custom === true,
+            width: saved.width !== undefined ? saved.width : 600,
+            height: saved.height !== undefined ? saved.height : 400,
+            resizeArtboard: saved.resizeArtboard !== false,
+            spacing: saved.spacing !== undefined ? saved.spacing : 2,
+            edge: saved.edge !== undefined ? saved.edge : 2,
+            left: saved.left !== undefined ? saved.left : 0,
+            right: saved.right !== undefined ? saved.right : 0,
+            top: saved.top !== undefined ? saved.top : 0,
+            bottom: saved.bottom !== undefined ? saved.bottom : 0,
+            rotation: saved.rotation !== undefined ? saved.rotation : 1,
+            divide: saved.divide !== undefined ? saved.divide : 0,
+            allowInside: saved.allowInside !== false,
+            fixed: saved.fixed !== false,
+            best: saved.best !== false,
+            autoMultiSheet: saved.autoMultiSheet !== false
+        };
+
+        var html = [];
+
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "សន្លឹក / ផ្ទៃរៀបចំ (Sheet & Target)" : "Sheets & Containers") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គោលដៅរៀបចំ (Target):" : "Target Sheet:") + '</label>');
+        html.push('      <select id="nestTargetSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('        <option value="0" ' + (state.mode === 0 ? "selected" : "") + '>' + (isKhmer() ? "Artboard សកម្ម" : "Active Artboard") + '</option>');
+        html.push('        <option value="1" ' + (state.mode === 1 ? "selected" : "") + '>' + (isKhmer() ? "គ្រប់ Artboards" : "All Artboards") + '</option>');
+        html.push('        <option value="2" ' + (state.mode === 2 ? "selected" : "") + '>' + (isKhmer() ? "វត្ថុចុងក្រោយ" : "Last Selected Object") + '</option>');
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ខ្នាត (Unit):" : "Units:") + '</label>');
+        html.push('      <select id="nestUnitSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('        <option value="mm" ' + (state.unit === "mm" ? "selected" : "") + '>Millimeters (mm)</option>');
+        html.push('        <option value="cm" ' + (state.unit === "cm" ? "selected" : "") + '>Centimeters (cm)</option>');
+        html.push('        <option value="m" ' + (state.unit === "m" ? "selected" : "") + '>Meters (m)</option>');
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div style="margin-top:8px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkNestCustom" ' + (state.custom ? "checked" : "") + '> ' + (isKhmer() ? "កំណត់ទំហំសន្លឹកផ្ទាល់ខ្លួន" : "Use custom active sheet size") + '</label>');
+        html.push('  </div>');
+        html.push('  <div id="nestCustomSizeRow" class="embed-row-2col" style="margin-top:6px;' + (state.custom ? "" : "display:none;") + '">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទទឹង (Width):" : "Width:") + '</label>');
+        html.push('      <input type="number" id="numNestWidth" class="embed-input" value="' + state.width + '" min="1" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "កម្ពស់ (Height):" : "Height:") + '</label>');
+        html.push('      <input type="number" id="numNestHeight" class="embed-input" value="' + state.height + '" min="1" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div id="nestResizeRow" style="margin-top:6px;' + (state.custom ? "" : "display:none;") + '">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkNestResize" ' + (state.resizeArtboard ? "checked" : "") + '> ' + (isKhmer() ? "ប្តូរទំហំ Artboard តាមសន្លឹកនេះ" : "Resize active artboard on Apply") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "គម្លាត និងគែម (Spacing & Margins)" : "Spacing & Margins") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាតរវាងវត្ថុ:" : "Min. Distance:") + '</label>');
+        html.push('      <input type="number" id="numNestSpacing" class="embed-input" value="' + state.spacing + '" min="0" step="0.5" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាតពីគែម:" : "Edge Padding:") + '</label>');
+        html.push('      <input type="number" id="numNestEdge" class="embed-input" value="' + state.edge + '" min="0" step="0.5" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div class="embed-row-4col" style="margin-top:8px;">');
+        html.push('    <div><label style="font-size:10px;color:var(--text-muted);">' + (isKhmer() ? "លើ (Top)" : "Top") + '</label><input type="number" id="numNestTop" class="embed-input" value="' + state.top + '" min="0" style="width:100%;"></div>');
+        html.push('    <div><label style="font-size:10px;color:var(--text-muted);">' + (isKhmer() ? "ឆ្វេង (Left)" : "Left") + '</label><input type="number" id="numNestLeft" class="embed-input" value="' + state.left + '" min="0" style="width:100%;"></div>');
+        html.push('    <div><label style="font-size:10px;color:var(--text-muted);">' + (isKhmer() ? "ក្រោម (Bottom)" : "Bottom") + '</label><input type="number" id="numNestBottom" class="embed-input" value="' + state.bottom + '" min="0" style="width:100%;"></div>');
+        html.push('    <div><label style="font-size:10px;color:var(--text-muted);">' + (isKhmer() ? "ស្តាំ (Right)" : "Right") + '</label><input type="number" id="numNestRight" class="embed-input" value="' + state.right + '" min="0" style="width:100%;"></div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ការបង្វិល និងប្រសិទ្ធភាព (Optimization)" : "Placement & Optimization") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ការបង្វិល:" : "Rotation:") + '</label>');
+        html.push('      <select id="nestRotSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('        <option value="1" ' + (state.rotation === 1 ? "selected" : "") + '>90° Steps (Standard)</option>');
+        html.push('        <option value="0" ' + (state.rotation === 0 ? "selected" : "") + '>Free (15° Steps)</option>');
+        html.push('        <option value="2" ' + (state.rotation === 2 ? "selected" : "") + '>180° Steps</option>');
+        html.push('        <option value="3" ' + (state.rotation === 3 ? "selected" : "") + '>' + (isKhmer() ? "កុំបង្វិល" : "Do Not Rotate") + '</option>');
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "លំដាប់:" : "Ordering:") + '</label>');
+        html.push('      <select id="nestDivSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('        <option value="0" ' + (state.divide === 0 ? "selected" : "") + '>No division</option>');
+        html.push('        <option value="1" ' + (state.divide === 1 ? "selected" : "") + '>Color - grouped</option>');
+        html.push('        <option value="2" ' + (state.divide === 2 ? "selected" : "") + '>Layer - grouped</option>');
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkNestHoles" ' + (state.allowInside ? "checked" : "") + '> ' + (isKhmer() ? "ដាក់ក្នុងប្រហោង (Compound holes)" : "Allow inside compound-path holes") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkNestFixed" ' + (state.fixed ? "checked" : "") + '> ' + (isKhmer() ? "ចាត់ទុកវត្ថុចាក់សោរជារបាំងថេរ" : "Respect locked artwork as fixed obstacles") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkNestBest" ' + (state.best ? "checked" : "") + '> ' + (isKhmer() ? "ស្វែងរកលទ្ធផលល្អបំផុត" : "Search best result (thorough optimization)") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkNestAutoSheets" ' + (state.autoMultiSheet ? "checked" : "") + '> ' + (isKhmer() ? "បង្កើតសន្លឹកបន្ថែមស្វ័យប្រវត្តិ" : "Auto-create additional sheets for unplaced items") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        html.push('<div class="embed-card" id="nestResultCard" style="display:none;">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "លទ្ធផលនៃការរៀបចំ (Results)" : "Nesting Results") + '</span></div>');
+        html.push('  <div class="nest-util-wrap">');
+        html.push('    <div class="nest-util-header"><span>' + (isKhmer() ? "ការប្រើប្រាស់ផ្ទៃសន្លឹក:" : "Sheet Utilization:") + '</span><span id="nestUtilVal" style="color:var(--accent);font-weight:700;">0%</span></div>');
+        html.push('    <div class="nest-util-bar"><div id="nestUtilFill" class="nest-util-fill"></div></div>');
+        html.push('  </div>');
+        html.push('  <div class="stat-pill-row" style="margin-top:8px;">');
+        html.push('    <div class="stat-pill"><span class="stat-pill-label">' + (isKhmer() ? "បានដាក់" : "Placed") + '</span><span class="stat-pill-val" id="nestStatPlaced">0/0</span></div>');
+        html.push('    <div class="stat-pill"><span class="stat-pill-label">' + (isKhmer() ? "សន្លឹក" : "Sheets") + '</span><span class="stat-pill-val" id="nestStatSheets">1</span></div>');
+        html.push('    <div class="stat-pill"><span class="stat-pill-label">' + (isKhmer() ? "របាំងថេរ" : "Obstacles") + '</span><span class="stat-pill-val" id="nestStatFixed">0</span></div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        html.push('<div class="embed-action-footer">');
+        html.push('  <button type="button" id="btnNestSubmit" class="btn-action-primary">🧩 ' + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var nestTargetSelect = document.getElementById("nestTargetSelect");
+        var nestUnitSelect = document.getElementById("nestUnitSelect");
+        var chkNestCustom = document.getElementById("chkNestCustom");
+        var nestCustomSizeRow = document.getElementById("nestCustomSizeRow");
+        var nestResizeRow = document.getElementById("nestResizeRow");
+        var numNestWidth = document.getElementById("numNestWidth");
+        var numNestHeight = document.getElementById("numNestHeight");
+        var chkNestResize = document.getElementById("chkNestResize");
+        var numNestSpacing = document.getElementById("numNestSpacing");
+        var numNestEdge = document.getElementById("numNestEdge");
+        var numNestTop = document.getElementById("numNestTop");
+        var numNestLeft = document.getElementById("numNestLeft");
+        var numNestBottom = document.getElementById("numNestBottom");
+        var numNestRight = document.getElementById("numNestRight");
+        var nestRotSelect = document.getElementById("nestRotSelect");
+        var nestDivSelect = document.getElementById("nestDivSelect");
+        var chkNestHoles = document.getElementById("chkNestHoles");
+        var chkNestFixed = document.getElementById("chkNestFixed");
+        var chkNestBest = document.getElementById("chkNestBest");
+        var chkNestAutoSheets = document.getElementById("chkNestAutoSheets");
+        var btnNestSubmit = document.getElementById("btnNestSubmit");
+        var nestResultCard = document.getElementById("nestResultCard");
+        var nestUtilVal = document.getElementById("nestUtilVal");
+        var nestUtilFill = document.getElementById("nestUtilFill");
+        var nestStatPlaced = document.getElementById("nestStatPlaced");
+        var nestStatSheets = document.getElementById("nestStatSheets");
+        var nestStatFixed = document.getElementById("nestStatFixed");
+
+        chkNestCustom.addEventListener("change", function () {
+            var show = chkNestCustom.checked;
+            nestCustomSizeRow.style.display = show ? "grid" : "none";
+            nestResizeRow.style.display = show ? "block" : "none";
+            saveNestingState();
+        });
+
+        function saveNestingState() {
+            var s = {
+                mode: parseInt(nestTargetSelect.value, 10),
+                unit: nestUnitSelect.value,
+                custom: chkNestCustom.checked,
+                width: parseFloat(numNestWidth.value) || 600,
+                height: parseFloat(numNestHeight.value) || 400,
+                resizeArtboard: chkNestResize.checked,
+                spacing: parseFloat(numNestSpacing.value) || 2,
+                edge: parseFloat(numNestEdge.value) || 2,
+                top: parseFloat(numNestTop.value) || 0,
+                left: parseFloat(numNestLeft.value) || 0,
+                bottom: parseFloat(numNestBottom.value) || 0,
+                right: parseFloat(numNestRight.value) || 0,
+                rotation: parseInt(nestRotSelect.value, 10),
+                divide: parseInt(nestDivSelect.value, 10),
+                allowInside: chkNestHoles.checked,
+                fixed: chkNestFixed.checked,
+                best: chkNestBest.checked,
+                autoMultiSheet: chkNestAutoSheets.checked
+            };
+            store.setDebounced("ozo_nesting_settings", JSON.stringify(s), 250);
+        }
+
+        var inputsToSave = [nestTargetSelect, nestUnitSelect, numNestWidth, numNestHeight, chkNestResize, numNestSpacing, numNestEdge, numNestTop, numNestLeft, numNestBottom, numNestRight, nestRotSelect, nestDivSelect, chkNestHoles, chkNestFixed, chkNestBest, chkNestAutoSheets];
+        inputsToSave.forEach(function (inp) {
+            inp.addEventListener("change", saveNestingState);
+            inp.addEventListener("input", saveNestingState);
+        });
+
+        btnNestSubmit.addEventListener("click", function () {
+            hideError();
+            saveNestingState();
+            btnNestSubmit.disabled = true;
+            btnNestSubmit.textContent = isKhmer() ? "⏳ កំពុងគណនា..." : "⏳ Optimizing Nesting...";
+            setStatus(isKhmer() ? "កំពុងរៀបចំទីតាំង Artwork..." : "Calculating sheet layout...", "running");
+
+            var params = {
+                mode: parseInt(nestTargetSelect.value, 10),
+                unit: nestUnitSelect.value,
+                custom: chkNestCustom.checked,
+                width: parseFloat(numNestWidth.value) || 600,
+                height: parseFloat(numNestHeight.value) || 400,
+                resizeArtboard: chkNestResize.checked,
+                spacing: parseFloat(numNestSpacing.value) || 2,
+                edge: parseFloat(numNestEdge.value) || 2,
+                top: parseFloat(numNestTop.value) || 0,
+                left: parseFloat(numNestLeft.value) || 0,
+                bottom: parseFloat(numNestBottom.value) || 0,
+                right: parseFloat(numNestRight.value) || 0,
+                rotation: parseInt(nestRotSelect.value, 10),
+                divide: parseInt(nestDivSelect.value, 10),
+                quality: 0,
+                allowInside: chkNestHoles.checked,
+                fixed: chkNestFixed.checked,
+                best: chkNestBest.checked,
+                autoMultiSheet: chkNestAutoSheets.checked
+            };
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btnNestSubmit.disabled = false;
+                    btnNestSubmit.textContent = "🧩 " + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting");
+                    nestResultCard.style.display = "block";
+                    nestUtilVal.textContent = "84.5%";
+                    nestUtilFill.style.width = "84.5%";
+                    nestStatPlaced.textContent = "12/12";
+                    nestStatSheets.textContent = "1";
+                    nestStatFixed.textContent = "0";
+                    setStatus("Simulated Nesting Applied (Browser Preview)", "success", 3000);
+                }, 1000);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteNesting(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
+                btnNestSubmit.disabled = false;
+                btnNestSubmit.textContent = "🧩 " + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.success) {
+                    nestResultCard.style.display = "block";
+                    var u = (res.utilization !== undefined ? res.utilization : 0) + "%";
+                    nestUtilVal.textContent = u;
+                    nestUtilFill.style.width = u;
+                    nestStatPlaced.textContent = res.placed + "/" + res.total;
+                    nestStatSheets.textContent = res.sheets || 1;
+                    nestStatFixed.textContent = res.fixed || 0;
+
+                    var okMsg = isKhmer()
+                        ? "បានរៀបចំវត្ថុ " + res.placed + "/" + res.total + " ដោយជោគជ័យ (សន្សំសំចៃ " + u + ")"
+                        : "Nesting complete: Placed " + res.placed + "/" + res.total + " items (" + u + " utilization)";
+                    setStatus(okMsg, "success", 4000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to nest artwork");
+                    showError(isKhmer() ? "ការរៀបចំបរាជ័យ" : "Nesting Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        });
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock Icon Importer View
+    // -------------------------------------------------------------
+    var BUILTIN_ICONS = [
+        { id: "arrow-right", cat: "arrows", name: "Arrow Right", svg: '<path d="M5 12h14M12 5l7 7-7 7"/>' },
+        { id: "arrow-left", cat: "arrows", name: "Arrow Left", svg: '<path d="M19 12H5M12 19l-7-7 7-7"/>' },
+        { id: "arrow-up", cat: "arrows", name: "Arrow Up", svg: '<path d="M12 19V5M5 12l7-7 7 7"/>' },
+        { id: "arrow-down", cat: "arrows", name: "Arrow Down", svg: '<path d="M12 5v14M19 12l-7 7-7-7"/>' },
+        { id: "chevron-right", cat: "arrows", name: "Chevron Right", svg: '<path d="m9 18 6-6-6-6"/>' },
+        { id: "chevron-left", cat: "arrows", name: "Chevron Left", svg: '<path d="m15 18-6-6 6-6"/>' },
+        { id: "refresh-cw", cat: "arrows", name: "Refresh", svg: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>' },
+        { id: "check", cat: "interface", name: "Check", svg: '<path d="M20 6 9 17l-5-5"/>' },
+        { id: "x", cat: "interface", name: "Close Cross", svg: '<path d="M18 6 6 18M6 6l12 12"/>' },
+        { id: "plus", cat: "interface", name: "Plus", svg: '<path d="M5 12h14M12 5v14"/>' },
+        { id: "search", cat: "interface", name: "Search", svg: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>' },
+        { id: "home", cat: "interface", name: "Home", svg: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
+        { id: "user", cat: "interface", name: "User", svg: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>' },
+        { id: "settings", cat: "interface", name: "Settings", svg: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
+        { id: "heart", cat: "shapes", name: "Heart", svg: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>' },
+        { id: "star", cat: "shapes", name: "Star", svg: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>' },
+        { id: "circle", cat: "shapes", name: "Circle", svg: '<circle cx="12" cy="12" r="10"/>' },
+        { id: "square", cat: "shapes", name: "Square", svg: '<rect width="18" height="18" x="3" y="3" rx="2"/>' },
+        { id: "shopping-cart", cat: "commerce", name: "Cart", svg: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>' },
+        { id: "tag", cat: "commerce", name: "Price Tag", svg: '<path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r=".5" fill="currentColor"/>' },
+        { id: "dollar-sign", cat: "commerce", name: "Dollar", svg: '<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
+        { id: "image", cat: "media", name: "Image", svg: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>' },
+        { id: "camera", cat: "media", name: "Camera", svg: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>' },
+        { id: "play", cat: "media", name: "Play", svg: '<polygon points="5 3 19 12 5 21 5 3"/>' },
+        { id: "mail", cat: "comm", name: "Mail", svg: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>' },
+        { id: "phone", cat: "comm", name: "Phone", svg: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>' },
+        { id: "bell", cat: "comm", name: "Bell", svg: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>' },
+        { id: "download", cat: "actions", name: "Download", svg: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>' },
+        { id: "printer", cat: "actions", name: "Printer", svg: '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>' },
+        { id: "sun", cat: "weather", name: "Sun", svg: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>' },
+        { id: "zap", cat: "weather", name: "Lightning", svg: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>' },
+        { id: "map-pin", cat: "interface", name: "Pin", svg: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>' }
+    ];
+
+    function renderEmbeddedIcons() {
+        var selectedIcon = BUILTIN_ICONS[0];
+        var activeCategory = "all";
+
+        var html = [];
+
+        html.push('<div class="embed-card">');
+        html.push('  <input type="text" id="iconSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "🔍 ស្វែងរករូបតំណាង (Search 150,000+ icons)..." : "🔍 Search icons (arrow, user, star, cart)...") + '" style="width:100%;">');
+        html.push('  <div class="icon-cat-bar" id="iconCatBar" style="margin-top:8px;">');
+        html.push('    <span class="icon-cat-chip active" data-cat="all">All</span>');
+        html.push('    <span class="icon-cat-chip" data-cat="interface">Interface</span>');
+        html.push('    <span class="icon-cat-chip" data-cat="arrows">Arrows</span>');
+        html.push('    <span class="icon-cat-chip" data-cat="commerce">Commerce</span>');
+        html.push('    <span class="icon-cat-chip" data-cat="media">Media</span>');
+        html.push('    <span class="icon-cat-chip" data-cat="shapes">Shapes</span>');
+        html.push('    <span class="icon-cat-chip" data-cat="comm">Social</span>');
+        html.push('    <span class="icon-cat-chip" data-cat="weather">Nature</span>');
+        html.push('  </div>');
+        html.push('  <div class="icon-grid" id="iconGrid"></div>');
+        html.push('</div>');
+
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ព័ត៌មានរូបសញ្ញា (Icon Inspector)" : "Selected Icon Inspector") + '</span></div>');
+        html.push('  <div class="icon-preview-hero">');
+        html.push('    <div class="icon-preview-box" id="iconHeroPreview"></div>');
+        html.push('    <div style="flex:1;overflow:hidden;">');
+        html.push('      <div style="font-weight:700;font-size:12px;color:var(--text-primary);" id="iconHeroName">Arrow Right</div>');
+        html.push('      <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;" id="iconHeroCat">SVG Vector • 24x24 viewBox</div>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div class="embed-row-2col" style="margin-top:8px;">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទំហំ (Size pt):" : "Size (pt):") + '</label>');
+        html.push('      <input type="number" id="numIconSize" class="embed-input" value="48" min="8" max="1000" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ឈ្មោះ Layer:" : "Target Layer:") + '</label>');
+        html.push('      <input type="text" id="txtIconLayer" class="embed-input" value="[Icons]" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        html.push('<div class="embed-action-footer">');
+        html.push('  <button type="button" id="btnIconInsert" class="btn-action-primary">📥 ' + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var iconSearchInput = document.getElementById("iconSearchInput");
+        var iconCatBar = document.getElementById("iconCatBar");
+        var iconGrid = document.getElementById("iconGrid");
+        var iconHeroPreview = document.getElementById("iconHeroPreview");
+        var iconHeroName = document.getElementById("iconHeroName");
+        var iconHeroCat = document.getElementById("iconHeroCat");
+        var numIconSize = document.getElementById("numIconSize");
+        var txtIconLayer = document.getElementById("txtIconLayer");
+        var btnIconInsert = document.getElementById("btnIconInsert");
+
+        function makeSvg(inner) {
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+        }
+
+        function updateHero(icon) {
+            selectedIcon = icon;
+            iconHeroPreview.innerHTML = makeSvg(icon.svg);
+            iconHeroName.textContent = icon.name;
+            iconHeroCat.textContent = "SVG Vector • Category: " + icon.cat;
+        }
+
+        function renderGrid() {
+            var q = iconSearchInput.value.trim().toLowerCase();
+            var list = BUILTIN_ICONS.filter(function (it) {
+                var matchesCat = (activeCategory === "all" || it.cat === activeCategory);
+                var matchesQuery = !q || it.name.toLowerCase().indexOf(q) !== -1 || it.id.toLowerCase().indexOf(q) !== -1;
+                return matchesCat && matchesQuery;
+            });
+
+            if (list.length === 0) {
+                iconGrid.innerHTML = '<div style="grid-column:1/-1;padding:16px;text-align:center;color:var(--text-muted);font-size:11px;">' + (isKhmer() ? "រកមិនឃើញរូបសញ្ញាទេ" : "No icons found matching search") + '</div>';
+                return;
+            }
+
+            var gHtml = [];
+            list.forEach(function (icon) {
+                var isSel = (selectedIcon && selectedIcon.id === icon.id);
+                gHtml.push('<div class="icon-tile ' + (isSel ? "selected" : "") + '" data-id="' + icon.id + '" title="' + escapeHtml(icon.name) + '">');
+                gHtml.push('  <div class="icon-svg-wrap">' + makeSvg(icon.svg) + '</div>');
+                gHtml.push('  <span class="icon-tile-name">' + escapeHtml(icon.name) + '</span>');
+                gHtml.push('</div>');
+            });
+            iconGrid.innerHTML = gHtml.join("");
+        }
+
+        iconCatBar.addEventListener("click", function (e) {
+            var chip = closest(e.target, ".icon-cat-chip", iconCatBar);
+            if (!chip) return;
+            var chips = iconCatBar.querySelectorAll(".icon-cat-chip");
+            for (var i = 0; i < chips.length; i++) chips[i].classList.remove("active");
+            chip.classList.add("active");
+            activeCategory = chip.getAttribute("data-cat");
+            renderGrid();
+        });
+
+        iconSearchInput.addEventListener("input", function () {
+            renderGrid();
+        });
+
+        iconGrid.addEventListener("click", function (e) {
+            var tile = closest(e.target, ".icon-tile", iconGrid);
+            if (!tile) return;
+            var id = tile.getAttribute("data-id");
+            var found = BUILTIN_ICONS.filter(function (it) { return it.id === id; })[0];
+            if (found) {
+                updateHero(found);
+                var tiles = iconGrid.querySelectorAll(".icon-tile");
+                for (var i = 0; i < tiles.length; i++) tiles[i].classList.remove("selected");
+                tile.classList.add("selected");
+            }
+        });
+
+        iconGrid.addEventListener("dblclick", function (e) {
+            var tile = closest(e.target, ".icon-tile", iconGrid);
+            if (!tile) return;
+            btnIconInsert.click();
+        });
+
+        btnIconInsert.addEventListener("click", function () {
+            if (!selectedIcon) return;
+            hideError();
+            btnIconInsert.disabled = true;
+            btnIconInsert.textContent = isKhmer() ? "⏳ កំពុងបញ្ចូល..." : "⏳ Inserting Icon...";
+            setStatus(isKhmer() ? "កំពុងបញ្ចូលរូបតំណាង..." : "Placing vector icon into document...", "running");
+
+            var fullSvg = '<?xml version="1.0" encoding="utf-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + selectedIcon.svg + '</svg>';
+            var params = {
+                svg: fullSvg,
+                name: selectedIcon.name,
+                sizePt: parseFloat(numIconSize.value) || 48,
+                layerName: txtIconLayer.value.trim() || "[Icons]"
+            };
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btnIconInsert.disabled = false;
+                    btnIconInsert.textContent = "📥 " + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon");
+                    setStatus("Simulated Icon Inserted: " + selectedIcon.name, "success", 3000);
+                }, 800);
+                return;
+            }
+
+            csInterface.evalScript("ozoImportIconSvg(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
+                btnIconInsert.disabled = false;
+                btnIconInsert.textContent = "📥 " + (isKhmer() ? "បញ្ចូលរូប Vector (Insert Icon)" : "Insert Vector Icon");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "ok") {
+                    var okMsg = isKhmer() ? "បានបញ្ចូលរូប " + res.name + " (" + res.width + "x" + res.height + " pt) លើ Layer " + res.layer : "Placed " + res.name + " (" + res.width + "x" + res.height + " pt) on layer " + res.layer;
+                    setStatus(okMsg, "success", 4000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to place icon");
+                    showError(isKhmer() ? "ការបញ្ចូលរូបសញ្ញាបរាជ័យ" : "Icon Import Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        });
+
+        updateHero(selectedIcon);
+        renderGrid();
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock Script Launcher View
+    // -------------------------------------------------------------
+    function renderEmbeddedLauncher() {
+        var html = [];
+
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <input type="text" id="launcherSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "🔍 ស្វែងរកស្គ្រីប..." : "🔍 Search scripts...") + '" style="width:100%;">');
+        html.push('    <button type="button" id="btnLauncherRefresh" class="btn-action-secondary" style="padding:4px 8px;">🔄 ' + (isKhmer() ? "ផ្ទុកឡើងវិញ" : "Refresh") + '</button>');
+        html.push('  </div>');
+        html.push('  <div class="script-folder-bar" style="margin-top:8px;">');
+        html.push('    <span class="script-folder-path" id="launcherFolderPath">Scanning scripts...</span>');
+        html.push('    <button type="button" id="btnLauncherBrowse" class="btn-action-secondary" style="padding:2px 8px;font-size:10px;white-space:nowrap;">📂 ' + (isKhmer() ? "ជ្រើស Folder" : "Browse...") + '</button>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span id="launcherCountHeader">' + (isKhmer() ? "បញ្ជីស្គ្រីប (Scripts List)" : "Available Scripts") + '</span></div>');
+        html.push('  <div class="script-list" id="launcherScriptList">');
+        html.push('    <div style="padding:16px;text-align:center;color:var(--text-muted);font-size:11px;">' + (isKhmer() ? "កំពុងស្កេនស្គ្រីប..." : "Scanning scripts...") + '</div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var launcherSearchInput = document.getElementById("launcherSearchInput");
+        var btnLauncherRefresh = document.getElementById("btnLauncherRefresh");
+        var launcherFolderPath = document.getElementById("launcherFolderPath");
+        var btnLauncherBrowse = document.getElementById("btnLauncherBrowse");
+        var launcherCountHeader = document.getElementById("launcherCountHeader");
+        var launcherScriptList = document.getElementById("launcherScriptList");
+
+        var allScripts = [];
+
+        function renderScriptList() {
+            var q = launcherSearchInput.value.trim().toLowerCase();
+            var filtered = allScripts.filter(function (s) {
+                return !q || s.name.toLowerCase().indexOf(q) !== -1 || s.fileName.toLowerCase().indexOf(q) !== -1;
+            });
+
+            launcherCountHeader.textContent = (isKhmer() ? "បញ្ជីស្គ្រីប (" + filtered.length + ")" : "Available Scripts (" + filtered.length + ")");
+
+            if (filtered.length === 0) {
+                launcherScriptList.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:11px;">' + (isKhmer() ? "រកមិនឃើញស្គ្រីបទេ" : "No scripts found matching search") + '</div>';
+                return;
+            }
+
+            var sHtml = [];
+            filtered.forEach(function (script) {
+                var kb = Math.round((script.size || 0) / 1024);
+                sHtml.push('<div class="script-item">');
+                sHtml.push('  <div class="script-info">');
+                sHtml.push('    <div class="script-name" title="' + escapeHtml(script.path) + '">📜 ' + escapeHtml(script.name) + '</div>');
+                sHtml.push('    <div class="script-meta"><span>' + kb + ' KB</span><span>•</span><span>' + escapeHtml(script.fileName) + '</span></div>');
+                sHtml.push('  </div>');
+                sHtml.push('  <button type="button" class="script-run-btn" data-path="' + escapeHtml(script.path) + '">▶ ' + (isKhmer() ? "រត់" : "Run") + '</button>');
+                sHtml.push('</div>');
+            });
+            launcherScriptList.innerHTML = sHtml.join("");
+        }
+
+        function loadScripts(customFolder) {
+            launcherScriptList.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:11px;">' + (isKhmer() ? "កំពុងស្កេនស្គ្រីប..." : "Scanning scripts...") + '</div>';
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    launcherFolderPath.textContent = "D:/git/script/scripts";
+                    allScripts = [
+                        { name: "Batch Production Exporter", fileName: "Batch Production Exporter.jsx", path: "D:/git/script/scripts/Batch Production Exporter.jsx", size: 45000 },
+                        { name: "CutContour Generator", fileName: "CutContour Generator.jsx", path: "D:/git/script/scripts/CutContour Generator.jsx", size: 32000 },
+                        { name: "Generate QR Code", fileName: "Generate QR Code.jsx", path: "D:/git/script/scripts/Generate QR Code.jsx", size: 18000 },
+                        { name: "Nesting", fileName: "Nesting.jsx", path: "D:/git/script/scripts/Nesting.jsx", size: 68000 },
+                        { name: "Smart Dimension", fileName: "Smart Dimension.jsx", path: "D:/git/script/scripts/Smart Dimension.jsx", size: 28000 }
+                    ];
+                    renderScriptList();
+                }, 500);
+                return;
+            }
+
+            var arg = customFolder ? JSON.stringify(customFolder) : '""';
+            csInterface.evalScript("ozoScanLauncherScripts(" + arg + ")", function (raw) {
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "ok") {
+                    launcherFolderPath.textContent = res.folder || "Scripts Folder";
+                    allScripts = res.scripts || [];
+                    renderScriptList();
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to scan scripts");
+                    launcherScriptList.innerHTML = '<div style="padding:16px;text-align:center;color:var(--color-error);font-size:11px;">Error: ' + escapeHtml(errMsg) + '</div>';
+                }
+            });
+        }
+
+        launcherSearchInput.addEventListener("input", renderScriptList);
+        btnLauncherRefresh.addEventListener("click", function () { loadScripts(); });
+
+        btnLauncherBrowse.addEventListener("click", function () {
+            if (!csInterface) {
+                loadScripts();
+                return;
+            }
+            csInterface.evalScript('(function(){ var f = Folder.selectDialog("Select Scripts Directory"); return f ? f.fsName : ""; })()', function (chosen) {
+                var p = String(chosen || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "");
+                if (p && p !== "null" && p !== "undefined") {
+                    loadScripts(p);
+                }
+            });
+        });
+
+        launcherScriptList.addEventListener("click", function (e) {
+            var btn = closest(e.target, ".script-run-btn", launcherScriptList);
+            if (!btn) return;
+            var scriptPath = btn.getAttribute("data-path");
+            if (!scriptPath) return;
+
+            hideError();
+            btn.disabled = true;
+            btn.textContent = "⏳";
+            setStatus(isKhmer() ? "កំពុងដំណើរការស្គ្រីប..." : "Executing script...", "running");
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btn.disabled = false;
+                    btn.textContent = "▶ " + (isKhmer() ? "រត់" : "Run");
+                    setStatus("Simulated Script Executed: " + scriptPath, "success", 3000);
+                }, 800);
+                return;
+            }
+
+            csInterface.evalScript("ozoRunLauncherScript(" + JSON.stringify(scriptPath) + ")", function (raw) {
+                btn.disabled = false;
+                btn.textContent = "▶ " + (isKhmer() ? "រត់" : "Run");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "ok") {
+                    setStatus(isKhmer() ? "បានបញ្ចប់ស្គ្រីប " + res.file + " ដោយជោគជ័យ" : "Executed " + res.file + " successfully", "success", 4000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Script execution failed");
+                    showError(isKhmer() ? "ការរត់ស្គ្រីបបរាជ័យ" : "Script Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        });
+
+        loadScripts();
+    }
+
+    // -------------------------------------------------------------
     // Generic In-Dock View (for other tools)
     // -------------------------------------------------------------
     function renderEmbeddedGeneric(tool) {
@@ -3696,6 +4335,9 @@
             else if (activeEmbeddedTool.id === "pathfinder") renderEmbeddedPathfinder();
             else if (activeEmbeddedTool.id === "guide" || activeEmbeddedTool.id === "guides") renderEmbeddedGuides();
             else if (activeEmbeddedTool.id === "repeat") renderEmbeddedRepeat();
+            else if (activeEmbeddedTool.id === "nesting") renderEmbeddedNesting();
+            else if (activeEmbeddedTool.id === "icons") renderEmbeddedIcons();
+            else if (activeEmbeddedTool.id === "launcher") renderEmbeddedLauncher();
             else renderEmbeddedGeneric(activeEmbeddedTool);
         } else {
             renderTools();

@@ -14,13 +14,19 @@
     var doc = app.activeDocument;
     var selectionValue = doc.selection;
     if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 1) {
-        if (confirm(OZO.isKhmer() ?
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            doc.selectObjectsOnActiveArtboard();
+            selectionValue = doc.selection;
+        } else if (confirm(OZO.isKhmer() ?
             "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f Artwork \u1791\u17c1\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u178a\u17be\u1798\u17d2\u1794\u17b8\u179a\u17c0\u1794\u1785\u17c6 (Nest) \u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
             "No artwork is selected. Would you like to select all items on the active artboard to nest automatically?")) {
             doc.selectObjectsOnActiveArtboard();
             selectionValue = doc.selection;
         }
         if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 1) {
+            if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+                __ozoHeadlessResult = JSON.stringify({ success: false, message: "No artwork found on active artboard to nest." });
+            }
             return;
         }
     }
@@ -611,6 +617,10 @@
     }
 
     if (itemStates.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = JSON.stringify({ success: false, message: "The selection has no visible, unlocked artwork with measurable bounds." });
+            return;
+        }
         alert(OZO.isKhmer() ? "\u1787\u1798\u17d2\u179a\u17be\u179f\u1798\u17b7\u1793\u1798\u17b6\u1793\u1782\u17c6\u1793\u17bc\u179a\u178a\u17c2\u179b\u1798\u17be\u179b\u1783\u17be\u1789 \u1798\u17b7\u1793\u1785\u17b6\u1780\u17cb\u179f\u17c4 \u1793\u17b7\u1784\u17a2\u17b6\u1785\u179c\u17b6\u179f\u17cb\u1794\u17b6\u1793\u1791\u17c1\u17d4" :
             "The selection has no visible, unlocked artwork with measurable bounds.");
         return;
@@ -1607,9 +1617,9 @@
         return count;
     }
 
-    function performNesting(resizeSheet) {
+    function performNesting(resizeSheet, explicitSettings) {
         restoreItems();
-        var settings = readSettings();
+        var settings = explicitSettings || readSettings();
         var bins = buildContainers(settings);
         var sources = sourceDescriptors(settings);
         var fixedCount = addFixedObstacles(bins, settings, sources);
@@ -1665,6 +1675,66 @@
         result.sourceCount = sources.length;
         result.bins = resultBins;
         return result;
+    }
+
+    // -------------------------------------------------------------
+    // Headless In-Dock Execution Bridge
+    // -------------------------------------------------------------
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        var hp = null;
+        try {
+            hp = typeof __ozoHeadlessParams === "string" ? JSON.parse(__ozoHeadlessParams) : __ozoHeadlessParams;
+        } catch (eJson) {
+            __ozoHeadlessResult = JSON.stringify({ success: false, message: "Invalid JSON params: " + eJson.message });
+            return;
+        }
+
+        var uFactor = OZO.toPoints(1, hp.unit || "mm");
+        var activeIndex = doc.artboards.getActiveArtboardIndex();
+        var activeBounds = doc.artboards[activeIndex].artboardRect;
+        var custom = hp.custom === true;
+        var sheetW = custom && hp.width ? Number(hp.width) * uFactor : widthOf(activeBounds);
+        var sheetH = custom && hp.height ? Number(hp.height) * uFactor : heightOf(activeBounds);
+
+        var headlessSettings = {
+            mode: hp.mode !== undefined ? Number(hp.mode) : 0,
+            custom: custom,
+            width: sheetW,
+            height: sheetH,
+            resizeArtboard: hp.resizeArtboard === true,
+            left: (hp.left !== undefined ? Number(hp.left) : 0) * uFactor,
+            right: (hp.right !== undefined ? Number(hp.right) : 0) * uFactor,
+            top: (hp.top !== undefined ? Number(hp.top) : 0) * uFactor,
+            bottom: (hp.bottom !== undefined ? Number(hp.bottom) : 0) * uFactor,
+            spacing: (hp.spacing !== undefined ? Number(hp.spacing) : 2) * uFactor,
+            edge: (hp.edge !== undefined ? Number(hp.edge) : 2) * uFactor,
+            allowInside: hp.allowInside !== false,
+            fixed: hp.fixed !== false,
+            divide: hp.divide !== undefined ? Number(hp.divide) : 0,
+            quality: hp.quality !== undefined ? Number(hp.quality) : 0,
+            rotation: hp.rotation !== undefined ? Number(hp.rotation) : 1,
+            best: hp.best !== false,
+            autoMultiSheet: hp.autoMultiSheet !== false
+        };
+
+        try {
+            var finalResult = performNesting(true, headlessSettings);
+            var sheetCount = countSheets(finalResult.bins) || 1;
+            __ozoHeadlessResult = JSON.stringify({
+                success: true,
+                placed: finalResult.plan.length,
+                total: finalResult.sourceCount,
+                unplaced: finalResult.unplaced ? finalResult.unplaced.length : 0,
+                utilization: finalResult.utilization,
+                sheets: sheetCount,
+                fixed: finalResult.fixedCount
+            });
+            return;
+        } catch (nestErr) {
+            restoreItems();
+            __ozoHeadlessResult = JSON.stringify({ success: false, message: errorMessage(nestErr) });
+            return;
+        }
     }
 
     previewButton.onClick = function () {

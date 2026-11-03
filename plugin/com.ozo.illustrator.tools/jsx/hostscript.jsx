@@ -1121,3 +1121,229 @@ function ozoExecuteObjectRepeat(paramsJsonStr) {
         return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
     }
 }
+
+// -------------------------------------------------------------
+// Nesting Bridge
+// -------------------------------------------------------------
+function ozoExecuteNesting(paramsJsonStr) {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Nesting.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Nesting.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Nesting.jsx not found" });
+        }
+
+        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
+            ? JSON.parse(paramsJsonStr)
+            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "Nesting completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+// -------------------------------------------------------------
+// Icon Importer Bridge (Vector SVG placement)
+// -------------------------------------------------------------
+function ozoImportIconSvg(paramsJsonStr) {
+    var tempFile = null;
+    try {
+        if (app.documents.length === 0) {
+            return ozoJsonStringify({ status: "error", message: "No open document found. Please open or create a document first." });
+        }
+        var doc = app.activeDocument;
+        var params = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
+            ? JSON.parse(paramsJsonStr)
+            : (new Function("return " + paramsJsonStr))();
+
+        var svgContent = params.svg;
+        if (!svgContent) {
+            return ozoJsonStringify({ status: "error", message: "No SVG content provided." });
+        }
+
+        var iconName = params.name || "Icon";
+        var targetSizePt = Number(params.sizePt) || 48;
+        var layerName = params.layerName || "[Icons]";
+
+        // Write SVG to temp file
+        var tempName = "ozo_icon_" + (new Date().getTime()) + "_" + Math.floor(Math.random() * 1000) + ".svg";
+        tempFile = new File(Folder.temp.fsName + "/" + tempName);
+        tempFile.encoding = "UTF-8";
+        tempFile.open("w");
+        tempFile.write(svgContent);
+        tempFile.close();
+
+        // Get or create layer
+        var targetLayer = null;
+        for (var li = 0; li < doc.layers.length; li++) {
+            if (doc.layers[li].name === layerName) {
+                targetLayer = doc.layers[li];
+                break;
+            }
+        }
+        if (!targetLayer) {
+            targetLayer = doc.layers.add();
+            targetLayer.name = layerName;
+        }
+        doc.activeLayer = targetLayer;
+
+        // Import SVG
+        var wrapper = targetLayer.groupItems.add();
+        wrapper.name = iconName;
+        var imported = doc.groupItems.createFromFile(tempFile);
+        imported.move(wrapper, ElementPlacement.PLACEATEND);
+
+        // Resize proportionally to targetSizePt
+        var maxDim = Math.max(wrapper.width, wrapper.height);
+        if (maxDim > 0 && targetSizePt > 0) {
+            var scaleFactor = (targetSizePt / maxDim) * 100;
+            wrapper.resize(scaleFactor, scaleFactor);
+        }
+
+        // Center on active artboard
+        var abIdx = doc.artboards.getActiveArtboardIndex();
+        var abRect = doc.artboards[abIdx].artboardRect;
+        var abCenterX = (abRect[0] + abRect[2]) / 2;
+        var abCenterY = (abRect[1] + abRect[3]) / 2;
+
+        wrapper.position = [
+            abCenterX - (wrapper.width / 2),
+            abCenterY + (wrapper.height / 2)
+        ];
+
+        // Select the newly imported icon
+        doc.selection = null;
+        wrapper.selected = true;
+        app.redraw();
+
+        // Clean temp file
+        try { if (tempFile && tempFile.exists) tempFile.remove(); } catch (eIgnore) {}
+
+        return ozoJsonStringify({
+            status: "ok",
+            name: iconName,
+            width: Math.round(wrapper.width * 10) / 10,
+            height: Math.round(wrapper.height * 10) / 10,
+            layer: layerName
+        });
+    } catch (e) {
+        try { if (tempFile && tempFile.exists) tempFile.remove(); } catch (eIgnore2) {}
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+// -------------------------------------------------------------
+// Script Launcher Bridge (Scan & Run external scripts)
+// -------------------------------------------------------------
+function ozoScanLauncherScripts(customFolderPath) {
+    try {
+        var results = [];
+        var targetFolder = null;
+        if (customFolderPath) {
+            targetFolder = new Folder(customFolderPath);
+        }
+        if (!targetFolder || !targetFolder.exists) {
+            targetFolder = ozoResolveScriptsFolder();
+        }
+
+        function scanDir(dir, depth) {
+            if (!dir || !dir.exists || depth > 2) return;
+            var files = dir.getFiles();
+            for (var i = 0; i < files.length; i++) {
+                var f = files[i];
+                if (f instanceof Folder) {
+                    var fn = f.name;
+                    if (fn !== "lib" && fn !== "node_modules" && fn.charAt(0) !== ".") {
+                        scanDir(f, depth + 1);
+                    }
+                } else if (f instanceof File) {
+                    var ext = f.name.toLowerCase();
+                    if (ext.indexOf(".jsx") !== -1 || ext.indexOf(".js") !== -1) {
+                        results.push({
+                            name: f.name.replace(/\.(jsx|js)$/i, ""),
+                            fileName: f.name,
+                            path: f.fsName,
+                            size: f.length || 0,
+                            modified: f.modified ? f.modified.getTime() : 0
+                        });
+                    }
+                }
+            }
+        }
+
+        scanDir(targetFolder, 0);
+
+        // Also scan Illustrator application scripts folder
+        try {
+            if (app.path) {
+                var appPresetFolders = [
+                    new Folder(app.path.fsName + "/Presets/en_US/Scripts"),
+                    new Folder(app.path.fsName + "/Presets/Scripts"),
+                    new Folder(app.path.fsName + "/Presets.localized/Scripts")
+                ];
+                for (var p = 0; p < appPresetFolders.length; p++) {
+                    if (appPresetFolders[p].exists) {
+                        scanDir(appPresetFolders[p], 0);
+                        break;
+                    }
+                }
+            }
+        } catch (eAppScan) {}
+
+        // Remove duplicates by path
+        var seen = {};
+        var unique = [];
+        for (var u = 0; u < results.length; u++) {
+            if (!seen[results[u].path]) {
+                seen[results[u].path] = true;
+                unique.push(results[u]);
+            }
+        }
+
+        return ozoJsonStringify({
+            status: "ok",
+            folder: targetFolder ? targetFolder.fsName : "",
+            scripts: unique
+        });
+    } catch (e) {
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+function ozoRunLauncherScript(filePath) {
+    try {
+        var scriptFile = new File(filePath);
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Script file not found: " + filePath });
+        }
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+        }
+        return ozoJsonStringify({ status: "ok", file: scriptFile.name });
+    } catch (e) {
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
