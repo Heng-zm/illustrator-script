@@ -299,6 +299,8 @@ button:focus-visible,
 .tool-list {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 10px 12px;
     display: flex;
     flex-direction: column;
@@ -828,6 +830,8 @@ body.theme-light {
 .error-banner-message {
     max-height: 72px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     white-space: pre-wrap;
     word-break: break-word;
     user-select: text;
@@ -845,6 +849,7 @@ body.theme-light {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    animation: ozoFadeIn 0.15s ease-out;
 }
 
 .view-embedded {
@@ -854,6 +859,12 @@ body.theme-light {
     min-height: 0;
     overflow: hidden;
     background: var(--bg-main);
+    animation: ozoFadeIn 0.15s ease-out;
+}
+
+@keyframes ozoFadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Embedded Sub-Header */
@@ -941,7 +952,11 @@ body.theme-light {
 .embedded-content {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 10px 10px 14px 10px;
     display: flex;
     flex-direction: column;

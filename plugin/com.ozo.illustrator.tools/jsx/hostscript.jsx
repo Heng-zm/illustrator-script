@@ -238,15 +238,24 @@ function ozoGetDocumentStatus() {
                 hasDoc: false,
                 name: "",
                 colorSpace: "",
-                itemCount: 0
+                artboardsCount: 0,
+                selectedCount: 0
             });
         }
         var doc = app.activeDocument;
+        var selCount = 0;
+        try {
+            if (doc.selection && doc.selection.length !== undefined) {
+                selCount = doc.selection.length;
+            }
+        } catch (eSel) {}
+
         return ozoJsonStringify({
             hasDoc: true,
             name: doc.name,
             colorSpace: String(doc.documentColorSpace).replace("DocumentColorSpace.", ""),
-            itemCount: doc.pageItems.length
+            artboardsCount: doc.artboards.length,
+            selectedCount: selCount
         });
     } catch (e) {
         return ozoJsonStringify({

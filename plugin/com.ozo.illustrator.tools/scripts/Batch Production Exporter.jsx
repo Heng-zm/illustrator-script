@@ -155,6 +155,7 @@
         return unique;
     }
 
+    var abDimsCache = {};
     function buildFileName(template, docName, abIndex, formatExt, unit, abNameOverride, batchCtx) {
         var ab = (abIndex >= 0 && abIndex < doc.artboards.length) ? doc.artboards[abIndex] : doc.artboards[0];
         if (!ab) {
@@ -163,7 +164,12 @@
         }
         var isCombined = (abNameOverride !== undefined && abNameOverride !== null);
         var abName = isCombined ? abNameOverride : (ab.name || ("Artboard_" + (abIndex + 1)));
-        var dims = getArtboardDimensions(ab, unit);
+        var cacheKey = abIndex + "_" + unit;
+        var dims = abDimsCache[cacheKey];
+        if (!dims) {
+            dims = getArtboardDimensions(ab, unit);
+            abDimsCache[cacheKey] = dims;
+        }
         var dateStr = (batchCtx && batchCtx.date) ? batchCtx.date : getFormattedDate();
         var timeStr = (batchCtx && batchCtx.time) ? batchCtx.time : getFormattedTime();
         var numStr = isCombined ? "All" : padNumber(abIndex + 1, totalArtboards);
@@ -431,23 +437,54 @@
                 }
             }
 
+            // Pre-allocate export options once outside the loop for maximum performance
+            var tiffOpts = null;
+            if (tiffEnabled) {
+                var tiffCfg = cfg.formats.tiff;
+                tiffOpts = new ExportOptionsTIFF();
+                tiffOpts.resolution = tiffCfg.dpi || 300;
+                tiffOpts.byteOrder = TIFFByteOrder.IBMPC;
+                tiffOpts.lzwCompression = (tiffCfg.lzw !== false);
+                tiffOpts.imageColorSpace = (tiffCfg.colorSpace === "RGB") ? ImageColorSpace.RGB : ImageColorSpace.CMYK;
+                tiffOpts.antiAliasing = AntiAliasingMethod.ARTOPTIMIZED;
+                tiffOpts.artBoardClipping = true;
+            }
+
+            var pngOpts = null;
+            if (pngEnabled) {
+                var pngCfg = cfg.formats.png;
+                pngOpts = new ExportOptionsPNG24();
+                var pDpi = pngCfg.dpi || 300;
+                var pScale = (pDpi / 72) * 100;
+                pngOpts.horizontalScale = pScale;
+                pngOpts.verticalScale = pScale;
+                pngOpts.transparency = (pngCfg.transparency !== false);
+                pngOpts.antiAliasing = true;
+                pngOpts.artBoardClipping = true;
+            }
+
+            var jpgOpts = null;
+            if (jpgEnabled) {
+                var jpgCfg = cfg.formats.jpg;
+                jpgOpts = new ExportOptionsJPEG();
+                var jDpi = jpgCfg.dpi || 300;
+                var jScale = (jDpi / 72) * 100;
+                jpgOpts.horizontalScale = jScale;
+                jpgOpts.verticalScale = jScale;
+                jpgOpts.qualitySetting = 100;
+                jpgOpts.antiAliasing = true;
+                jpgOpts.artBoardClipping = true;
+            }
+
             // Export TIFF, PNG, JPEG
             for (var t = 0; t < targetIndices.length; t++) {
                 var abIdx = targetIndices[t];
                 doc.artboards.setActiveArtboardIndex(abIdx);
 
                 // A. TIFF
-                if (tiffEnabled) {
+                if (tiffEnabled && tiffOpts) {
                     try {
-                        var tiffCfg = cfg.formats.tiff;
                         var tiffFile = new File(targetFolder.fsName + "/" + buildFileName(cfg.template, docBaseName, abIdx, "tif", selUnit, null, batchCtx));
-                        var tiffOpts = new ExportOptionsTIFF();
-                        tiffOpts.resolution = tiffCfg.dpi || 300;
-                        tiffOpts.byteOrder = TIFFByteOrder.IBMPC;
-                        tiffOpts.lzwCompression = (tiffCfg.lzw !== false);
-                        tiffOpts.imageColorSpace = (tiffCfg.colorSpace === "RGB") ? ImageColorSpace.RGB : ImageColorSpace.CMYK;
-                        tiffOpts.antiAliasing = AntiAliasingMethod.ARTOPTIMIZED;
-                        tiffOpts.artBoardClipping = true;
                         doc.exportFile(tiffFile, ExportType.TIFF, tiffOpts);
                         totalExported++;
                     } catch (eTiff) {
@@ -456,18 +493,9 @@
                 }
 
                 // B. PNG
-                if (pngEnabled) {
+                if (pngEnabled && pngOpts) {
                     try {
-                        var pngCfg = cfg.formats.png;
                         var pngFile = new File(targetFolder.fsName + "/" + buildFileName(cfg.template, docBaseName, abIdx, "png", selUnit, null, batchCtx));
-                        var pngOpts = new ExportOptionsPNG24();
-                        var pDpi = pngCfg.dpi || 300;
-                        var pScale = (pDpi / 72) * 100;
-                        pngOpts.horizontalScale = pScale;
-                        pngOpts.verticalScale = pScale;
-                        pngOpts.transparency = (pngCfg.transparency !== false);
-                        pngOpts.antiAliasing = true;
-                        pngOpts.artBoardClipping = true;
                         doc.exportFile(pngFile, ExportType.PNG24, pngOpts);
                         totalExported++;
                     } catch (ePng) {
@@ -476,18 +504,9 @@
                 }
 
                 // C. JPEG
-                if (jpgEnabled) {
+                if (jpgEnabled && jpgOpts) {
                     try {
-                        var jpgCfg = cfg.formats.jpg;
                         var jpgFile = new File(targetFolder.fsName + "/" + buildFileName(cfg.template, docBaseName, abIdx, "jpg", selUnit, null, batchCtx));
-                        var jpgOpts = new ExportOptionsJPEG();
-                        var jDpi = jpgCfg.dpi || 300;
-                        var jScale = (jDpi / 72) * 100;
-                        jpgOpts.horizontalScale = jScale;
-                        jpgOpts.verticalScale = jScale;
-                        jpgOpts.qualitySetting = 100;
-                        jpgOpts.antiAliasing = true;
-                        jpgOpts.artBoardClipping = true;
                         doc.exportFile(jpgFile, ExportType.JPEG, jpgOpts);
                         totalExported++;
                     } catch (eJpg) {

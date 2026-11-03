@@ -286,6 +286,7 @@
     }
 
     var store = {
+        _timers: {},
         get: function (key, fallback) {
             try {
                 var v = window.localStorage.getItem(key);
@@ -293,6 +294,13 @@
             } catch (e) { return fallback; }
         },
         set: function (key, value) { try { window.localStorage.setItem(key, value); } catch (e) {} },
+        setDebounced: function (key, value, delayMs) {
+            var self = this;
+            if (self._timers[key]) clearTimeout(self._timers[key]);
+            self._timers[key] = setTimeout(function () {
+                try { window.localStorage.setItem(key, value); } catch (e) {}
+            }, delayMs || 300);
+        },
         remove: function (key) { try { window.localStorage.removeItem(key); } catch (e) {} }
     };
 
@@ -482,10 +490,16 @@
 
             if (info && info.hasDoc) {
                 var name = info.name || "Untitled";
-                var items = typeof info.itemCount === "number" ? info.itemCount : 0;
                 var detail = [];
                 if (info.colorSpace) detail.push(info.colorSpace);
-                detail.push(t("status.items", { n: items }));
+                if (typeof info.artboardsCount === "number") {
+                    detail.push(info.artboardsCount + " " + (isKhmer() ? "ផ្ទាំង" : (info.artboardsCount === 1 ? "artboard" : "artboards")));
+                }
+                if (info.selectedCount && info.selectedCount > 0) {
+                    detail.push(info.selectedCount + " " + (isKhmer() ? "បានជ្រើស" : "sel"));
+                } else if (typeof info.itemCount === "number" && info.itemCount > 0) {
+                    detail.push(t("status.items", { n: info.itemCount }));
+                }
                 setIdleStatus(name + " (" + detail.join(" \u2022 ") + ")", name);
             } else if (info) {
                 setIdleStatus(t("status.noDoc"));
@@ -534,14 +548,20 @@
         return out;
     }
 
+    var searchDebounceTimer = null;
     function onSearchChanged() {
-        setSearch(searchInput.value);
-        renderTools();
+        if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(function () {
+            setSearch(searchInput.value);
+            renderTools();
+        }, 80);
     }
 
     function clearSearch(refocus) {
+        if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
         searchInput.value = "";
-        onSearchChanged();
+        setSearch("");
+        renderTools();
         if (refocus) searchInput.focus();
     }
 
@@ -1141,7 +1161,7 @@
             state.subfolderName = expSubfolderInput.value;
             state.openFolder = chkOpenFolder.checked;
 
-            store.set("ozo_exporter_settings", JSON.stringify(state));
+            store.setDebounced("ozo_exporter_settings", JSON.stringify(state), 250);
         }
 
         // Scope handlers
@@ -1440,7 +1460,7 @@
             state.title = qrTgTitleInput.value;
             state.handle = qrTgHandleInput.value;
 
-            store.set("ozo_qr_settings", JSON.stringify(state));
+            store.setDebounced("ozo_qr_settings", JSON.stringify(state), 250);
         }
 
         // Style Segmented
