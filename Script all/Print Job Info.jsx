@@ -406,7 +406,7 @@
     dialog.minimumSize = [530, 520];
 
     // Top Header Banner
-    OZO.addDialogHeader(dialog, SCRIPT_NAME + " (\u1791\u17c6\u179b\u17b6\u1780\u17cb File Print)", "v2.2 \u2022 Wide-Format RIP Metadata");
+    OZO.addDialogHeader(dialog, OZO.tr("Print Job Info"), "v2.2 \u2022 " + OZO.tr("Wide-Format RIP Metadata & Banner Studio"));
 
     // Panel 1: Job Information
     var headerPanel = dialog.add("panel", undefined, OZO.tr("Job Information"));

@@ -630,84 +630,100 @@
     // -------------------------------------------------------------
     // User Interface Construction
     // -------------------------------------------------------------
-    var dialog = new Window("dialog", OZO.tr(SCRIPT_NAME) + " v" + SCRIPT_VERSION);
+    var dialog = new Window("dialog", OZO.tr(SCRIPT_NAME));
     dialog.orientation = "column";
     dialog.alignChildren = ["fill", "top"];
-    dialog.spacing = 8;
-    dialog.margins = 14;
+    dialog.spacing = 10;
+    dialog.margins = [16, 14, 16, 14];
+    dialog.minimumSize = [510, 560];
 
-    // Header with title and mode tabs
-    var headerGroup = dialog.add("group");
-    headerGroup.orientation = "row";
-    headerGroup.alignChildren = ["left", "center"];
-    var titleText = headerGroup.add("statictext", undefined, "CUT CONTOUR PRO");
-    try {
-        titleText.graphics.font = ScriptUI.newFont(titleText.graphics.font ? titleText.graphics.font.name : "dialog", "BOLD", 15);
-    } catch (eFont) {}
+    // Standardized Studio Header Banner
+    OZO.addDialogHeader(
+        dialog,
+        OZO.tr("CutContour Generator"),
+        "v" + SCRIPT_VERSION + " \u2022 " + OZO.tr("Die-Cut & Kiss-Cut Studio")
+    );
 
-    var modeSegment = headerGroup.add("group");
-    modeSegment.alignment = ["right", "center"];
-    var autoBtn = modeSegment.add("button", undefined, "AUTO");
-    var tightBtn = modeSegment.add("button", undefined, "TIGHT");
-    var shapeBtn = modeSegment.add("button", undefined, "SHAPE");
-    var dualBtn = modeSegment.add("button", undefined, "DUAL");
-    autoBtn.preferredSize.height = 24;
-    tightBtn.preferredSize.height = 24;
-    shapeBtn.preferredSize.height = 24;
-    dualBtn.preferredSize.height = 24;
+    // Quick Preset Mode Segment (Segmented style card buttons)
+    var quickGroup = dialog.add("group");
+    quickGroup.orientation = "row";
+    quickGroup.alignment = ["fill", "top"];
+    quickGroup.alignChildren = ["fill", "center"];
+    quickGroup.spacing = 6;
 
-    // Mode Toggle: Simple vs Pro
-    var modeToggleRow = dialog.add("group");
-    modeToggleRow.orientation = "row";
-    modeToggleRow.alignChildren = ["left", "center"];
-    var simpleModeRadio = modeToggleRow.add("radiobutton", undefined, OZO.tr("Simple Mode"));
-    var proModeRadio = modeToggleRow.add("radiobutton", undefined, OZO.tr("Pro Mode"));
+    var autoBtn = quickGroup.add("button", undefined, "\u26a1 " + OZO.tr("Auto Fit"));
+    var tightBtn = quickGroup.add("button", undefined, "\u2702 " + OZO.tr("Tight Silhouette"));
+    var shapeBtn = quickGroup.add("button", undefined, "\u25a2 " + OZO.tr("Shape Card"));
+    var dualBtn = quickGroup.add("button", undefined, "\u29c9 " + OZO.tr("Dual (Kiss+Die)"));
+    autoBtn.preferredSize = [105, 26];
+    tightBtn.preferredSize = [125, 26];
+    shapeBtn.preferredSize = [110, 26];
+    dualBtn.preferredSize = [130, 26];
+    autoBtn.helpTip = "Intelligently select recommended shape and offset based on artwork geometry";
+    tightBtn.helpTip = "Create tight boundary contour hugging the artwork silhouette";
+    shapeBtn.helpTip = "Surround artwork with rounded card boundary";
+    dualBtn.helpTip = "Enable both inner Kiss-Cut and outer backing card Die-Cut lines";
+
+    // Mode Toggle (Simple vs Pro) & Machine Preset Bar
+    var modePresetRow = dialog.add("group");
+    modePresetRow.orientation = "row";
+    modePresetRow.alignment = ["fill", "center"];
+    modePresetRow.alignChildren = ["left", "center"];
+
+    var modeSegment = modePresetRow.add("group");
+    modeSegment.orientation = "row";
+    modeSegment.alignChildren = ["left", "center"];
+    var simpleModeRadio = modeSegment.add("radiobutton", undefined, OZO.tr("Simple Mode"));
+    var proModeRadio = modeSegment.add("radiobutton", undefined, OZO.tr("Pro Mode"));
     proModeRadio.value = true;
 
-    // Preset selection
-    var presetGroup = dialog.add("group");
-    presetGroup.orientation = "row";
-    presetGroup.alignChildren = ["left", "center"];
-    presetGroup.add("statictext", undefined, "Machine / RIP Preset:");
-    var presetList = presetGroup.add("dropdownlist", undefined, []);
-    presetList.preferredSize.width = 240;
+    var presetSubGrp = modePresetRow.add("group");
+    presetSubGrp.alignment = ["right", "center"];
+    presetSubGrp.alignChildren = ["right", "center"];
+    presetSubGrp.add("statictext", undefined, OZO.tr("Machine / RIP Preset:"));
+    var presetList = presetSubGrp.add("dropdownlist", undefined, []);
+    presetList.preferredSize.width = 200;
     for (var p = 0; p < MACHINE_PRESETS.length; p++) {
         presetList.add("item", MACHINE_PRESETS[p].name);
     }
     presetList.selection = 0;
 
-    // Main Panels
-    var configPanel = dialog.add("panel", undefined, "Geometry & Cutline Settings");
+    // Panel 1: Geometry & Cutline Settings
+    var configPanel = dialog.add("panel", undefined, OZO.tr("Geometry & Cutline Settings"));
     configPanel.orientation = "column";
     configPanel.alignChildren = ["fill", "top"];
-    configPanel.margins = [12, 14, 12, 10];
-    configPanel.spacing = 6;
+    configPanel.margins = [14, 16, 14, 12];
+    configPanel.spacing = 8;
 
-    // Geometry Row
+    // Row 1: Geometry & Units
     var geomRow = configPanel.add("group");
     geomRow.orientation = "row";
     geomRow.alignChildren = ["left", "center"];
-    geomRow.add("statictext", undefined, "Geometry:");
+    var geomLbl = geomRow.add("statictext", undefined, OZO.tr("Geometry:"));
+    geomLbl.preferredSize.width = 90;
     var shapeList = geomRow.add("dropdownlist", undefined, [
         OZO.tr("Rounded Rectangle"),
         OZO.tr("Rectangle"),
         OZO.tr("Circle / Ellipse"),
         OZO.tr("Capsule / Stadium"),
         OZO.tr("Tight Contour (Silhouette)"),
-        "Hexagon",
-        "Octagon"
+        OZO.tr("Hexagon"),
+        OZO.tr("Octagon")
     ]);
     shapeList.selection = initialStats.recommendation.mode;
-    shapeList.preferredSize.width = 200;
+    shapeList.preferredSize.width = 190;
 
-    geomRow.add("statictext", undefined, OZO.tr("Units:"));
-    var unitList = geomRow.add("dropdownlist", undefined, ["mm", "cm", "pt", "in"]);
+    var unitSubGrp = geomRow.add("group");
+    unitSubGrp.alignment = ["right", "center"];
+    unitSubGrp.add("statictext", undefined, OZO.tr("Units:"));
+    var unitList = unitSubGrp.add("dropdownlist", undefined, ["mm", "cm", "pt", "in"]);
     var defaultDocUnit = OZO.getDocDefaultUnit(doc);
     var defaultUnitIdx = 0;
     if (defaultDocUnit === "cm") defaultUnitIdx = 1;
     else if (defaultDocUnit === "pt") defaultUnitIdx = 2;
     else if (defaultDocUnit === "in") defaultUnitIdx = 3;
     unitList.selection = defaultUnitIdx;
+    unitList.preferredSize.width = 65;
 
     var initialUnit = ["mm", "cm", "pt", "in"][defaultUnitIdx] || "mm";
     var previousUnit = initialUnit;
@@ -726,80 +742,91 @@
         return formatQuantity(OZO.fromPoints(pt, currentUnit()));
     }
 
-    // Offsets & Dimensions Row
+    // Row 2: Offsets & Dimensions Row
     var paramRow = configPanel.add("group");
     paramRow.orientation = "row";
     paramRow.alignChildren = ["left", "center"];
 
-    paramRow.add("statictext", undefined, OZO.tr("Offset / Bleed") + ":");
+    var offsetLbl = paramRow.add("statictext", undefined, OZO.tr("Offset / Bleed") + ":");
+    offsetLbl.preferredSize.width = 90;
     var offsetInput = paramRow.add("edittext", undefined, mmToUnit(initialStats.recommendation.offsetMm));
     offsetInput.characters = 5;
     var offsetUnitLbl = paramRow.add("statictext", undefined, initialUnit);
+    offsetUnitLbl.preferredSize.width = 30;
 
     var radiusLabel = paramRow.add("statictext", undefined, OZO.tr("Corner Radius") + ":");
     var radiusInput = paramRow.add("edittext", undefined, mmToUnit(3));
     radiusInput.characters = 5;
     var radiusUnitLbl = paramRow.add("statictext", undefined, initialUnit);
+    radiusUnitLbl.preferredSize.width = 30;
 
-    var perfectSquareCheck = configPanel.add("checkbox", undefined, "Equal width & height (Circle / Square)");
+    var perfectSquareCheck = configPanel.add("checkbox", undefined, OZO.tr("Equal width & height (Circle / Square)"));
     perfectSquareCheck.value = false;
 
-    // Hole Management
+    // Row 3: Hole Management
     var holeGroup = configPanel.add("group");
     holeGroup.orientation = "row";
     holeGroup.alignChildren = ["left", "center"];
-    holeGroup.add("statictext", undefined, "Holes:");
+    var holeLbl = holeGroup.add("statictext", undefined, OZO.tr("Inner Holes:"));
+    holeLbl.preferredSize.width = 90;
     var holeList = holeGroup.add("dropdownlist", undefined, [
         OZO.tr("Keep Holes"),
         OZO.tr("Remove Small Holes"),
         OZO.tr("Remove All Holes")
     ]);
     holeList.selection = initialStats.recommendation.holeMode;
+    holeList.preferredSize.width = 220;
 
-    // Dual Cutline (Kiss-Cut + Perf-Cut)
-    var dualPanel = configPanel.add("panel", undefined, "Cut Types & Spot Layers");
+    // Sub-Panel: Dual Cutline (Kiss-Cut + Perf-Cut)
+    var dualPanel = configPanel.add("panel", undefined, OZO.tr("Cut Types & Spot Layers"));
     dualPanel.orientation = "column";
     dualPanel.alignChildren = ["fill", "top"];
-    dualPanel.margins = [10, 12, 10, 8];
-    dualPanel.spacing = 6;
+    dualPanel.margins = [12, 14, 12, 10];
+    dualPanel.spacing = 8;
 
     var kissRow = dualPanel.add("group");
     kissRow.orientation = "row";
     kissRow.alignChildren = ["left", "center"];
     var kissCheck = kissRow.add("checkbox", undefined, OZO.tr("Kiss-Cut") + " (Inner):");
     kissCheck.value = true;
+    kissCheck.preferredSize.width = 135;
     var kissNameInput = kissRow.add("edittext", undefined, "CutContour");
     kissNameInput.characters = 12;
-    kissRow.add("statictext", undefined, "Offset:");
+    kissRow.add("statictext", undefined, OZO.tr("Offset") + ":");
     var kissOffsetInput = kissRow.add("edittext", undefined, mmToUnit(2));
     kissOffsetInput.characters = 4;
     var kissUnitLbl = kissRow.add("statictext", undefined, initialUnit);
+    kissUnitLbl.preferredSize.width = 30;
 
     var perfRow = dualPanel.add("group");
     perfRow.orientation = "row";
     perfRow.alignChildren = ["left", "center"];
     var perfCheck = perfRow.add("checkbox", undefined, OZO.tr("Die-Cut") + " (Outer):");
     perfCheck.value = false;
+    perfCheck.preferredSize.width = 135;
     var perfNameInput = perfRow.add("edittext", undefined, "PerfCutContour");
     perfNameInput.characters = 12;
-    perfRow.add("statictext", undefined, "Offset:");
+    perfRow.add("statictext", undefined, OZO.tr("Offset") + ":");
     var perfOffsetInput = perfRow.add("edittext", undefined, mmToUnit(5));
     perfOffsetInput.characters = 4;
     var perfUnitLbl = perfRow.add("statictext", undefined, initialUnit);
+    perfUnitLbl.preferredSize.width = 30;
 
-    // Pro Options Panel (Collapsible via Simple/Pro mode)
-    var proPanel = dialog.add("panel", undefined, "Prepress & Optimization (Pro)");
+    // Panel 2: Pro Options Panel (Collapsible via Simple/Pro mode)
+    var proPanel = dialog.add("panel", undefined, OZO.tr("Prepress & Optimization (Pro)"));
     proPanel.orientation = "column";
     proPanel.alignChildren = ["fill", "top"];
-    proPanel.margins = [12, 14, 12, 10];
-    proPanel.spacing = 6;
+    proPanel.margins = [14, 16, 14, 12];
+    proPanel.spacing = 8;
 
     var strokeRow = proPanel.add("group");
     strokeRow.orientation = "row";
     strokeRow.alignChildren = ["left", "center"];
-    strokeRow.add("statictext", undefined, OZO.tr("Stroke Weight:"));
+    var strokeLbl = strokeRow.add("statictext", undefined, OZO.tr("Stroke Weight:"));
+    strokeLbl.preferredSize.width = 95;
     var strokeList = strokeRow.add("dropdownlist", undefined, ["0.25 pt (Hairline)", "0.30 pt", "0.50 pt", "0.75 pt"]);
     strokeList.selection = 0;
+    strokeList.preferredSize.width = 140;
     var overprintCheck = strokeRow.add("checkbox", undefined, OZO.tr("Overprint Stroke"));
     overprintCheck.value = true;
 
@@ -811,12 +838,13 @@
     var regMarksCheck = optRow.add("checkbox", undefined, OZO.tr("Registration Marks"));
     regMarksCheck.value = false;
 
-    // Validation Banner
-    var validationBox = dialog.add("group");
+    // Validation Card
+    var validationBox = dialog.add("panel");
     validationBox.orientation = "row";
     validationBox.alignChildren = ["left", "center"];
-    var validationLabel = validationBox.add("statictext", undefined, "Validation: Running...");
-    validationLabel.preferredSize.width = 460;
+    validationBox.margins = [12, 8, 12, 8];
+    var validationLabel = validationBox.add("statictext", undefined, "Validation: Ready");
+    validationLabel.preferredSize.width = 440;
 
     // Pre-flight updater
     function updateValidationUI() {
@@ -846,6 +874,19 @@
     proModeRadio.onClick = updateVisibility;
     simpleModeRadio.onClick = updateVisibility;
 
+    function formatDim(pt, u) {
+        return formatQuantity(OZO.fromPoints(pt, u)) + " " + u;
+    }
+
+    function updateStatsFooter() {
+        var u = currentUnit();
+        var wPt = Math.abs(initialStats.bounds[2] - initialStats.bounds[0]);
+        var hPt = Math.abs(initialStats.bounds[1] - initialStats.bounds[3]);
+        statusStats.text = OZO.tr("Selected items") + ": " + initialStats.total +
+            "  |  " + OZO.tr("Paths") + ": " + initialStats.paths +
+            "  |  " + OZO.tr("Dimensions:") + " " + formatDim(wPt, u) + " x " + formatDim(hPt, u);
+    }
+
     unitList.onChange = function () {
         var u = currentUnit();
         if (u !== previousUnit) {
@@ -864,6 +905,7 @@
         radiusUnitLbl.text = u;
         kissUnitLbl.text = u;
         perfUnitLbl.text = u;
+        updateStatsFooter();
         updateValidationUI();
     };
 
@@ -904,28 +946,30 @@
         updateVisibility();
     };
 
-    // Status Footer
+    // Status / Artwork Details Footer
     var footerGroup = dialog.add("group");
     footerGroup.orientation = "row";
     footerGroup.alignChildren = ["left", "center"];
-    var statusStats = footerGroup.add("statictext", undefined,
-        "Objects: " + initialStats.total +
-        " | Paths: " + initialStats.paths +
-        " | Bounds: " + Math.round(initialStats.bounds[2] - initialStats.bounds[0]) + "x" +
-        Math.round(initialStats.bounds[1] - initialStats.bounds[3]) + " pt"
-    );
+    var statusStats = footerGroup.add("statictext", undefined, "");
     statusStats.preferredSize.width = 460;
+    updateStatsFooter();
 
     // Action Buttons
     var buttons = dialog.add("group");
     buttons.alignment = ["right", "top"];
     var previewButton = buttons.add("button", undefined, OZO.tr("Update Preview"));
+    previewButton.preferredSize = [120, 30];
     var cancelButton = buttons.add("button", undefined, OZO.tr("Cancel"), {name: "cancel"});
+    cancelButton.preferredSize = [85, 30];
     var applyButton = buttons.add("button", undefined, OZO.tr("Generate CutContour"), {name: "ok"});
+    applyButton.preferredSize = [160, 30];
     dialog.defaultElement = applyButton;
     dialog.cancelElement = cancelButton;
 
-    OZO.addLanguageSelector(dialog);
+    OZO.addLanguageSelector(dialog, function () {
+        updateStatsFooter();
+        updateValidationUI();
+    });
 
     function readSettings() {
         var unit = (unitList.selection && unitList.selection.text) ? unitList.selection.text : "mm";

@@ -107,9 +107,6 @@
 
     var activeLayerName = (activeLayer && activeLayer.name) ? activeLayer.name : "Layer 1";
     var activeLayerText = dialog.add("statictext", undefined, OZO.tr("Active layer: ") + activeLayerName);
-    activeLayerText.graphics.foregroundColor = activeLayerText.graphics.newPen(
-        activeLayerText.graphics.PenType.SOLID_COLOR, [0.65, 0.65, 0.65], 1
-    );
 
     function addStatRow(parent, label, value) {
         var row = parent.add("group");
