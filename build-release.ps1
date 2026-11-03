@@ -70,7 +70,8 @@ foreach ($dir in $dirsToCopy) {
 }
 
 # Remove unwanted temporary/junk files
-Get-ChildItem -Path $stageDir -Recurse -Include ".DS_Store", "Thumbs.db", "*.tmp" -Force | Remove-Item -Force
+Get-ChildItem -Path $stageDir -Recurse -Include ".DS_Store", "Thumbs.db", "*.tmp", "*.log", "*.bak", "*~" -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+Get-ChildItem -Path $stageDir -Recurse -Hidden -ErrorAction SilentlyContinue | Where-Object { $_.Name -like ".git*" } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
 # 3. Create zip
 $zipName = "Ozo-Tools-v$Version.zip"

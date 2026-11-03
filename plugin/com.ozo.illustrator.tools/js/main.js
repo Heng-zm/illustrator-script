@@ -3715,6 +3715,9 @@
         inputsToSave.forEach(function (inp) {
             inp.addEventListener("change", saveNestingState);
             inp.addEventListener("input", saveNestingState);
+            inp.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") btnNestSubmit.click();
+            });
         });
 
         btnNestSubmit.addEventListener("click", function () {
@@ -3953,6 +3956,20 @@
             btnIconInsert.click();
         });
 
+        numIconSize.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") btnIconInsert.click();
+        });
+
+        iconSearchInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                var firstTile = iconGrid.querySelector(".icon-tile");
+                if (firstTile) {
+                    firstTile.click();
+                    btnIconInsert.click();
+                }
+            }
+        });
+
         btnIconInsert.addEventListener("click", function () {
             if (!selectedIcon) return;
             hideError();
@@ -4095,6 +4112,12 @@
         }
 
         launcherSearchInput.addEventListener("input", renderScriptList);
+        launcherSearchInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                var firstBtn = launcherScriptList.querySelector(".script-run-btn");
+                if (firstBtn) firstBtn.click();
+            }
+        });
         btnLauncherRefresh.addEventListener("click", function () { loadScripts(); });
 
         btnLauncherBrowse.addEventListener("click", function () {
