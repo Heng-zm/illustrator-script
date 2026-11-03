@@ -1822,6 +1822,60 @@
         }
     }
 
+    // Check for Headless Dock Execution
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        var p = __ozoHeadlessParams;
+        var qrContent = p.content;
+        if (!qrContent || qrContent.length === 0) {
+            __ozoHeadlessResult = { status: "error", message: "Enter text, a URL, contact data, or other QR content." };
+            return;
+        }
+        var qrSize = parsePositiveNumber(p.size);
+        if (!isFinite(qrSize) || qrSize <= 0) {
+            __ozoHeadlessResult = { status: "error", message: "Enter a finished size greater than zero." };
+            return;
+        }
+        var qrQuietZone = parsePositiveNumber(p.quietZone != null ? p.quietZone : 4);
+        if (!isFinite(qrQuietZone) || qrQuietZone < 0) qrQuietZone = 4;
+
+        var qrUnit = p.unit || "mm";
+        var qrSizeMillimeters = qrSize * unitToMillimeters(qrUnit);
+        var qrOutputStyle = p.style || "Normal";
+        var isTg = (qrOutputStyle.indexOf("Telegram") !== -1);
+        var qrLevel = isTg ? "M" : (p.level || "M");
+
+        var tgOptions = {
+            isCard: (qrOutputStyle === "Telegram 2026 (Share Card)"),
+            theme: p.telegramTheme || "Official Telegram Blue",
+            title: p.telegramTitle || "Telegram",
+            handle: p.telegramHandle || "@telegram"
+        };
+
+        try {
+            var encoded = encodeQr(qrContent, qrLevel);
+            var output = addVectorQr(
+                encoded,
+                qrSizeMillimeters * POINTS_PER_MM,
+                qrQuietZone,
+                p.background !== false,
+                p.newLayer === true,
+                qrOutputStyle,
+                tgOptions
+            );
+            __ozoHeadlessResult = {
+                status: "success",
+                message: "QR code generated successfully.",
+                version: encoded.version,
+                modules: output.modules,
+                style: qrOutputStyle,
+                size: formatMeasurement(qrSize) + " " + qrUnit
+            };
+        } catch (err) {
+            __ozoHeadlessResult = { status: "error", message: errorMessage(err) };
+        }
+        return;
+    }
+
     var dialog = new Window("dialog", SCRIPT_NAME);
     dialog.orientation = "column";
     dialog.alignChildren = ["fill", "top"];

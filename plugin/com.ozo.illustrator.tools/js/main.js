@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.3.0"; // keep in sync with CSXS/manifest.xml
+    var CURRENT_VERSION = "2.4.0"; // keep in sync with CSXS/manifest.xml
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
@@ -58,6 +58,10 @@
             "view.grid": "Grid View (Compact)",
             "view.list": "List View (Detailed)",
             "lang.switched": "Switched to English",
+            "back.tools": "Tools",
+            "back.title": "Back to Tools (Esc)",
+            "open.dialog": "Dialog",
+            "open.dialogTitle": "Open as Floating Window Dialog",
             "refreshed": "Refreshed panel",
             "update.btn": "Update",
             "update.btnTitle": "Download & update to latest release",
@@ -117,6 +121,10 @@
             "view.grid": "ទិដ្ឋភាព Grid (តូច)",
             "view.list": "ទិដ្ឋភាពបញ្ជី (លម្អិត)",
             "lang.switched": "បានប្តូរទៅជាភាសាខ្មែរ",
+            "back.tools": "ឧបករណ៍",
+            "back.title": "ត្រឡប់ទៅបញ្ជីឧបករណ៍ (Esc)",
+            "open.dialog": "ផ្ទាំងបង្អួច",
+            "open.dialogTitle": "បើកជាផ្ទាំងបង្អួចដាច់ដោយឡែក (Floating Dialog)",
             "refreshed": "បានផ្ទុកឡើងវិញរួចរាល់",
             "update.btn": "ដំឡើង",
             "update.btnTitle": "ទាញយក និងដំឡើងកំណែចុងក្រោយ",
@@ -368,6 +376,15 @@
     var errorTitle = $("errorTitle");
     var errorMessage = $("errorMessage");
     var errorDismissBtn = $("errorDismissBtn");
+
+    var viewCatalog = $("viewCatalog");
+    var viewEmbedded = $("viewEmbedded");
+    var embeddedBackBtn = $("embeddedBackBtn");
+    var embeddedToolIcon = $("embeddedToolIcon");
+    var embeddedToolTitle = $("embeddedToolTitle");
+    var embeddedDialogBtn = $("embeddedDialogBtn");
+    var embeddedContent = $("embeddedContent");
+    var activeEmbeddedTool = null;
 
     // ------------------------------------------------------------------
     // i18n
@@ -716,6 +733,840 @@
     }
 
     // ------------------------------------------------------------------
+    // In-Dock Embedded Views
+    // ------------------------------------------------------------------
+    function openEmbeddedView(toolId) {
+        var tool = toolById[toolId];
+        if (!tool) return;
+        activeEmbeddedTool = tool;
+        hideError();
+        viewCatalog.style.display = "none";
+        viewEmbedded.style.display = "flex";
+        embeddedToolIcon.innerHTML = tool.icon;
+        embeddedToolTitle.textContent = toolName(tool);
+        embeddedContent.innerHTML = "";
+
+        if (tool.id === "exporter") {
+            renderEmbeddedExporter();
+        } else if (tool.id === "qr") {
+            renderEmbeddedQR();
+        } else {
+            renderEmbeddedGeneric(tool);
+        }
+    }
+
+    function closeEmbeddedView() {
+        activeEmbeddedTool = null;
+        viewEmbedded.style.display = "none";
+        viewCatalog.style.display = "flex";
+        renderTools();
+    }
+
+    function buildPreviewSample(template, docName, ab, formatExt, unit, isCombined) {
+        var abName = isCombined ? "All" : (ab ? ab.name : "Artboard_1");
+        var w = ab ? ab.width : "100";
+        var h = ab ? ab.height : "100";
+        var num = isCombined ? "All" : "01";
+        var rawNum = isCombined ? "All" : "1";
+        var now = new Date();
+        var y = now.getFullYear();
+        var m = now.getMonth() + 1; if (m < 10) m = "0" + m;
+        var d = now.getDate(); if (d < 10) d = "0" + d;
+        var dateStr = y + "-" + m + "-" + d;
+        var hr = now.getHours(); if (hr < 10) hr = "0" + hr;
+        var mn = now.getMinutes(); if (mn < 10) mn = "0" + mn;
+        var timeStr = String(hr) + String(mn);
+        var color = "CMYK";
+
+        var res = String(template || "").replace(
+            /\[(doc|ab|num|raw_num|w|h|unit|date|time|color|fmt)\]|\{(doc|ab|num|raw_num|w|h|unit|date|time|color|fmt)\}/gi,
+            function (match, bracketToken, braceToken) {
+                var token = String(bracketToken || braceToken || "").toLowerCase();
+                switch (token) {
+                    case "doc": return docName;
+                    case "ab": return abName;
+                    case "num": return num;
+                    case "raw_num": return rawNum;
+                    case "w": return w;
+                    case "h": return h;
+                    case "unit": return unit;
+                    case "date": return dateStr;
+                    case "time": return timeStr;
+                    case "color": return color;
+                    case "fmt": return formatExt;
+                }
+                return match;
+            }
+        );
+        res = res.replace(/[\\\/:\*\?"<>\|]/g, "_").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+        if (!res) res = docName + "_" + abName;
+        return res + "." + formatExt;
+    }
+
+    // -------------------------------------------------------------
+    // Exporter In-Dock View
+    // -------------------------------------------------------------
+    function renderEmbeddedExporter() {
+        embeddedContent.innerHTML =
+            '<div style="display:flex;align-items:center;justify-content:center;padding:40px 0;color:var(--text-secondary);gap:8px;">' +
+                '<span class="status-dot running"></span> ' + (isKhmer() ? "កំពុងអានព័ត៌មានឯកសារ..." : "Reading document info...") +
+            '</div>';
+
+        if (!csInterface) {
+            mountExporterForm({
+                hasDoc: true,
+                docName: "File For Print",
+                fullDocName: "File For Print.ai",
+                isSaved: true,
+                docPath: "C:/Desktop",
+                defaultUnit: "cm",
+                colorSpace: "RGB",
+                totalArtboards: 2,
+                activeArtboardIndex: 0,
+                artboards: [
+                    { index: 0, name: "Front Card", width: "9.0", height: "5.4" },
+                    { index: 1, name: "Back Card", width: "9.0", height: "5.4" }
+                ],
+                pdfPresets: ["[High Quality Print]", "[Press Quality]", "[Smallest File Size]"]
+            });
+            return;
+        }
+
+        csInterface.evalScript("ozoGetExportMetadata()", function (raw) {
+            var meta = null;
+            try {
+                meta = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, ""));
+            } catch (e) {}
+
+            if (!meta || !meta.hasDoc) {
+                embeddedContent.innerHTML =
+                    '<div class="embed-generic-card">' +
+                        '<div class="embed-generic-icon">' + svgIcon('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>') + '</div>' +
+                        '<div class="embed-generic-title">' + (isKhmer() ? "គ្មានឯកសារបើកក្នុង Illustrator" : "No Document Open") + '</div>' +
+                        '<div class="embed-generic-desc">' + (isKhmer() ? "សូមបើកឯកសារគំនូរក្នុង Illustrator រួចចុច Refresh ដើម្បីប្រើប្រាស់មុខងារនាំចេញជាកញ្ចប់។" : "Open an artwork document in Illustrator, then click Refresh to configure batch artboard export.") + '</div>' +
+                        '<button type="button" id="btnRetryDoc" class="btn-action-primary" style="margin-top:8px;">' + (isKhmer() ? "ផ្ទុកឡើងវិញ (Refresh)" : "Refresh Document") + '</button>' +
+                    '</div>';
+                var btnRetry = $("btnRetryDoc");
+                if (btnRetry) btnRetry.addEventListener("click", renderEmbeddedExporter);
+                return;
+            }
+
+            mountExporterForm(meta);
+        });
+    }
+
+    function mountExporterForm(meta) {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_exporter_settings", "{}")); } catch (e) {}
+
+        var state = {
+            scope: saved.scope || "all",
+            customRange: saved.customRange || ("1-" + Math.min(meta.totalArtboards, 5)),
+            pdf: saved.pdf !== undefined ? saved.pdf : true,
+            pdfPreset: saved.pdfPreset || (meta.pdfPresets && meta.pdfPresets[0] ? meta.pdfPresets[0] : "[High Quality Print]"),
+            pdfCombined: saved.pdfCombined === true,
+            tiff: saved.tiff === true,
+            tiffDpi: saved.tiffDpi || 300,
+            tiffColor: saved.tiffColor || (meta.colorSpace === "RGB" ? "RGB" : "CMYK"),
+            tiffLzw: saved.tiffLzw !== undefined ? saved.tiffLzw : true,
+            png: saved.png === true,
+            pngDpi: saved.pngDpi || 300,
+            pngTrans: saved.pngTrans !== undefined ? saved.pngTrans : true,
+            jpg: saved.jpg === true,
+            jpgDpi: saved.jpgDpi || 300,
+            outline: saved.outline === true,
+            template: saved.template || "[doc]_[ab]_[w]x[h][unit]",
+            unit: saved.unit || meta.defaultUnit || "mm",
+            destFolder: saved.destFolder || meta.docPath || "",
+            useSubfolder: saved.useSubfolder === true,
+            subfolderName: saved.subfolderName || "Export",
+            openFolder: saved.openFolder !== undefined ? saved.openFolder : true
+        };
+
+        var namingPresets = [
+            { label: "Doc_Artboard_Size", pattern: "[doc]_[ab]_[w]x[h][unit]" },
+            { label: "Doc_Artboard", pattern: "[doc]_[ab]" },
+            { label: "Artboard_Size", pattern: "[ab]_[w]x[h][unit]" },
+            { label: "01_Doc_Artboard", pattern: "[num]_[doc]_[ab]" },
+            { label: "Doc_01", pattern: "[doc]_[num]" },
+            { label: "Timestamp", pattern: "[doc]_[ab]_[date]_[time]" },
+            { label: "Custom", pattern: "" }
+        ];
+
+        var html = [];
+
+        // 1. Doc Info Bar
+        html.push('<div class="embed-doc-bar">');
+        html.push('  <span class="embed-doc-name" title="' + escapeHtml(meta.fullDocName) + '">' + escapeHtml(meta.fullDocName) + '</span>');
+        html.push('  <div class="embed-doc-tags">');
+        html.push('    <span class="embed-tag">' + escapeHtml(meta.colorSpace) + '</span>');
+        html.push('    <span class="embed-tag ' + (meta.isSaved ? "tag-saved" : "tag-unsaved") + '">' + (meta.isSaved ? "Saved" : "Unsaved") + '</span>');
+        html.push('    <span class="embed-tag">' + meta.totalArtboards + ' AB</span>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Scope Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ផ្ទាំងគំនូរគោលដៅ" : "Target Artboards") + '</span></div>');
+        html.push('  <div class="embed-segmented" id="expScopeSegmented">');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.scope === "all" ? "active" : "") + '" data-scope="all">' + (isKhmer() ? "ទាំងអស់" : "All") + ' (' + meta.totalArtboards + ')</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.scope === "active" ? "active" : "") + '" data-scope="active">' + (isKhmer() ? "សកម្ម" : "Active") + ' (#' + (meta.activeArtboardIndex + 1) + ')</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.scope === "range" ? "active" : "") + '" data-scope="range">' + (isKhmer() ? "ចន្លោះ" : "Range") + '</button>');
+        html.push('  </div>');
+        html.push('  <div class="embed-range-row" id="expRangeRow" style="display:' + (state.scope === "range" ? "flex" : "none") + ';">');
+        html.push('    <label>' + (isKhmer() ? "ចន្លោះ (ឧ. 1-3, 5)៖" : "Range (e.g. 1-3, 5):") + '</label>');
+        html.push('    <input type="text" id="expRangeInput" class="embed-input" value="' + escapeHtml(state.customRange) + '" style="flex:1;">');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Formats Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់នាំចេញ" : "Export Formats") + '</span></div>');
+        html.push('  <div class="embed-format-group">');
+
+        // Format PDF
+        html.push('    <div class="embed-format-card ' + (state.pdf ? "active" : "") + '">');
+        html.push('      <div class="embed-format-top">');
+        html.push('        <label class="embed-format-label"><input type="checkbox" id="chkPdf" ' + (state.pdf ? "checked" : "") + '> PDF (Print / Vector)</label>');
+        html.push('      </div>');
+        html.push('      <div class="embed-format-options" id="optPdf" style="display:' + (state.pdf ? "flex" : "none") + ';">');
+        html.push('        <select id="selPdfPreset" class="embed-select" style="flex:1;">');
+        for (var p = 0; p < meta.pdfPresets.length; p++) {
+            var pr = meta.pdfPresets[p];
+            html.push('          <option value="' + escapeHtml(pr) + '" ' + (state.pdfPreset === pr ? "selected" : "") + '>' + escapeHtml(pr) + '</option>');
+        }
+        html.push('        </select>');
+        html.push('        <label class="embed-check-row" style="margin-left:4px;"><input type="radio" name="pdfMode" id="rbPdfSep" value="sep" ' + (!state.pdfCombined ? "checked" : "") + '> Separate</label>');
+        html.push('        <label class="embed-check-row"><input type="radio" name="pdfMode" id="rbPdfComb" value="comb" ' + (state.pdfCombined ? "checked" : "") + '> Multi-page</label>');
+        html.push('      </div>');
+        html.push('    </div>');
+
+        // Format TIFF
+        html.push('    <div class="embed-format-card ' + (state.tiff ? "active" : "") + '">');
+        html.push('      <div class="embed-format-top">');
+        html.push('        <label class="embed-format-label"><input type="checkbox" id="chkTiff" ' + (state.tiff ? "checked" : "") + '> TIFF (Prepress / RIP)</label>');
+        html.push('      </div>');
+        html.push('      <div class="embed-format-options" id="optTiff" style="display:' + (state.tiff ? "flex" : "none") + ';">');
+        html.push('        <select id="selTiffDpi" class="embed-select"><option value="300" ' + (state.tiffDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.tiffDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.tiffDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
+        html.push('        <select id="selTiffColor" class="embed-select"><option value="CMYK" ' + (state.tiffColor === "CMYK" ? "selected" : "") + '>CMYK</option><option value="RGB" ' + (state.tiffColor === "RGB" ? "selected" : "") + '>RGB</option></select>');
+        html.push('        <label class="embed-check-row"><input type="checkbox" id="chkTiffLzw" ' + (state.tiffLzw ? "checked" : "") + '> LZW</label>');
+        html.push('      </div>');
+        html.push('    </div>');
+
+        // Format PNG
+        html.push('    <div class="embed-format-card ' + (state.png ? "active" : "") + '">');
+        html.push('      <div class="embed-format-top">');
+        html.push('        <label class="embed-format-label"><input type="checkbox" id="chkPng" ' + (state.png ? "checked" : "") + '> PNG (Transparent Web)</label>');
+        html.push('      </div>');
+        html.push('      <div class="embed-format-options" id="optPng" style="display:' + (state.png ? "flex" : "none") + ';">');
+        html.push('        <select id="selPngDpi" class="embed-select"><option value="300" ' + (state.pngDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.pngDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.pngDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
+        html.push('        <label class="embed-check-row"><input type="checkbox" id="chkPngTrans" ' + (state.pngTrans ? "checked" : "") + '> Transparent</label>');
+        html.push('      </div>');
+        html.push('    </div>');
+
+        // Format JPEG
+        html.push('    <div class="embed-format-card ' + (state.jpg ? "active" : "") + '">');
+        html.push('      <div class="embed-format-top">');
+        html.push('        <label class="embed-format-label"><input type="checkbox" id="chkJpg" ' + (state.jpg ? "checked" : "") + '> JPEG (Client Proof)</label>');
+        html.push('      </div>');
+        html.push('      <div class="embed-format-options" id="optJpg" style="display:' + (state.jpg ? "flex" : "none") + ';">');
+        html.push('        <select id="selJpgDpi" class="embed-select"><option value="300" ' + (state.jpgDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.jpgDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.jpgDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
+        html.push('        <span style="font-size:11px;color:var(--text-muted);">Quality 100% (Max)</span>');
+        html.push('      </div>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Prepress Options
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ជម្រើសមុនបោះពុម្ព" : "Prepress Options") + '</span></div>');
+        html.push('  <label class="embed-check-row" title="Outlines all text frames for export, then restores the saved document so live text is preserved.">');
+        html.push('    <input type="checkbox" id="chkOutline" ' + (state.outline ? "checked" : "") + '>');
+        html.push('    <span>' + (isKhmer() ? "បម្លែងអក្សរទៅជា Outline មុននាំចេញ" : "Convert text to outlines before export") + '</span>');
+        html.push('  </label>');
+        html.push('</div>');
+
+        // 5. Dynamic File Naming Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ឈ្មោះឯកសារ" : "Dynamic File Naming") + '</span></div>');
+        html.push('  <div class="embed-naming-row">');
+        html.push('    <select id="selNamingPreset" class="embed-select" style="flex:1;">');
+        for (var np = 0; np < namingPresets.length; np++) {
+            var npo = namingPresets[np];
+            var isSel = (npo.pattern && npo.pattern === state.template);
+            html.push('      <option value="' + escapeHtml(npo.pattern) + '" ' + (isSel ? "selected" : "") + '>' + escapeHtml(npo.label) + '</option>');
+        }
+        html.push('    </select>');
+        html.push('    <select id="selNamingUnit" class="embed-select" style="width:65px;">');
+        var units = ["mm", "cm", "in", "pt"];
+        for (var u = 0; u < units.length; u++) {
+            html.push('      <option value="' + units[u] + '" ' + (state.unit === units[u] ? "selected" : "") + '>' + units[u] + '</option>');
+        }
+        html.push('    </select>');
+        html.push('    <select id="selNamingTag" class="embed-select" style="width:85px;">');
+        html.push('      <option value="">+ Tag... ▾</option>');
+        html.push('      <option value="[doc]">[doc] Document</option>');
+        html.push('      <option value="[ab]">[ab] Artboard</option>');
+        html.push('      <option value="[w]">[w] Width</option>');
+        html.push('      <option value="[h]">[h] Height</option>');
+        html.push('      <option value="[unit]">[unit] Unit</option>');
+        html.push('      <option value="[num]">[num] 01, 02</option>');
+        html.push('      <option value="[raw_num]">[raw_num] 1, 2</option>');
+        html.push('      <option value="[date]">[date] YYYY-MM-DD</option>');
+        html.push('      <option value="[time]">[time] HHMM</option>');
+        html.push('      <option value="[color]">[color] Color</option>');
+        html.push('      <option value="[fmt]">[fmt] Format</option>');
+        html.push('    </select>');
+        html.push('  </div>');
+        html.push('  <input type="text" id="expTemplateInput" class="embed-input embed-input-mono" value="' + escapeHtml(state.template) + '">');
+        html.push('  <div class="embed-naming-preview" id="expNamingPreview">→ Preview</div>');
+        html.push('  <div class="embed-naming-info" id="expNamingInfo"></div>');
+        html.push('</div>');
+
+        // 6. Destination Folder Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ថតគោលដៅ" : "Destination Folder") + '</span></div>');
+        html.push('  <div class="embed-browse-row">');
+        html.push('    <input type="text" id="expDestInput" class="embed-input" value="' + escapeHtml(state.destFolder) + '">');
+        html.push('    <button type="button" id="btnBrowseDest" class="embed-btn-browse">' + (isKhmer() ? "ជ្រើសរើស..." : "Browse...") + '</button>');
+        html.push('  </div>');
+        html.push('  <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkUseSubfolder" ' + (state.useSubfolder ? "checked" : "") + '> ' + (isKhmer() ? "ថតរង" : "Subfolder") + ':</label>');
+        html.push('    <input type="text" id="expSubfolderInput" class="embed-input" value="' + escapeHtml(state.subfolderName) + '" style="width:100px;' + (state.useSubfolder ? "" : "opacity:0.5;") + '" ' + (state.useSubfolder ? "" : "disabled") + '>');
+        html.push('  </div>');
+        html.push('  <label class="embed-check-row"><input type="checkbox" id="chkOpenFolder" ' + (state.openFolder ? "checked" : "") + '> ' + (isKhmer() ? "បើកថតពេលរួចរាល់" : "Open folder when finished") + '</label>');
+        html.push('</div>');
+
+        // 7. Sticky Action Footer
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnExportSubmit" class="btn-action-primary">🚀 ' + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        // Wire elements
+        var scopeBtns = embeddedContent.querySelectorAll("#expScopeSegmented .embed-seg-btn");
+        var expRangeRow = $("expRangeRow");
+        var expRangeInput = $("expRangeInput");
+        var chkPdf = $("chkPdf");
+        var optPdf = $("optPdf");
+        var selPdfPreset = $("selPdfPreset");
+        var rbPdfSep = $("rbPdfSep");
+        var rbPdfComb = $("rbPdfComb");
+        var chkTiff = $("chkTiff");
+        var optTiff = $("optTiff");
+        var selTiffDpi = $("selTiffDpi");
+        var selTiffColor = $("selTiffColor");
+        var chkTiffLzw = $("chkTiffLzw");
+        var chkPng = $("chkPng");
+        var optPng = $("optPng");
+        var selPngDpi = $("selPngDpi");
+        var chkPngTrans = $("chkPngTrans");
+        var chkJpg = $("chkJpg");
+        var optJpg = $("optJpg");
+        var selJpgDpi = $("selJpgDpi");
+        var chkOutline = $("chkOutline");
+        var selNamingPreset = $("selNamingPreset");
+        var selNamingUnit = $("selNamingUnit");
+        var selNamingTag = $("selNamingTag");
+        var expTemplateInput = $("expTemplateInput");
+        var expNamingPreview = $("expNamingPreview");
+        var expNamingInfo = $("expNamingInfo");
+        var expDestInput = $("expDestInput");
+        var btnBrowseDest = $("btnBrowseDest");
+        var chkUseSubfolder = $("chkUseSubfolder");
+        var expSubfolderInput = $("expSubfolderInput");
+        var chkOpenFolder = $("chkOpenFolder");
+        var btnExportSubmit = $("btnExportSubmit");
+
+        function updateExportPreview() {
+            var ext = chkPdf.checked ? "pdf" : (chkTiff.checked ? "tif" : (chkPng.checked ? "png" : (chkJpg.checked ? "jpg" : "pdf")));
+            var isComb = chkPdf.checked && rbPdfComb.checked;
+            var abIndex = state.scope === "active" ? meta.activeArtboardIndex : 0;
+            var ab = meta.artboards && meta.artboards[abIndex] ? meta.artboards[abIndex] : null;
+            var sampleName = buildPreviewSample(expTemplateInput.value, meta.docName, ab, ext, selNamingUnit.value, isComb);
+            expNamingPreview.textContent = "→ " + sampleName;
+
+            var abCount = 0;
+            if (state.scope === "all") {
+                abCount = meta.totalArtboards;
+            } else if (state.scope === "active") {
+                abCount = 1;
+            } else {
+                var rangeArr = (expRangeInput.value || "").split(",");
+                var count = 0;
+                for (var r = 0; r < rangeArr.length; r++) {
+                    var prt = rangeArr[r].trim();
+                    if (prt.indexOf("-") !== -1) {
+                        var parts = prt.split("-");
+                        var start = parseInt(parts[0], 10);
+                        var end = parseInt(parts[1], 10);
+                        if (!isNaN(start) && !isNaN(end)) count += Math.max(0, Math.abs(end - start) + 1);
+                    } else if (parseInt(prt, 10)) {
+                        count++;
+                    }
+                }
+                abCount = count > 0 ? count : meta.totalArtboards;
+            }
+
+            var fmtCount = (chkPdf.checked ? 1 : 0) + (chkTiff.checked ? 1 : 0) + (chkPng.checked ? 1 : 0) + (chkJpg.checked ? 1 : 0);
+            var fileCount = 0;
+            if (chkPdf.checked) fileCount += isComb ? 1 : abCount;
+            if (chkTiff.checked) fileCount += abCount;
+            if (chkPng.checked) fileCount += abCount;
+            if (chkJpg.checked) fileCount += abCount;
+
+            expNamingInfo.textContent = abCount + " " + (isKhmer() ? "ផ្ទាំងគំនូរ" : "artboard(s)") + " • " +
+                fmtCount + " " + (isKhmer() ? "ទម្រង់" : "format(s)") + " • " +
+                fileCount + " " + (isKhmer() ? "ឯកសារសរុប" : "file(s) total");
+
+            state.customRange = expRangeInput.value;
+            state.pdf = chkPdf.checked;
+            state.pdfPreset = selPdfPreset.value;
+            state.pdfCombined = rbPdfComb.checked;
+            state.tiff = chkTiff.checked;
+            state.tiffDpi = parseInt(selTiffDpi.value, 10) || 300;
+            state.tiffColor = selTiffColor.value;
+            state.tiffLzw = chkTiffLzw.checked;
+            state.png = chkPng.checked;
+            state.pngDpi = parseInt(selPngDpi.value, 10) || 300;
+            state.pngTrans = chkPngTrans.checked;
+            state.jpg = chkJpg.checked;
+            state.jpgDpi = parseInt(selJpgDpi.value, 10) || 300;
+            state.outline = chkOutline.checked;
+            state.template = expTemplateInput.value;
+            state.unit = selNamingUnit.value;
+            state.destFolder = expDestInput.value;
+            state.useSubfolder = chkUseSubfolder.checked;
+            state.subfolderName = expSubfolderInput.value;
+            state.openFolder = chkOpenFolder.checked;
+
+            store.set("ozo_exporter_settings", JSON.stringify(state));
+        }
+
+        // Scope handlers
+        for (var b = 0; b < scopeBtns.length; b++) {
+            scopeBtns[b].addEventListener("click", function () {
+                for (var sb = 0; sb < scopeBtns.length; sb++) scopeBtns[sb].classList.remove("active");
+                this.classList.add("active");
+                state.scope = this.getAttribute("data-scope");
+                expRangeRow.style.display = (state.scope === "range") ? "flex" : "none";
+                updateExportPreview();
+            });
+        }
+        expRangeInput.addEventListener("input", updateExportPreview);
+
+        // Format handlers
+        chkPdf.addEventListener("change", function () {
+            optPdf.style.display = this.checked ? "flex" : "none";
+            var card = closest(this, ".embed-format-card");
+            if (card) card.classList.toggle("active", this.checked);
+            updateExportPreview();
+        });
+        selPdfPreset.addEventListener("change", updateExportPreview);
+        rbPdfSep.addEventListener("change", updateExportPreview);
+        rbPdfComb.addEventListener("change", updateExportPreview);
+
+        chkTiff.addEventListener("change", function () {
+            optTiff.style.display = this.checked ? "flex" : "none";
+            var card = closest(this, ".embed-format-card");
+            if (card) card.classList.toggle("active", this.checked);
+            updateExportPreview();
+        });
+        selTiffDpi.addEventListener("change", updateExportPreview);
+        selTiffColor.addEventListener("change", updateExportPreview);
+        chkTiffLzw.addEventListener("change", updateExportPreview);
+
+        chkPng.addEventListener("change", function () {
+            optPng.style.display = this.checked ? "flex" : "none";
+            var card = closest(this, ".embed-format-card");
+            if (card) card.classList.toggle("active", this.checked);
+            updateExportPreview();
+        });
+        selPngDpi.addEventListener("change", updateExportPreview);
+        chkPngTrans.addEventListener("change", updateExportPreview);
+
+        chkJpg.addEventListener("change", function () {
+            optJpg.style.display = this.checked ? "flex" : "none";
+            var card = closest(this, ".embed-format-card");
+            if (card) card.classList.toggle("active", this.checked);
+            updateExportPreview();
+        });
+        selJpgDpi.addEventListener("change", updateExportPreview);
+        chkOutline.addEventListener("change", updateExportPreview);
+
+        // Naming handlers
+        selNamingPreset.addEventListener("change", function () {
+            if (this.value) {
+                expTemplateInput.value = this.value;
+                updateExportPreview();
+            }
+        });
+        selNamingUnit.addEventListener("change", updateExportPreview);
+        selNamingTag.addEventListener("change", function () {
+            if (this.value) {
+                expTemplateInput.value += this.value;
+                this.selectedIndex = 0;
+                updateExportPreview();
+            }
+        });
+        expTemplateInput.addEventListener("input", updateExportPreview);
+
+        // Destination folder
+        btnBrowseDest.addEventListener("click", function () {
+            if (!csInterface) {
+                expDestInput.value = "C:/Projects/Export/Batch_Out";
+                updateExportPreview();
+                return;
+            }
+            csInterface.evalScript("ozoPickDestinationFolder(" + JSON.stringify(expDestInput.value) + ")", function (raw) {
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+                if (res && res.status === "success" && res.folder) {
+                    expDestInput.value = res.folder;
+                    updateExportPreview();
+                }
+            });
+        });
+
+        chkUseSubfolder.addEventListener("change", function () {
+            expSubfolderInput.disabled = !this.checked;
+            expSubfolderInput.style.opacity = this.checked ? "1" : "0.5";
+            updateExportPreview();
+        });
+        expSubfolderInput.addEventListener("input", updateExportPreview);
+        chkOpenFolder.addEventListener("change", updateExportPreview);
+
+        // Submit Export
+        btnExportSubmit.addEventListener("click", function () {
+            var fmtCount = (chkPdf.checked ? 1 : 0) + (chkTiff.checked ? 1 : 0) + (chkPng.checked ? 1 : 0) + (chkJpg.checked ? 1 : 0);
+            if (fmtCount === 0) {
+                showError("Batch Export", isKhmer() ? "សូមជ្រើសរើសទម្រង់យ៉ាងហោចមួយដើម្បីនាំចេញ។" : "Please select at least one format to export.");
+                return;
+            }
+            if (!expDestInput.value.trim()) {
+                showError("Batch Export", isKhmer() ? "សូមជ្រើសរើសថតគោលដៅ។" : "Please choose a destination folder.");
+                return;
+            }
+
+            hideError();
+            btnExportSubmit.disabled = true;
+            btnExportSubmit.textContent = isKhmer() ? "⏳ កំពុងនាំចេញ..." : "⏳ Exporting...";
+            setStatus(isKhmer() ? "កំពុងនាំចេញឯកសារ..." : "Batch exporting artboards...", "running");
+
+            var exportConfig = {
+                scope: state.scope,
+                customRange: expRangeInput.value,
+                formats: {
+                    pdf: { enabled: chkPdf.checked, preset: selPdfPreset.value, combined: rbPdfComb.checked },
+                    tiff: { enabled: chkTiff.checked, dpi: parseInt(selTiffDpi.value, 10) || 300, colorSpace: selTiffColor.value, lzw: chkTiffLzw.checked },
+                    png: { enabled: chkPng.checked, dpi: parseInt(selPngDpi.value, 10) || 300, transparency: chkPngTrans.checked },
+                    jpg: { enabled: chkJpg.checked, dpi: parseInt(selJpgDpi.value, 10) || 300, quality: 100 }
+                },
+                template: expTemplateInput.value,
+                unit: selNamingUnit.value,
+                destFolder: expDestInput.value,
+                useSubfolder: chkUseSubfolder.checked,
+                subfolderName: expSubfolderInput.value,
+                openFolder: chkOpenFolder.checked,
+                outline: chkOutline.checked
+            };
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btnExportSubmit.disabled = false;
+                    btnExportSubmit.textContent = "🚀 " + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now");
+                    setStatus("Simulated Export Complete (2 files)", "success", 4000);
+                }, 1200);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteBatchExport(" + JSON.stringify(JSON.stringify(exportConfig)) + ")", function (raw) {
+                btnExportSubmit.disabled = false;
+                btnExportSubmit.textContent = "🚀 " + (isKhmer() ? "នាំចេញឥឡូវនេះ" : "Export Now");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "success") {
+                    var successMsg = (isKhmer() ? "នាំចេញបានជោគជ័យ៖ " : "Export complete: ") + res.count + " " + (isKhmer() ? "ឯកសារ" : "file(s)") + " → " + res.folder;
+                    setStatus(successMsg, "success", 6000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Export failed");
+                    showError(isKhmer() ? "ការនាំចេញបរាជ័យ" : "Export Failed", errMsg);
+                    setStatus(isKhmer() ? "ការនាំចេញបរាជ័យ៖ " + errMsg : "Export failed: " + errMsg, "error", 6000);
+                }
+            });
+        });
+
+        updateExportPreview();
+    }
+
+    // -------------------------------------------------------------
+    // QR Code In-Dock View
+    // -------------------------------------------------------------
+    function renderEmbeddedQR() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_qr_settings", "{}")); } catch (e) {}
+
+        var state = {
+            style: saved.style || "Normal",
+            content: saved.content || "https://",
+            size: saved.size || 30,
+            unit: saved.unit || "mm",
+            quietZone: saved.quietZone !== undefined ? saved.quietZone : 4,
+            level: saved.level || "M",
+            background: saved.background !== false,
+            newLayer: saved.newLayer === true,
+            theme: saved.theme || "Official Telegram Blue",
+            title: saved.title || "Telegram",
+            handle: saved.handle || "@telegram"
+        };
+
+        var html = [];
+
+        // 1. Style Segmented Control
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "រចនាប័ទ្ម QR" : "QR Style") + '</span></div>');
+        html.push('  <div class="embed-segmented" id="qrStyleSegmented">');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "Normal" ? "active" : "") + '" data-style="Normal">Standard</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "Telegram 2026 (Share Card)" ? "active" : "") + '" data-style="Telegram 2026 (Share Card)">Telegram Card</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "Telegram 2026 (QR Only)" ? "active" : "") + '" data-style="Telegram 2026 (QR Only)">Telegram QR</button>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Content Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "មាតិកា QR" : "QR Content") + '</span></div>');
+        html.push('  <div class="embed-chips">');
+        html.push('    <button type="button" class="embed-chip" data-tpl="https://">URL</button>');
+        html.push('    <button type="button" class="embed-chip" data-tpl="WIFI:T:WPA;S:Network;P:Password;;">Wi-Fi</button>');
+        html.push('    <button type="button" class="embed-chip" data-tpl="BEGIN:VCARD\nVERSION:3.0\nFN:Name\nTEL:+855\nEND:VCARD">Contact</button>');
+        html.push('    <button type="button" class="embed-chip" data-tpl="tel:+855">Phone</button>');
+        html.push('  </div>');
+        html.push('  <textarea id="qrContentInput" class="embed-textarea" placeholder="Enter text, URL, or data...">' + escapeHtml(state.content) + '</textarea>');
+        html.push('  <div class="embed-naming-info" id="qrCharCount"></div>');
+        html.push('</div>');
+
+        // 3. Size & Options Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទំហំ និងជម្រើស" : "Dimensions & Options") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទំហំបញ្ចប់៖" : "Size:") + '</label>');
+        html.push('      <div style="display:flex;gap:4px;margin-top:2px;">');
+        html.push('        <input type="number" id="qrSizeInput" class="embed-input" value="' + state.size + '" style="flex:1;" min="1" step="1">');
+        html.push('        <select id="qrUnitSelect" class="embed-select" style="width:60px;">');
+        var qrUnits = ["mm", "cm", "in"];
+        for (var qu = 0; qu < qrUnits.length; qu++) {
+            html.push('          <option value="' + qrUnits[qu] + '" ' + (state.unit === qrUnits[qu] ? "selected" : "") + '>' + qrUnits[qu] + '</option>');
+        }
+        html.push('        </select>');
+        html.push('      </div>');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "កម្រិតកែកំហុស៖" : "Correction:") + '</label>');
+        html.push('      <select id="qrCorrectionSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('        <option value="L" ' + (state.level === "L" ? "selected" : "") + '>L - 7%</option>');
+        html.push('        <option value="M" ' + (state.level === "M" ? "selected" : "") + '>M - 15%</option>');
+        html.push('        <option value="Q" ' + (state.level === "Q" ? "selected" : "") + '>Q - 25%</option>');
+        html.push('        <option value="H" ' + (state.level === "H" ? "selected" : "") + '>H - 30%</option>');
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div style="display:flex;gap:12px;margin-top:4px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkQrBg" ' + (state.background ? "checked" : "") + '> White Background</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkQrNewLayer" ' + (state.newLayer ? "checked" : "") + '> New Layer</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Telegram Style Options
+        var isTg = (state.style.indexOf("Telegram") !== -1);
+        html.push('<div class="embed-card" id="qrTelegramCard" style="display:' + (isTg ? "flex" : "none") + ';">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ជម្រើស Telegram 2026" : "Telegram Options") + '</span></div>');
+        html.push('  <div>');
+        html.push('    <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ពណ៌រចនាប័ទ្ម៖" : "Theme:") + '</label>');
+        html.push('    <select id="qrTgThemeSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        var tgThemes = ["Official Telegram Blue", "Midnight Dark", "Vibrant Cyan", "Classic Black"];
+        for (var tt = 0; tt < tgThemes.length; tt++) {
+            html.push('      <option value="' + tgThemes[tt] + '" ' + (state.theme === tgThemes[tt] ? "selected" : "") + '>' + tgThemes[tt] + '</option>');
+        }
+        html.push('    </select>');
+        html.push('  </div>');
+        html.push('  <div id="qrTgCardFields" style="display:' + (state.style === "Telegram 2026 (Share Card)" ? "flex" : "none") + ';flex-direction:column;gap:6px;">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ឈ្មោះបង្ហាញ៖" : "Display Name:") + '</label>');
+        html.push('      <input type="text" id="qrTgTitleInput" class="embed-input" value="' + escapeHtml(state.title) + '" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ឈ្មោះគណនី / តំណ៖" : "Username / Link:") + '</label>');
+        html.push('      <input type="text" id="qrTgHandleInput" class="embed-input" value="' + escapeHtml(state.handle) + '" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 5. Sticky Action Button
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnQrSubmit" class="btn-action-primary">➕ ' + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var styleBtns = embeddedContent.querySelectorAll("#qrStyleSegmented .embed-seg-btn");
+        var qrContentInput = $("qrContentInput");
+        var qrCharCount = $("qrCharCount");
+        var qrSizeInput = $("qrSizeInput");
+        var qrUnitSelect = $("qrUnitSelect");
+        var qrCorrectionSelect = $("qrCorrectionSelect");
+        var chkQrBg = $("chkQrBg");
+        var chkQrNewLayer = $("chkQrNewLayer");
+        var qrTelegramCard = $("qrTelegramCard");
+        var qrTgThemeSelect = $("qrTgThemeSelect");
+        var qrTgCardFields = $("qrTgCardFields");
+        var qrTgTitleInput = $("qrTgTitleInput");
+        var qrTgHandleInput = $("qrTgHandleInput");
+        var btnQrSubmit = $("btnQrSubmit");
+
+        function updateQRState() {
+            var len = qrContentInput.value.length;
+            qrCharCount.textContent = len + " " + (isKhmer() ? "តួអក្សរ" : "characters") + (len > 0 ? " • " + (isKhmer() ? "រួចរាល់សម្រាប់បង្កើត" : "Ready to generate") : "");
+
+            state.content = qrContentInput.value;
+            state.size = parseFloat(qrSizeInput.value) || 30;
+            state.unit = qrUnitSelect.value;
+            state.level = qrCorrectionSelect.value;
+            state.background = chkQrBg.checked;
+            state.newLayer = chkQrNewLayer.checked;
+            state.theme = qrTgThemeSelect.value;
+            state.title = qrTgTitleInput.value;
+            state.handle = qrTgHandleInput.value;
+
+            store.set("ozo_qr_settings", JSON.stringify(state));
+        }
+
+        // Style Segmented
+        for (var s = 0; s < styleBtns.length; s++) {
+            styleBtns[s].addEventListener("click", function () {
+                for (var sb = 0; sb < styleBtns.length; sb++) styleBtns[sb].classList.remove("active");
+                this.classList.add("active");
+                state.style = this.getAttribute("data-style");
+                var tg = (state.style.indexOf("Telegram") !== -1);
+                qrTelegramCard.style.display = tg ? "flex" : "none";
+                qrTgCardFields.style.display = (state.style === "Telegram 2026 (Share Card)") ? "flex" : "none";
+                if (tg) {
+                    qrCorrectionSelect.value = "M";
+                    qrCorrectionSelect.disabled = true;
+                } else {
+                    qrCorrectionSelect.disabled = false;
+                }
+                updateQRState();
+            });
+        }
+
+        // Template chips
+        var chips = embeddedContent.querySelectorAll(".embed-chip");
+        for (var c = 0; c < chips.length; c++) {
+            chips[c].addEventListener("click", function () {
+                qrContentInput.value = this.getAttribute("data-tpl");
+                qrContentInput.focus();
+                updateQRState();
+            });
+        }
+
+        qrContentInput.addEventListener("input", updateQRState);
+        qrSizeInput.addEventListener("input", updateQRState);
+        qrUnitSelect.addEventListener("change", updateQRState);
+        qrCorrectionSelect.addEventListener("change", updateQRState);
+        chkQrBg.addEventListener("change", updateQRState);
+        chkQrNewLayer.addEventListener("change", updateQRState);
+        qrTgThemeSelect.addEventListener("change", updateQRState);
+        qrTgTitleInput.addEventListener("input", updateQRState);
+        qrTgHandleInput.addEventListener("input", updateQRState);
+
+        // Submit QR
+        btnQrSubmit.addEventListener("click", function () {
+            var txt = qrContentInput.value.trim();
+            if (!txt) {
+                showError("Generate QR Code", isKhmer() ? "សូមបញ្ចូលអត្ថបទ ឬតំណ URL សម្រាប់កូដ QR។" : "Enter text, a URL, or contact data for the QR code.");
+                return;
+            }
+
+            hideError();
+            btnQrSubmit.disabled = true;
+            btnQrSubmit.textContent = isKhmer() ? "⏳ កំពុងបង្កើត..." : "⏳ Generating...";
+            setStatus(isKhmer() ? "កំពុងបង្កើតកូដ QR..." : "Generating vector QR code...", "running");
+
+            var qrParams = {
+                content: txt,
+                size: parseFloat(qrSizeInput.value) || 30,
+                unit: qrUnitSelect.value,
+                style: state.style,
+                level: qrCorrectionSelect.value,
+                quietZone: 4,
+                background: chkQrBg.checked,
+                newLayer: chkQrNewLayer.checked,
+                telegramTheme: qrTgThemeSelect.value,
+                telegramTitle: qrTgTitleInput.value,
+                telegramHandle: qrTgHandleInput.value
+            };
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btnQrSubmit.disabled = false;
+                    btnQrSubmit.textContent = "➕ " + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code");
+                    setStatus("Simulated QR Inserted (Browser Preview)", "success", 4000);
+                }, 1000);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteGenerateQR(" + JSON.stringify(JSON.stringify(qrParams)) + ")", function (raw) {
+                btnQrSubmit.disabled = false;
+                btnQrSubmit.textContent = "➕ " + (isKhmer() ? "បញ្ចូលកូដ QR វ៉ិចទ័រ" : "Insert Vector QR Code");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "success") {
+                    var successMsg = (isKhmer() ? "បានបង្កើតកូដ QR វ៉ិចទ័រជោគជ័យ (ជំនាន់ " : "QR code inserted: Version ") + res.version + " (" + res.modules + "x" + res.modules + " modules)";
+                    setStatus(successMsg, "success", 5000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to generate QR code");
+                    showError(isKhmer() ? "ការបង្កើត QR បរាជ័យ" : "QR Generation Failed", errMsg);
+                    setStatus(isKhmer() ? "ការបង្កើត QR បរាជ័យ៖ " + errMsg : "QR generation failed: " + errMsg, "error", 6000);
+                }
+            });
+        });
+
+        updateQRState();
+    }
+
+    // -------------------------------------------------------------
+    // Generic In-Dock View (for other tools)
+    // -------------------------------------------------------------
+    function renderEmbeddedGeneric(tool) {
+        var name = toolName(tool);
+        var desc = toolDesc(tool);
+
+        var html = [];
+        html.push('<div class="embed-generic-card">');
+        html.push('  <div class="embed-generic-icon">' + tool.icon + '</div>');
+        html.push('  <div class="embed-generic-title">' + escapeHtml(name) + '</div>');
+        html.push('  <span class="tool-badge badge-' + tool.category + '">' + escapeHtml(t("cat." + tool.category)) + '</span>');
+        html.push('  <div class="embed-generic-desc">' + escapeHtml(desc) + '</div>');
+        html.push('  <div style="font-size:10.5px;color:var(--text-muted);font-family:monospace;">' + escapeHtml(tool.file) + '</div>');
+        html.push('  <div class="embed-generic-actions">');
+        html.push('    <button type="button" id="btnGenericRun" class="btn-action-primary">▶ ' + (isKhmer() ? "ដំណើរការក្នុង Illustrator" : "Run in Illustrator") + '</button>');
+        html.push('    <button type="button" id="btnGenericDialog" class="btn-action-secondary">↗ ' + (isKhmer() ? "បើកផ្ទាំងបញ្ជា (Dialog)" : "Open Dialog Window") + '</button>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var btnRun = $("btnGenericRun");
+        var btnDialog = $("btnGenericDialog");
+        if (btnRun) btnRun.addEventListener("click", function () { runScript(tool); });
+        if (btnDialog) btnDialog.addEventListener("click", function () { runScript(tool); });
+    }
+
+    // ------------------------------------------------------------------
     // Events
     // ------------------------------------------------------------------
     // One delegated click handler for every card, star and Run button
@@ -725,7 +1576,7 @@
         var tool = toolById[card.getAttribute("data-id")];
         if (!tool) return;
         if (closest(e.target, ".fav-btn", card)) toggleFavorite(tool.id);
-        else runScript(tool);
+        else openEmbeddedView(tool.id);
     });
 
     toolList.addEventListener("keydown", function (e) {
@@ -738,7 +1589,7 @@
 
         if (key === "Enter" || key === " ") {
             e.preventDefault();
-            if (tool) runScript(tool);
+            if (tool) openEmbeddedView(tool.id);
         } else if (key === "f" || key === "F") {
             e.preventDefault();
             if (tool) toggleFavorite(tool.id);
@@ -787,10 +1638,13 @@
 
         if (key === "/" && !editing && !e.ctrlKey && !e.metaKey && !e.altKey) {
             e.preventDefault();
+            if (activeEmbeddedTool) closeEmbeddedView();
             searchInput.focus();
             searchInput.select();
         } else if (key === "Escape") {
-            if (searchInput.value) {
+            if (activeEmbeddedTool && !editing) {
+                closeEmbeddedView();
+            } else if (searchInput.value) {
                 clearSearch(false);
                 if (active === searchInput) searchInput.blur();
             } else if (active === searchInput) {
@@ -800,6 +1654,18 @@
             }
         }
     });
+
+    if (embeddedBackBtn) {
+        embeddedBackBtn.addEventListener("click", closeEmbeddedView);
+    }
+
+    if (embeddedDialogBtn) {
+        embeddedDialogBtn.addEventListener("click", function () {
+            if (activeEmbeddedTool) {
+                runScript(activeEmbeddedTool);
+            }
+        });
+    }
 
     searchClearBtn.addEventListener("click", function () { clearSearch(true); });
     emptyClearBtn.addEventListener("click", function () { clearSearch(true); });
@@ -816,7 +1682,11 @@
         currentLang = isKhmer() ? "en" : "km";
         store.set("ozo_lang", currentLang);
         applyI18n();
-        renderTools();
+        if (activeEmbeddedTool) {
+            openEmbeddedView(activeEmbeddedTool.id);
+        } else {
+            renderTools();
+        }
         setStatus(t("lang.switched"), "success", 2500);
     });
 
@@ -843,7 +1713,13 @@
     donateBtn.addEventListener("click", function () { openExternalURL(DONATE_URL); });
 
     refreshBtn.addEventListener("click", function () {
-        renderTools();
+        if (activeEmbeddedTool) {
+            if (activeEmbeddedTool.id === "exporter") renderEmbeddedExporter();
+            else if (activeEmbeddedTool.id === "qr") renderEmbeddedQR();
+            else renderEmbeddedGeneric(activeEmbeddedTool);
+        } else {
+            renderTools();
+        }
         refreshDocumentStatus();
         checkForUpdates(true);
         setStatus(t("refreshed"), "success", 2000);
@@ -940,10 +1816,8 @@
     function initHost() {
         var extPath = getExtensionPath();
         if (!extPath) return;
-        csInterface.evalScript("typeof ozoRunScript", function (type) {
-            if (type !== "function") loadHostScript(extPath);
-            csInterface.evalScript("ozoInitExtensionPath(" + JSON.stringify(extPath) + ")");
-        });
+        loadHostScript(extPath);
+        csInterface.evalScript("ozoInitExtensionPath(" + JSON.stringify(extPath) + ")");
     }
 
     // ------------------------------------------------------------------

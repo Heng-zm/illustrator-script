@@ -4,13 +4,14 @@
   <img src="assets/logo.png" alt="Ozo Tools Logo" width="520">
 </p>
 
-> **Ozo Tools — Professional Adobe Illustrator Plugin & Automation Script Suite (v2.3)**  
+> **Ozo Tools — Professional Adobe Illustrator Plugin & Automation Script Suite (v2.4)**  
 > Production-ready ExtendScript (ES3) tools and dockable CEP extension panel for print shops, signage, vinyl cutters, packaging, and design automation.
 
 ---
 
 ## Features Overview
 
+- **In-Dock Embedded Execution**: Run and configure batch artboard exporter, vector QR generator, etc., directly inside the dock panel with zero modal dialogs.
 - **Dockable CEP Extension Panel**: HTML5 panel accessible via `Window > Extensions > Ozo Tools` that docks alongside Layers, Properties, and Tools.
 - **Native Menu Integration**: Access scripts directly via `File > Scripts > Ozo Tools > ...` with custom keyboard shortcut support (`Ctrl+F12` / custom shortcuts).
 - **Dual Language Support**: Instant toggle between **English** and **Khmer (ភាសាខ្មែរ)**.

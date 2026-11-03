@@ -48,7 +48,7 @@
         </div>
     </header>
 
-    <!-- Update Notification Banner (shown when a newer GitHub release exists) -->
+    <!-- Update Notification Banner -->
     <div id="updateBanner" class="update-banner" hidden>
         <div class="update-banner-content">
             <span class="update-icon" aria-hidden="true">&#9889;</span>
@@ -60,7 +60,7 @@
         </div>
     </div>
 
-    <!-- Script / update error banner (replaces blocking alert() dialogs) -->
+    <!-- Script / update error banner -->
     <div id="errorBanner" class="error-banner" role="alert" hidden>
         <div class="error-banner-body">
             <strong id="errorTitle" class="error-banner-title"></strong>
@@ -69,38 +69,67 @@
         <button type="button" id="errorDismissBtn" class="update-dismiss" data-i18n-title="dismiss" title="Dismiss">&times;</button>
     </div>
 
-    <!-- Search Input -->
-    <div class="search-container" role="search">
-        <div class="search-input-wrap">
-            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+    <!-- Catalog View (Tools Grid / List) -->
+    <div id="viewCatalog" class="view-catalog">
+        <!-- Search Input -->
+        <div class="search-container" role="search">
+            <div class="search-input-wrap">
+                <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <input type="text" id="searchInput" class="search-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="search.placeholder" placeholder="Search tools...">
+                <kbd id="searchKbdHint" aria-hidden="true" class="search-kbd" data-i18n-title="search.hint" title="Press / to search">/</kbd>
+                <button type="button" id="searchClearBtn" class="search-clear" data-i18n-title="search.clear" title="Clear search">&times;</button>
+            </div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div id="tabs" class="tabs-container" role="tablist">
+            <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-category="all"><span data-i18n="cat.all">All</span> <span class="tab-count" data-count="all"></span></button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="favorites"><span class="tab-star" aria-hidden="true">&#9733;</span> <span data-i18n="cat.favorites">Favorites</span> <span class="tab-count" data-count="favorites"></span></button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="prepress"><span data-i18n="cat.prepress">Prepress</span> <span class="tab-count" data-count="prepress"></span></button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="layout"><span data-i18n="cat.layout">Layout</span> <span class="tab-count" data-count="layout"></span></button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="utilities"><span data-i18n="cat.utilities">Utilities</span> <span class="tab-count" data-count="utilities"></span></button>
+        </div>
+
+        <!-- Tool Card List (rendered by js/main.js) -->
+        <main id="toolList" class="tool-list"></main>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" hidden>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="searchInput" class="search-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="search.placeholder" placeholder="Search tools...">
-            <kbd id="searchKbdHint" aria-hidden="true" class="search-kbd" data-i18n-title="search.hint" title="Press / to search">/</kbd>
-            <button type="button" id="searchClearBtn" class="search-clear" data-i18n-title="search.clear" title="Clear search">&times;</button>
+            <p id="emptyText"></p>
+            <button type="button" id="emptyClearBtn" class="empty-clear-btn" data-i18n="empty.clear" data-i18n-title="empty.clearTitle">Clear search</button>
         </div>
     </div>
 
-    <!-- Category Tabs -->
-    <div id="tabs" class="tabs-container" role="tablist">
-        <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-category="all"><span data-i18n="cat.all">All</span> <span class="tab-count" data-count="all"></span></button>
-        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="favorites"><span class="tab-star" aria-hidden="true">&#9733;</span> <span data-i18n="cat.favorites">Favorites</span> <span class="tab-count" data-count="favorites"></span></button>
-        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="prepress"><span data-i18n="cat.prepress">Prepress</span> <span class="tab-count" data-count="prepress"></span></button>
-        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="layout"><span data-i18n="cat.layout">Layout</span> <span class="tab-count" data-count="layout"></span></button>
-        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="utilities"><span data-i18n="cat.utilities">Utilities</span> <span class="tab-count" data-count="utilities"></span></button>
-    </div>
-
-    <!-- Tool Card List (rendered by js/main.js) -->
-    <main id="toolList" class="tool-list"></main>
-
-    <!-- Empty State (no search match / no favorites yet) -->
-    <div id="emptyState" class="empty-state" hidden>
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <p id="emptyText"></p>
-        <button type="button" id="emptyClearBtn" class="empty-clear-btn" data-i18n="empty.clear" data-i18n-title="empty.clearTitle">Clear search</button>
+    <!-- Embedded Tool View (controls directly inside the dock panel) -->
+    <div id="viewEmbedded" class="view-embedded" style="display: none;">
+        <div class="embedded-header">
+            <button type="button" id="embeddedBackBtn" class="embedded-back-btn" data-i18n-title="back.title" title="Back to Tools (Esc)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span data-i18n="back.tools">Tools</span>
+            </button>
+            <div class="embedded-title-wrap">
+                <span id="embeddedToolIcon" class="embedded-tool-icon" aria-hidden="true"></span>
+                <span id="embeddedToolTitle" class="embedded-tool-title"></span>
+            </div>
+            <button type="button" id="embeddedDialogBtn" class="embedded-dialog-btn" data-i18n-title="open.dialogTitle" title="Open as Floating Window Dialog">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                <span data-i18n="open.dialog">Dialog</span>
+            </button>
+        </div>
+        <div id="embeddedContent" class="embedded-content"></div>
     </div>
 
     <!-- Bottom Footer -->

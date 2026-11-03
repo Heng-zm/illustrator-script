@@ -542,3 +542,198 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
         return ozoJsonStringify({ status: "error", message: String(e && e.message ? e.message : e) });
     }
 }
+
+// -------------------------------------------------------------
+// In-Dock Headless Execution Bridge
+// -------------------------------------------------------------
+var __ozoHeadlessParams = null;
+var __ozoHeadlessResult = null;
+
+function ozoGetExportMetadata() {
+    try {
+        if (app.documents.length === 0) {
+            return ozoJsonStringify({
+                status: "error",
+                hasDoc: false,
+                message: "No document open in Illustrator"
+            });
+        }
+        var doc = app.activeDocument;
+        var isSaved = false;
+        var docPath = "";
+        try {
+            if (doc.fullName && doc.fullName.exists) {
+                isSaved = true;
+                docPath = doc.path.fsName;
+            }
+        } catch (eDocPath) {}
+
+        if (!docPath) {
+            try {
+                docPath = Folder.desktop.fsName;
+            } catch (eDesk) {
+                docPath = Folder.current.fsName;
+            }
+        }
+
+        var defaultUnit = "mm";
+        try {
+            var ruler = doc.rulerUnits;
+            if (ruler === RulerUnits.Millimeters) defaultUnit = "mm";
+            else if (ruler === RulerUnits.Centimeters) defaultUnit = "cm";
+            else if (ruler === RulerUnits.Inches) defaultUnit = "in";
+            else if (ruler === RulerUnits.Points) defaultUnit = "pt";
+            else if (ruler === RulerUnits.Pixels) defaultUnit = "px";
+        } catch (eUnit) {}
+
+        function cleanNum(num) {
+            var rounded = Math.round(num * 100) / 100;
+            return String(rounded).replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1");
+        }
+
+        function fromPt(pt, unit) {
+            if (unit === "mm") return pt / (72 / 25.4);
+            if (unit === "cm") return pt / (72 / 2.54);
+            if (unit === "in") return pt / 72;
+            return pt;
+        }
+
+        var artboards = [];
+        for (var i = 0; i < doc.artboards.length; i++) {
+            var ab = doc.artboards[i];
+            var rect = ab.artboardRect;
+            var widthPt = Math.abs(rect[2] - rect[0]);
+            var heightPt = Math.abs(rect[1] - rect[3]);
+            artboards.push({
+                index: i,
+                name: ab.name || ("Artboard " + (i + 1)),
+                width: cleanNum(fromPt(widthPt, defaultUnit)),
+                height: cleanNum(fromPt(heightPt, defaultUnit))
+            });
+        }
+
+        var pdfPresets = [];
+        try {
+            if (app.PDFPresetsList && app.PDFPresetsList.length > 0) {
+                for (var p = 0; p < app.PDFPresetsList.length; p++) {
+                    pdfPresets.push(String(app.PDFPresetsList[p]));
+                }
+            }
+        } catch (ePresets) {}
+        if (pdfPresets.length === 0) {
+            pdfPresets = ["[High Quality Print]", "[Press Quality]", "[Illustrator Default]", "[Smallest File Size]"];
+        }
+
+        return ozoJsonStringify({
+            status: "success",
+            hasDoc: true,
+            docName: doc.name.replace(/\.[^\.]+$/, ""),
+            fullDocName: doc.name,
+            isSaved: isSaved,
+            docPath: docPath,
+            defaultUnit: defaultUnit,
+            colorSpace: (doc.documentColorSpace === DocumentColorSpace.RGB) ? "RGB" : "CMYK",
+            totalArtboards: doc.artboards.length,
+            activeArtboardIndex: doc.artboards.getActiveArtboardIndex(),
+            artboards: artboards,
+            pdfPresets: pdfPresets
+        });
+    } catch (e) {
+        return ozoJsonStringify({
+            status: "error",
+            message: e && e.message ? e.message : String(e)
+        });
+    }
+}
+
+function ozoPickDestinationFolder(initialPath) {
+    try {
+        var startFolder = null;
+        if (initialPath && typeof initialPath === "string") {
+            var testF = new Folder(initialPath);
+            if (testF.exists) startFolder = testF;
+        }
+        var picked = Folder.selectDialog("Select Destination Folder", startFolder);
+        if (picked && picked.exists) {
+            return ozoJsonStringify({
+                status: "success",
+                folder: picked.fsName
+            });
+        }
+        return ozoJsonStringify({ status: "cancel" });
+    } catch (e) {
+        return ozoJsonStringify({ status: "error", message: String(e && e.message ? e.message : e) });
+    }
+}
+
+function ozoExecuteBatchExport(paramsJsonStr) {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Batch Production Exporter.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Batch Production Exporter.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Batch Production Exporter.jsx not found" });
+        }
+
+        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
+            ? JSON.parse(paramsJsonStr)
+            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "Export completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+function ozoExecuteGenerateQR(paramsJsonStr) {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Generate QR Code.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Generate QR Code.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Generate QR Code.jsx not found" });
+        }
+
+        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
+            ? JSON.parse(paramsJsonStr)
+            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "QR generation completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}

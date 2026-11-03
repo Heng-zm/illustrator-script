@@ -24,6 +24,10 @@
     var STATE_NAMESPACE = "batch_production_exporter_v3";
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("No Illustrator document is open."));
         return;
     }
@@ -199,6 +203,434 @@
             return sanitized;
         }
         return sanitized + ext;
+    }
+
+    function unlockAllForOutline(targetDoc) {
+        try {
+            var layers = targetDoc.layers;
+            for (var i = 0; i < layers.length; i++) {
+                try {
+                    if (layers[i].locked) layers[i].locked = false;
+                } catch (eL) {}
+            }
+            var textFrames = targetDoc.textFrames;
+            for (var j = 0; j < textFrames.length; j++) {
+                try {
+                    if (textFrames[j].locked) textFrames[j].locked = false;
+                } catch (eTf) {}
+            }
+        } catch (eUnlock) {}
+    }
+
+    function outlineAllText(targetDoc) {
+        var failed = 0;
+        try {
+            unlockAllForOutline(targetDoc);
+            var tfCount = targetDoc.textFrames.length;
+            for (var t = tfCount - 1; t >= 0; t--) {
+                try {
+                    targetDoc.textFrames[t].createOutline();
+                } catch (eTf) {
+                    failed++;
+                }
+            }
+        } catch (eOut) {
+            return -1;
+        }
+        return failed;
+    }
+
+    function resolveTargetIndices(scope, rangeStr) {
+        var indices = [];
+        if (scope === "active") {
+            indices.push(activeAbIndex);
+        } else if (scope === "range" || scope === "custom") {
+            indices = parseArtboardRange(rangeStr, totalArtboards);
+        } else {
+            for (var a = 0; a < totalArtboards; a++) indices.push(a);
+        }
+        return indices;
+    }
+
+    function executeExportCore(cfg) {
+        var isHeadless = !!cfg.isHeadless;
+
+        // 1. Validate formats
+        var pdfEnabled = !!(cfg.formats && cfg.formats.pdf && cfg.formats.pdf.enabled);
+        var tiffEnabled = !!(cfg.formats && cfg.formats.tiff && cfg.formats.tiff.enabled);
+        var pngEnabled = !!(cfg.formats && cfg.formats.png && cfg.formats.png.enabled);
+        var jpgEnabled = !!(cfg.formats && cfg.formats.jpg && cfg.formats.jpg.enabled);
+
+        if (!pdfEnabled && !tiffEnabled && !pngEnabled && !jpgEnabled) {
+            if (isHeadless) return { status: "error", message: "Please select at least one format to export." };
+            alert(OZO.tr("Please select at least one format to export."));
+            return null;
+        }
+
+        // 2. Validate destination folder
+        var destPath = String(cfg.destFolder || "").replace(/^\s+|\s+$/g, "");
+        if (!destPath) {
+            if (isHeadless) return { status: "error", message: "Please choose a destination folder." };
+            alert(OZO.tr("Please choose a destination folder."));
+            return null;
+        }
+        var targetFolder = new Folder(destPath);
+        if (!targetFolder.exists) {
+            try {
+                if (!targetFolder.create()) {
+                    var errFold = "Could not create destination folder:\n" + targetFolder.fsName;
+                    if (isHeadless) return { status: "error", message: errFold };
+                    alert(OZO.tr("Could not create destination folder:\n") + targetFolder.fsName);
+                    return null;
+                }
+            } catch (eFold) {
+                var errFold2 = "Invalid destination folder:\n" + targetFolder.fsName;
+                if (isHeadless) return { status: "error", message: errFold2 };
+                alert(OZO.tr("Invalid destination folder:\n") + targetFolder.fsName);
+                return null;
+            }
+        }
+
+        // 3. Apply subfolder
+        if (cfg.useSubfolder) {
+            var subName = sanitizeFolderName(cfg.subfolderName);
+            if (!subName) {
+                if (isHeadless) return { status: "error", message: "Please enter a valid subfolder name." };
+                alert(OZO.tr("Please enter a valid subfolder name."));
+                return null;
+            }
+            targetFolder = new Folder(targetFolder.fsName + "/" + subName);
+            if (!targetFolder.exists) {
+                try {
+                    if (!targetFolder.create()) {
+                        var errSub = "Could not create destination folder:\n" + targetFolder.fsName;
+                        if (isHeadless) return { status: "error", message: errSub };
+                        alert(OZO.tr("Could not create destination folder:\n") + targetFolder.fsName);
+                        return null;
+                    }
+                } catch (eSubFolder) {
+                    var errSub2 = "Invalid destination folder:\n" + targetFolder.fsName;
+                    if (isHeadless) return { status: "error", message: errSub2 };
+                    alert(OZO.tr("Invalid destination folder:\n") + targetFolder.fsName);
+                    return null;
+                }
+            }
+        }
+
+        // 4. Target artboards
+        var targetIndices = resolveTargetIndices(cfg.scope, cfg.customRange);
+        if (targetIndices.length === 0) {
+            if (isHeadless) return { status: "error", message: "Please specify a valid artboard range (e.g. 1, 3-5)." };
+            alert(OZO.tr("Please specify a valid artboard range (e.g. 1, 3-5)."));
+            return null;
+        }
+
+        // 5. Document modification checks (PDF export & Outlining)
+        var modifiesDocument = pdfEnabled || cfg.outline;
+        var originalDocFile = null;
+
+        if (modifiesDocument) {
+            var savedDocFile = null;
+            try {
+                var candidateDocFile = doc.fullName;
+                if (candidateDocFile && candidateDocFile.exists) savedDocFile = candidateDocFile;
+            } catch (eSavedDoc) {}
+
+            if (!savedDocFile) {
+                if (isHeadless) {
+                    return { status: "error", message: "PDF export and text outlining temporarily modify the document.\nPlease save the document as an .ai file first before exporting." };
+                }
+                var saveFirst = confirm(OZO.tr("PDF export and text outlining temporarily modify the document.\n\nSave the document before continuing?"));
+                if (!saveFirst) return null;
+                var saveFilePrompt = File.saveDialog(OZO.tr("Save Illustrator Document As"), "Adobe Illustrator:*.ai");
+                if (!saveFilePrompt) return null;
+                if (!/\.ai$/i.test(saveFilePrompt.name)) {
+                    saveFilePrompt = new File(saveFilePrompt.fsName + ".ai");
+                }
+                try {
+                    doc.saveAs(saveFilePrompt);
+                    savedDocFile = saveFilePrompt;
+                } catch (eSaveAsPrompt) {
+                    alert(OZO.tr("Failed to save document:\n") + (eSaveAsPrompt && eSaveAsPrompt.message ? eSaveAsPrompt.message : String(eSaveAsPrompt)));
+                    return null;
+                }
+            }
+
+            var savedDocExt = "";
+            try {
+                var savedDocName = String(savedDocFile.name || "");
+                var savedDocDot = savedDocName.lastIndexOf(".");
+                if (savedDocDot >= 0) savedDocExt = savedDocName.substring(savedDocDot + 1).toLowerCase();
+            } catch (eSavedDocExt) {}
+
+            if (savedDocExt !== "ai") {
+                var msgExt = "This document is not a saved .ai file. Save it as an .ai file before exporting PDF or outlining text.";
+                if (isHeadless) return { status: "error", message: msgExt };
+                alert(OZO.tr(msgExt));
+                return null;
+            }
+
+            var savedFileIsCurrent = false;
+            try {
+                savedFileIsCurrent = !!(doc.saved && savedDocFile.exists);
+            } catch (eSavedCheck) {}
+
+            if (!savedFileIsCurrent) {
+                if (isHeadless) {
+                    try { doc.save(); } catch (eSaveH) {}
+                } else {
+                    var saveChanges = confirm(OZO.tr("PDF export and text outlining temporarily modify the document.\n\nSave your latest changes before continuing?"));
+                    if (!saveChanges) return null;
+                    try { doc.save(); } catch (eSaveChanges) {}
+                }
+                try {
+                    savedFileIsCurrent = !!(doc.saved && savedDocFile.exists);
+                } catch (eSavedCheck2) {}
+                if (!savedFileIsCurrent) {
+                    var msgCur = "The document must be saved before exporting PDF or outlining text.";
+                    if (isHeadless) return { status: "error", message: msgCur };
+                    alert(OZO.tr(msgCur));
+                    return null;
+                }
+            }
+
+            try { originalDocFile = doc.fullName; } catch (eOrigFile) {}
+            if (!originalDocFile) {
+                var msgOrig = "Could not determine the document path. Save the document and try again.";
+                if (isHeadless) return { status: "error", message: msgOrig };
+                alert(OZO.tr(msgOrig));
+                return null;
+            }
+        }
+
+        // Prepare export state
+        var docBaseName = doc.name.replace(/\.[^\.]+$/, "");
+        var selUnit = cfg.unit || "mm";
+        var totalExported = 0;
+        var exportErrors = [];
+        var batchCtx = {
+            date: getFormattedDate(),
+            time: getFormattedTime(),
+            color: (doc.documentColorSpace === DocumentColorSpace.RGB) ? "RGB" : "CMYK"
+        };
+        var origActiveAb = doc.artboards.getActiveArtboardIndex();
+
+        var prevInteractionLevel = app.userInteractionLevel;
+        app.userInteractionLevel = UserInteractionLevel.DONTDISPLAYALERTS;
+
+        var tempAiFile = null;
+
+        try {
+            // Apply Outlines if requested
+            if (cfg.outline) {
+                var outlineResult = outlineAllText(doc);
+                if (outlineResult < 0) {
+                    exportErrors.push("Outline: text outlining failed.");
+                } else if (outlineResult > 0) {
+                    exportErrors.push("Outline: " + outlineResult + " text frame(s) could not be outlined (locked or unsupported).");
+                }
+            }
+
+            // Export TIFF, PNG, JPEG
+            for (var t = 0; t < targetIndices.length; t++) {
+                var abIdx = targetIndices[t];
+                doc.artboards.setActiveArtboardIndex(abIdx);
+
+                // A. TIFF
+                if (tiffEnabled) {
+                    try {
+                        var tiffCfg = cfg.formats.tiff;
+                        var tiffFile = new File(targetFolder.fsName + "/" + buildFileName(cfg.template, docBaseName, abIdx, "tif", selUnit, null, batchCtx));
+                        var tiffOpts = new ExportOptionsTIFF();
+                        tiffOpts.resolution = tiffCfg.dpi || 300;
+                        tiffOpts.byteOrder = TIFFByteOrder.IBMPC;
+                        tiffOpts.lzwCompression = (tiffCfg.lzw !== false);
+                        tiffOpts.imageColorSpace = (tiffCfg.colorSpace === "RGB") ? ImageColorSpace.RGB : ImageColorSpace.CMYK;
+                        tiffOpts.antiAliasing = AntiAliasingMethod.ARTOPTIMIZED;
+                        tiffOpts.artBoardClipping = true;
+                        doc.exportFile(tiffFile, ExportType.TIFF, tiffOpts);
+                        totalExported++;
+                    } catch (eTiff) {
+                        exportErrors.push("TIFF (AB " + (abIdx + 1) + "): " + eTiff.message);
+                    }
+                }
+
+                // B. PNG
+                if (pngEnabled) {
+                    try {
+                        var pngCfg = cfg.formats.png;
+                        var pngFile = new File(targetFolder.fsName + "/" + buildFileName(cfg.template, docBaseName, abIdx, "png", selUnit, null, batchCtx));
+                        var pngOpts = new ExportOptionsPNG24();
+                        var pDpi = pngCfg.dpi || 300;
+                        var pScale = (pDpi / 72) * 100;
+                        pngOpts.horizontalScale = pScale;
+                        pngOpts.verticalScale = pScale;
+                        pngOpts.transparency = (pngCfg.transparency !== false);
+                        pngOpts.antiAliasing = true;
+                        pngOpts.artBoardClipping = true;
+                        doc.exportFile(pngFile, ExportType.PNG24, pngOpts);
+                        totalExported++;
+                    } catch (ePng) {
+                        exportErrors.push("PNG (AB " + (abIdx + 1) + "): " + ePng.message);
+                    }
+                }
+
+                // C. JPEG
+                if (jpgEnabled) {
+                    try {
+                        var jpgCfg = cfg.formats.jpg;
+                        var jpgFile = new File(targetFolder.fsName + "/" + buildFileName(cfg.template, docBaseName, abIdx, "jpg", selUnit, null, batchCtx));
+                        var jpgOpts = new ExportOptionsJPEG();
+                        var jDpi = jpgCfg.dpi || 300;
+                        var jScale = (jDpi / 72) * 100;
+                        jpgOpts.horizontalScale = jScale;
+                        jpgOpts.verticalScale = jScale;
+                        jpgOpts.qualitySetting = 100;
+                        jpgOpts.antiAliasing = true;
+                        jpgOpts.artBoardClipping = true;
+                        doc.exportFile(jpgFile, ExportType.JPEG, jpgOpts);
+                        totalExported++;
+                    } catch (eJpg) {
+                        exportErrors.push("JPEG (AB " + (abIdx + 1) + "): " + eJpg.message);
+                    }
+                }
+
+                if (t > 0 && t % 5 === 0) $.gc();
+            }
+
+            // Export PDF
+            if (pdfEnabled) {
+                var pdfCfg = cfg.formats.pdf;
+                var selectedPreset = pdfCfg.preset || "[High Quality Print]";
+                var pdfOpts = new PDFSaveOptions();
+                try {
+                    if (selectedPreset) pdfOpts.pDFPreset = selectedPreset;
+                } catch (ePr) {}
+
+                if (pdfCfg.combined) {
+                    // Single Multi-page PDF
+                    try {
+                        var combinedIndex = targetIndices.length ? targetIndices[0] : activeAbIndex;
+                        var combinedFileName = buildFileName(cfg.template, docBaseName, combinedIndex, "pdf", selUnit, "All", batchCtx);
+                        var combinedFile = new File(targetFolder.fsName + "/" + combinedFileName);
+                        var rangeArr = [];
+                        for (var rIdx = 0; rIdx < targetIndices.length; rIdx++) {
+                            rangeArr.push(targetIndices[rIdx] + 1);
+                        }
+                        pdfOpts.artboardRange = rangeArr.join(",");
+                        doc.saveAs(combinedFile, pdfOpts);
+                        totalExported++;
+                    } catch (ePdfComb) {
+                        exportErrors.push("PDF (Multi-page): " + (ePdfComb && ePdfComb.message ? ePdfComb.message : String(ePdfComb)));
+                    }
+                } else {
+                    // Separate PDF per artboard
+                    if (targetIndices.length > 1) {
+                        try {
+                            tempAiFile = new File(Folder.temp.fsName + "/ozo_temp_pdf_" + (new Date().getTime()) + ".ai");
+                            var aiSaveOpts = new IllustratorSaveOptions();
+                            aiSaveOpts.pdfCompatible = false;
+                            aiSaveOpts.compressed = true;
+                            doc.saveAs(tempAiFile, aiSaveOpts);
+                        } catch (eTempAi) {
+                            tempAiFile = null;
+                        }
+                    }
+
+                    for (var pIdx = 0; pIdx < targetIndices.length; pIdx++) {
+                        var abIndexForPdf = targetIndices[pIdx];
+                        try {
+                            var pdfFile = new File(targetFolder.fsName + "/" + buildFileName(cfg.template, docBaseName, abIndexForPdf, "pdf", selUnit, null, batchCtx));
+                            pdfOpts.artboardRange = String(abIndexForPdf + 1);
+                            doc.saveAs(pdfFile, pdfOpts);
+                            totalExported++;
+                        } catch (ePdf) {
+                            exportErrors.push("PDF (AB " + (abIndexForPdf + 1) + "): " + (ePdf && ePdf.message ? ePdf.message : String(ePdf)));
+                        }
+
+                        if (tempAiFile && tempAiFile.exists && pIdx < targetIndices.length - 1) {
+                            try {
+                                doc.close(SaveOptions.DONOTSAVECHANGES);
+                                doc = app.open(tempAiFile);
+                            } catch (eReloadTemp) {
+                                exportErrors.push("PDF Reload: " + (eReloadTemp && eReloadTemp.message ? eReloadTemp.message : String(eReloadTemp)));
+                            }
+                        }
+
+                        if (pIdx > 0 && pIdx % 5 === 0) $.gc();
+                    }
+
+                    if (tempAiFile && tempAiFile.exists) {
+                        try { tempAiFile.remove(); } catch (eRemTemp) {}
+                    }
+                }
+            }
+
+        } catch (eUnexpected) {
+            exportErrors.push("Export: " + (eUnexpected && eUnexpected.message ? eUnexpected.message : String(eUnexpected)));
+        } finally {
+            app.userInteractionLevel = prevInteractionLevel;
+
+            if (tempAiFile && tempAiFile.exists) {
+                try { tempAiFile.remove(); } catch (eRemTempFin) {}
+            }
+
+            if (modifiesDocument && originalDocFile && originalDocFile.exists) {
+                var docClosed = false;
+                try {
+                    doc.close(SaveOptions.DONOTSAVECHANGES);
+                    docClosed = true;
+                } catch (eCloseDoc) {
+                    exportErrors.push("Restore (close): " + (eCloseDoc && eCloseDoc.message ? eCloseDoc.message : String(eCloseDoc)));
+                }
+                if (docClosed) {
+                    try {
+                        doc = app.open(originalDocFile);
+                    } catch (eOpenDoc) {
+                        exportErrors.push("Restore (open): " + (eOpenDoc && eOpenDoc.message ? eOpenDoc.message : String(eOpenDoc)));
+                    }
+                }
+            }
+
+            try {
+                if (doc && doc.artboards && origActiveAb >= 0 && origActiveAb < doc.artboards.length) {
+                    doc.artboards.setActiveArtboardIndex(origActiveAb);
+                }
+            } catch (eOrigAb) {}
+        }
+
+        // Open destination folder if requested
+        if (cfg.openFolder && targetFolder && targetFolder.exists) {
+            try { targetFolder.execute(); } catch (eOpenF) {}
+        }
+
+        $.gc();
+
+        if (isHeadless) {
+            return {
+                status: (exportErrors.length > 0 && totalExported === 0) ? "error" : "success",
+                count: totalExported,
+                artboardsCount: targetIndices.length,
+                folder: targetFolder.fsName,
+                errors: exportErrors
+            };
+        } else {
+            var msg = OZO.tr("Batch export complete!\n") +
+                      totalExported + " " + OZO.tr("file(s) exported across") + " " +
+                      targetIndices.length + " " + OZO.tr("artboard(s) to:\n") + targetFolder.fsName;
+            if (exportErrors.length > 0) {
+                msg += "\n\n" + OZO.tr("Notes / Errors:") + "\n" + exportErrors.join("\n");
+            }
+            alert(msg, SCRIPT_NAME);
+            return null;
+        }
+    }
+
+    // Check for Headless Dock Execution
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        __ozoHeadlessParams.isHeadless = true;
+        __ozoHeadlessResult = executeExportCore(__ozoHeadlessParams);
+        return;
     }
 
     // -------------------------------------------------------------
@@ -756,181 +1188,45 @@
     syncControlStates();
 
     // -------------------------------------------------------------
-    // Helper: Safely Outline Text
-    // -------------------------------------------------------------
-    function unlockAllForOutline(targetDoc) {
-        try {
-            var layers = targetDoc.layers;
-            for (var i = 0; i < layers.length; i++) {
-                try {
-                    if (layers[i].locked) layers[i].locked = false;
-                } catch (eL) {}
-            }
-            var textFrames = targetDoc.textFrames;
-            for (var j = 0; j < textFrames.length; j++) {
-                try {
-                    if (textFrames[j].locked) textFrames[j].locked = false;
-                } catch (eTf) {}
-            }
-        } catch (eUnlock) {}
-    }
-
-    function outlineAllText(targetDoc) {
-        var failed = 0;
-        try {
-            unlockAllForOutline(targetDoc);
-            var tfCount = targetDoc.textFrames.length;
-            for (var t = tfCount - 1; t >= 0; t--) {
-                try {
-                    targetDoc.textFrames[t].createOutline();
-                } catch (eTf) {
-                    failed++;
-                }
-            }
-        } catch (eOut) {
-            return -1;
-        }
-        return failed;
-    }
-
-    // -------------------------------------------------------------
-    // Export Execution Engine
+    // Export Button Handler
     // -------------------------------------------------------------
     exportButton.onClick = function () {
-        // Validate at least one format is selected
-        if (!pdfBox.value && !tiffBox.value && !pngBox.value && !jpgBox.value) {
-            alert(OZO.tr("Please select at least one format to export."));
-            return;
-        }
-
-        // Validate destination folder
-        var destPath = String(destFolderInput.text || "").replace(/^\s+|\s+$/g, "");
-        if (!destPath) {
-            alert(OZO.tr("Please choose a destination folder."));
-            return;
-        }
-        var targetFolder = new Folder(destPath);
-        if (!targetFolder.exists) {
-            try {
-                if (!targetFolder.create()) {
-                    alert(OZO.tr("Could not create destination folder:\n") + targetFolder.fsName);
-                    return;
+        var dpiMap = { "300 DPI": 300, "150 DPI": 150, "72 DPI": 72 };
+        var cfg = {
+            isHeadless: false,
+            scope: rbAll.value ? "all" : (rbActive.value ? "active" : "range"),
+            customRange: customRangeInput.text,
+            formats: {
+                pdf: {
+                    enabled: pdfBox.value,
+                    preset: (pdfPresetList.selection && pdfPresetList.selection.text) ? pdfPresetList.selection.text : "[High Quality Print]",
+                    combined: rbPdfCombined.value
+                },
+                tiff: {
+                    enabled: tiffBox.value,
+                    dpi: (tiffDpiList.selection && dpiMap[tiffDpiList.selection.text]) ? dpiMap[tiffDpiList.selection.text] : 300,
+                    colorSpace: (tiffColorList.selection && tiffColorList.selection.text === "RGB") ? "RGB" : "CMYK",
+                    lzw: tiffLzwBox.value
+                },
+                png: {
+                    enabled: pngBox.value,
+                    dpi: (pngDpiList.selection && dpiMap[pngDpiList.selection.text]) ? dpiMap[pngDpiList.selection.text] : 300,
+                    transparency: pngTransBox.value
+                },
+                jpg: {
+                    enabled: jpgBox.value,
+                    dpi: (jpgDpiList.selection && dpiMap[jpgDpiList.selection.text]) ? dpiMap[jpgDpiList.selection.text] : 300,
+                    quality: 100
                 }
-            } catch (eFold) {
-                alert(OZO.tr("Invalid destination folder:\n") + targetFolder.fsName);
-                return;
-            }
-        }
-
-        // Apply subfolder if requested
-        if (useSubfolderBox.value) {
-            var subName = sanitizeFolderName(subfolderNameInput.text);
-            if (!subName) {
-                alert(OZO.tr("Please enter a valid subfolder name."));
-                return;
-            }
-            targetFolder = new Folder(targetFolder.fsName + "/" + subName);
-            if (!targetFolder.exists) {
-                try {
-                    if (!targetFolder.create()) {
-                        alert(OZO.tr("Could not create destination folder:\n") + targetFolder.fsName);
-                        return;
-                    }
-                } catch (eSubFolder) {
-                    alert(OZO.tr("Invalid destination folder:\n") + targetFolder.fsName);
-                    return;
-                }
-            }
-        }
-
-        // Determine target artboard indices
-        var targetIndices = getTargetIndices();
-        if (targetIndices.length === 0) {
-            alert(OZO.tr("Please specify a valid artboard range (e.g. 1, 3-5)."));
-            return;
-        }
-
-        // PDF export uses saveAs() and outlining edits text in place. Both need a
-        // stable file on disk so the original can be reopened after export.
-        var modifiesDocument = pdfBox.value || outlineBox.value;
-        var originalDocFile = null;
-
-        if (modifiesDocument) {
-            var savedDocFile = null;
-            try {
-                var candidateDocFile = doc.fullName;
-                // Untitled documents can expose a placeholder File that does not
-                // exist on disk, so require a real file before trusting fullName.
-                if (candidateDocFile && candidateDocFile.exists) savedDocFile = candidateDocFile;
-            } catch (eSavedDoc) {}
-
-            // Untitled documents may Save As, but never a PDF/EPS/SVG file. Calling
-            // save() on those formats can create a new .ai file and overwrite an
-            // existing one, so PDF export and outlining require a native .ai file.
-            if (!savedDocFile) {
-                var saveFirst = confirm(OZO.tr("PDF export and text outlining temporarily modify the document.\n\nSave the document before continuing?"));
-                if (!saveFirst) {
-                    alert(OZO.tr("Export cancelled. Save the document and try again."));
-                    return;
-                }
-                var saveFilePrompt = File.saveDialog(OZO.tr("Save Illustrator Document As"), "Adobe Illustrator:*.ai");
-                if (!saveFilePrompt) {
-                    alert(OZO.tr("Export cancelled. Save the document and try again."));
-                    return;
-                }
-                if (!/\.ai$/i.test(saveFilePrompt.name)) {
-                    saveFilePrompt = new File(saveFilePrompt.fsName + ".ai");
-                }
-                try {
-                    doc.saveAs(saveFilePrompt);
-                    savedDocFile = saveFilePrompt;
-                } catch (eSaveAsPrompt) {
-                    alert(OZO.tr("Failed to save document:\n") + (eSaveAsPrompt && eSaveAsPrompt.message ? eSaveAsPrompt.message : String(eSaveAsPrompt)));
-                    return;
-                }
-            }
-
-            var savedDocExt = "";
-            try {
-                var savedDocName = String(savedDocFile.name || "");
-                var savedDocDot = savedDocName.lastIndexOf(".");
-                if (savedDocDot >= 0) savedDocExt = savedDocName.substring(savedDocDot + 1).toLowerCase();
-            } catch (eSavedDocExt) {}
-
-            if (savedDocExt !== "ai") {
-                alert(OZO.tr("This document is not a saved .ai file. Save it as an .ai file before exporting PDF or outlining text."));
-                return;
-            }
-
-            // A saved but modified .ai file must be written to disk so the copy
-            // reopened after export includes the user's latest changes.
-            var savedFileIsCurrent = false;
-            try {
-                savedFileIsCurrent = !!(doc.saved && savedDocFile.exists);
-            } catch (eSavedCheck) {}
-
-            if (!savedFileIsCurrent) {
-                var saveChanges = confirm(OZO.tr("PDF export and text outlining temporarily modify the document.\n\nSave your latest changes before continuing?"));
-                if (!saveChanges) {
-                    alert(OZO.tr("Export cancelled. Save the document and try again."));
-                    return;
-                }
-                try { doc.save(); } catch (eSaveChanges) {}
-                try {
-                    savedFileIsCurrent = !!(doc.saved && savedDocFile.exists);
-                } catch (eSavedCheck2) {}
-                if (!savedFileIsCurrent) {
-                    alert(OZO.tr("The document must be saved before exporting PDF or outlining text."));
-                    return;
-                }
-            }
-
-            try { originalDocFile = doc.fullName; } catch (eOrigFile) {}
-            if (!originalDocFile) {
-                alert(OZO.tr("Could not determine the document path. Save the document and try again."));
-                return;
-            }
-        }
+            },
+            template: templateInput.text,
+            unit: unitList.selection ? unitList.selection.text : "mm",
+            destFolder: destFolderInput.text,
+            useSubfolder: useSubfolderBox.value,
+            subfolderName: subfolderNameInput.text,
+            openFolder: openFolderBox.value,
+            outline: outlineBox.value
+        };
 
         // Save preferences
         OZO.saveWindowState(dialog, STATE_NAMESPACE, {
@@ -942,250 +1238,8 @@
             pdfCombined: rbPdfCombined.value
         });
 
-        // Hide dialog for clean export execution
         dialog.close(1);
-
-        // Prepare export state
-        var docBaseName = doc.name.replace(/\.[^\.]+$/, "");
-        var selUnit = unitList.selection ? unitList.selection.text : "mm";
-        var totalExported = 0;
-        var exportErrors = [];
-        var batchCtx = {
-            date: getFormattedDate(),
-            time: getFormattedTime(),
-            color: (doc.documentColorSpace === DocumentColorSpace.RGB) ? "RGB" : "CMYK"
-        };
-
-        var dpiMap = { "300 DPI": 300, "150 DPI": 150, "72 DPI": 72 };
-        var origActiveAb = doc.artboards.getActiveArtboardIndex();
-
-        // Suppress modal alerts and disable screen refresh for high performance
-        var prevInteractionLevel = app.userInteractionLevel;
-        app.userInteractionLevel = UserInteractionLevel.DONTDISPLAYALERTS;
-
-        try {
-            // Apply Outlines if requested
-            if (outlineBox.value) {
-                var outlineResult = outlineAllText(doc);
-                if (outlineResult < 0) {
-                    exportErrors.push("Outline: text outlining failed.");
-                } else if (outlineResult > 0) {
-                    exportErrors.push("Outline: " + outlineResult + " text frame(s) could not be outlined (locked or unsupported).");
-                }
-            }
-
-            // 1. Export TIFF, PNG, JPEG first (Fast & Non-destructive)
-            for (var t = 0; t < targetIndices.length; t++) {
-                var abIdx = targetIndices[t];
-                doc.artboards.setActiveArtboardIndex(abIdx);
-
-                // A. TIFF Export
-                if (tiffBox.value) {
-                    try {
-                        var tiffFile = new File(targetFolder.fsName + "/" + buildFileName(templateInput.text, docBaseName, abIdx, "tif", selUnit, null, batchCtx));
-                        var tiffOpts = new ExportOptionsTIFF();
-                        var tDpi = (tiffDpiList.selection && dpiMap[tiffDpiList.selection.text]) ? dpiMap[tiffDpiList.selection.text] : 300;
-                        tiffOpts.resolution = tDpi;
-                        tiffOpts.byteOrder = TIFFByteOrder.IBMPC;
-                        tiffOpts.lzwCompression = tiffLzwBox.value;
-                        tiffOpts.imageColorSpace = (tiffColorList.selection && tiffColorList.selection.text === "RGB") ? ImageColorSpace.RGB : ImageColorSpace.CMYK;
-                        tiffOpts.antiAliasing = AntiAliasingMethod.ARTOPTIMIZED;
-                        tiffOpts.artBoardClipping = true;
-                        doc.exportFile(tiffFile, ExportType.TIFF, tiffOpts);
-                        totalExported++;
-                    } catch (eTiff) {
-                        exportErrors.push("TIFF (AB " + (abIdx + 1) + "): " + eTiff.message);
-                    }
-                }
-
-                // B. PNG Export
-                if (pngBox.value) {
-                    try {
-                        var pngFile = new File(targetFolder.fsName + "/" + buildFileName(templateInput.text, docBaseName, abIdx, "png", selUnit, null, batchCtx));
-                        var pngOpts = new ExportOptionsPNG24();
-                        var pDpi = (pngDpiList.selection && dpiMap[pngDpiList.selection.text]) ? dpiMap[pngDpiList.selection.text] : 300;
-                        var pScale = (pDpi / 72) * 100;
-                        pngOpts.horizontalScale = pScale;
-                        pngOpts.verticalScale = pScale;
-                        pngOpts.transparency = pngTransBox.value;
-                        pngOpts.antiAliasing = true;
-                        pngOpts.artBoardClipping = true;
-                        doc.exportFile(pngFile, ExportType.PNG24, pngOpts);
-                        totalExported++;
-                    } catch (ePng) {
-                        exportErrors.push("PNG (AB " + (abIdx + 1) + "): " + ePng.message);
-                    }
-                }
-
-                // C. JPEG Export
-                if (jpgBox.value) {
-                    try {
-                        var jpgFile = new File(targetFolder.fsName + "/" + buildFileName(templateInput.text, docBaseName, abIdx, "jpg", selUnit, null, batchCtx));
-                        var jpgOpts = new ExportOptionsJPEG();
-                        var jDpi = (jpgDpiList.selection && dpiMap[jpgDpiList.selection.text]) ? dpiMap[jpgDpiList.selection.text] : 300;
-                        var jScale = (jDpi / 72) * 100;
-                        jpgOpts.horizontalScale = jScale;
-                        jpgOpts.verticalScale = jScale;
-                        jpgOpts.qualitySetting = 100; // Maximum quality
-                        jpgOpts.antiAliasing = true;
-                        jpgOpts.artBoardClipping = true;
-                        doc.exportFile(jpgFile, ExportType.JPEG, jpgOpts);
-                        totalExported++;
-                    } catch (eJpg) {
-                        exportErrors.push("JPEG (AB " + (abIdx + 1) + "): " + eJpg.message);
-                    }
-                }
-
-                // Memory cleanup every 5 artboards
-                if (t > 0 && t % 5 === 0) {
-                    $.gc();
-                }
-            }
-
-            // 2. Export PDF
-            var tempAiFile = null;
-            if (pdfBox.value) {
-                var selectedPreset = (pdfPresetList.selection && pdfPresetList.selection.text) ? pdfPresetList.selection.text : "[High Quality Print]";
-                var pdfOpts = new PDFSaveOptions();
-                try {
-                    if (selectedPreset) pdfOpts.pDFPreset = selectedPreset;
-                } catch (ePreset) {}
-
-                if (rbPdfCombined.value) {
-                    // Optimized Single Multi-Page PDF
-                    try {
-                        var combinedIndex = targetIndices.length ? targetIndices[0] : activeAbIndex;
-                        var combinedFileName = buildFileName(templateInput.text, docBaseName, combinedIndex, "pdf", selUnit, "All", batchCtx);
-                        var combinedFile = new File(targetFolder.fsName + "/" + combinedFileName);
-                        
-                        // Build 1-based range string
-                        var rangeArr = [];
-                        for (var rIdx = 0; rIdx < targetIndices.length; rIdx++) {
-                            rangeArr.push(targetIndices[rIdx] + 1);
-                        }
-                        pdfOpts.artboardRange = rangeArr.join(",");
-                        doc.saveAs(combinedFile, pdfOpts);
-                        totalExported++;
-                    } catch (ePdfComb) {
-                        exportErrors.push("PDF (Multi-page): " + (ePdfComb && ePdfComb.message ? ePdfComb.message : String(ePdfComb)));
-                    }
-                } else {
-                    // Separate PDF per artboard
-                    // In Illustrator, doc.saveAs() switches the active document to the newly saved single-artboard PDF.
-                    // If multiple artboards are targeted, saving subsequent artboards would fail with out-of-bounds error.
-                    // We save a temporary working .ai file containing the current state (with outlines if applied),
-                    // and reload it between artboards.
-                    if (targetIndices.length > 1) {
-                        try {
-                            tempAiFile = new File(Folder.temp.fsName + "/ozo_temp_pdf_" + (new Date().getTime()) + ".ai");
-                            var aiSaveOpts = new IllustratorSaveOptions();
-                            aiSaveOpts.pdfCompatible = false;
-                            aiSaveOpts.compressed = true;
-                            doc.saveAs(tempAiFile, aiSaveOpts);
-                        } catch (eTempAi) {
-                            tempAiFile = null;
-                        }
-                    }
-
-                    for (var pIdx = 0; pIdx < targetIndices.length; pIdx++) {
-                        var abIndexForPdf = targetIndices[pIdx];
-                        try {
-                            var pdfFile = new File(targetFolder.fsName + "/" + buildFileName(templateInput.text, docBaseName, abIndexForPdf, "pdf", selUnit, null, batchCtx));
-                            pdfOpts.artboardRange = String(abIndexForPdf + 1);
-                            doc.saveAs(pdfFile, pdfOpts);
-                            totalExported++;
-                        } catch (ePdf) {
-                            exportErrors.push("PDF (AB " + (abIndexForPdf + 1) + "): " + (ePdf && ePdf.message ? ePdf.message : String(ePdf)));
-                        }
-
-                        // If more artboards remain, reload the working multi-artboard document
-                        if (tempAiFile && tempAiFile.exists && pIdx < targetIndices.length - 1) {
-                            try {
-                                doc.close(SaveOptions.DONOTSAVECHANGES);
-                                doc = app.open(tempAiFile);
-                            } catch (eReloadTemp) {
-                                exportErrors.push("PDF Reload: " + (eReloadTemp && eReloadTemp.message ? eReloadTemp.message : String(eReloadTemp)));
-                            }
-                        }
-
-                        if (pIdx > 0 && pIdx % 5 === 0) {
-                            $.gc();
-                        }
-                    }
-
-                    if (tempAiFile && tempAiFile.exists) {
-                        try { tempAiFile.remove(); } catch (eRemTemp) {}
-                    }
-                }
-            }
-
-        } catch (eUnexpected) {
-            exportErrors.push("Export: " + (eUnexpected && eUnexpected.message ? eUnexpected.message : String(eUnexpected)));
-        } finally {
-            // Always restore interaction level, even if an export throws.
-            app.userInteractionLevel = prevInteractionLevel;
-
-            // Ensure temporary working file is cleaned up
-            if (tempAiFile && tempAiFile.exists) {
-                try { tempAiFile.remove(); } catch (eRemTempFin) {}
-            }
-
-            // Reopen the saved original so outlines and PDF saveAs() are discarded.
-            if (modifiesDocument && originalDocFile && originalDocFile.exists) {
-                var docClosed = false;
-                try {
-                    doc.close(SaveOptions.DONOTSAVECHANGES);
-                    docClosed = true;
-                } catch (eCloseDoc) {
-                    exportErrors.push("Restore (close): " + (eCloseDoc && eCloseDoc.message ? eCloseDoc.message : String(eCloseDoc)));
-                }
-                if (docClosed) {
-                    try {
-                        doc = app.open(originalDocFile);
-                    } catch (eOpenDoc) {
-                        exportErrors.push("Restore (open): " + (eOpenDoc && eOpenDoc.message ? eOpenDoc.message : String(eOpenDoc)));
-                    }
-                }
-            }
-        }
-
-        // Restore original active artboard
-        try {
-            if (doc && doc.artboards && origActiveAb >= 0 && origActiveAb < doc.artboards.length) {
-                doc.artboards.setActiveArtboardIndex(origActiveAb);
-            }
-        } catch (eOrigAb) {}
-
-        // Open destination folder if requested
-        if (openFolderBox.value && targetFolder.exists) {
-            try {
-                targetFolder.execute();
-            } catch (eOpen) {
-                try {
-                    if (Folder.fs === "Windows") {
-                        if (typeof app.system === "function") {
-                            app.system('explorer.exe "' + targetFolder.fsName.replace(/"/g, '""') + '"');
-                        }
-                    } else {
-                        if (typeof app.system === "function") {
-                            app.system('open "' + targetFolder.fsName.replace(/"/g, '\\"') + '"');
-                        }
-                    }
-                } catch (eSys) {}
-            }
-        }
-
-        // Final Garbage Collection
-        $.gc();
-
-        // Completion Alert
-        var msg = OZO.tr("Batch export complete!\n") +
-                  totalExported + " " + OZO.tr("file(s) exported across") + " " +
-                  targetIndices.length + " " + OZO.tr("artboard(s) to:\n") + targetFolder.fsName;
-        if (exportErrors.length > 0) {
-            msg += "\n\n" + OZO.tr("Notes / Errors:") + "\n" + exportErrors.join("\n");
-        }
-        alert(msg, SCRIPT_NAME);
+        executeExportCore(cfg);
     };
 
     dialog.center();
