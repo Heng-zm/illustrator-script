@@ -59,7 +59,7 @@ foreach ($item in $itemsToCopy) {
     }
 }
 
-$dirsToCopy = @("Script all", "lib", "plugin")
+$dirsToCopy = @("Script all", "lib", "plugin", "assets")
 foreach ($dir in $dirsToCopy) {
     $src = Join-Path $ScriptRoot $dir
     if (Test-Path $src) {
