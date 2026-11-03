@@ -818,3 +818,189 @@ function ozoExecuteSmartDimension(paramsJsonStr) {
         return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
     }
 }
+
+// -------------------------------------------------------------
+// Print Job Info Bridge
+// -------------------------------------------------------------
+function ozoGetPrintJobDefaults() {
+    try {
+        if (app.documents.length === 0) {
+            return ozoJsonStringify({ status: "error", message: "No Illustrator document is open." });
+        }
+        var doc = app.activeDocument;
+        var abIdx = doc.artboards.getActiveArtboardIndex();
+        if (abIdx < 0 || abIdx >= doc.artboards.length) abIdx = 0;
+        var rect = doc.artboards[abIdx].artboardRect;
+        var widthPt = Math.abs(rect[2] - rect[0]);
+        var heightPt = Math.abs(rect[1] - rect[3]);
+
+        var ru = "cm";
+        try {
+            if (doc.rulerUnits === RulerUnits.Millimeters) ru = "mm";
+            else if (doc.rulerUnits === RulerUnits.Centimeters) ru = "cm";
+            else if (doc.rulerUnits === RulerUnits.Inches) ru = "in";
+            else if (doc.rulerUnits === RulerUnits.Points) ru = "pt";
+            else if (doc.rulerUnits === RulerUnits.Meters) ru = "m";
+        } catch (eRu) {}
+
+        var factor = (typeof OZO !== "undefined" && OZO.toPoints) ? OZO.toPoints(1, ru) : 28.3464567;
+        var w = Math.round((widthPt / factor) * 100) / 100;
+        var h = Math.round((heightPt / factor) * 100) / 100;
+
+        var d = new Date();
+        var day = ("0" + d.getDate()).slice(-2);
+        var mo = ("0" + (d.getMonth() + 1)).slice(-2);
+        var dateStr = day + " " + mo + " " + d.getFullYear();
+
+        return ozoJsonStringify({
+            status: "success",
+            dateStr: dateStr,
+            unit: ru,
+            width: w,
+            height: h,
+            artboardName: doc.artboards[abIdx].name || ("Artboard " + (abIdx + 1)),
+            docName: doc.name
+        });
+    } catch (e) {
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+function ozoExecutePrintJob(paramsJsonStr) {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Print Job Info.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Print Job Info.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Print Job Info.jsx not found" });
+        }
+
+        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
+            ? JSON.parse(paramsJsonStr)
+            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "Print Job Info completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+// -------------------------------------------------------------
+// Object Count & Prepress Inspector Bridge
+// -------------------------------------------------------------
+function ozoGetObjectCountStats() {
+    try {
+        if (app.documents.length === 0) {
+            return ozoJsonStringify({ status: "error", message: "No Illustrator document is open." });
+        }
+        var doc = app.activeDocument;
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Count.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Count.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Count.jsx not found" });
+        }
+
+        __ozoHeadlessParams = { mode: "stats" };
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "Count completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+function ozoSelectAllOnActiveArtboard() {
+    try {
+        if (app.documents.length === 0) return ozoJsonStringify({ status: "error", message: "No document open" });
+        var doc = app.activeDocument;
+        doc.selection = null;
+        doc.selectObjectsOnActiveArtboard();
+        var count = doc.selection ? doc.selection.length : 0;
+        return ozoJsonStringify({ status: "success", count: count });
+    } catch (e) {
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+function ozoDeselectAll() {
+    try {
+        if (app.documents.length === 0) return ozoJsonStringify({ status: "error", message: "No document open" });
+        app.activeDocument.selection = null;
+        return ozoJsonStringify({ status: "success" });
+    } catch (e) {
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+// -------------------------------------------------------------
+// Sequential Numbering Bridge
+// -------------------------------------------------------------
+function ozoExecuteSequentialNumbering(paramsJsonStr) {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Sequential Numbering.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Sequential Numbering.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Sequential Numbering.jsx not found" });
+        }
+
+        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
+            ? JSON.parse(paramsJsonStr)
+            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "Sequential Numbering completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}

@@ -1401,3 +1401,89 @@ body.theme-light {
     color: var(--text-primary);
     border-color: var(--text-secondary);
 }
+
+/* Ticket Live Preview Card */
+.print-job-ticket-card {
+    background: #111418;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    font-family: var(--font-family);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 4px;
+}
+.ticket-line-date {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.ticket-line-mat {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.ticket-line-dim {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--accent);
+}
+.ticket-line-note {
+    font-size: 11px;
+    color: #e6a23c;
+    font-style: italic;
+    margin-top: 2px;
+}
+
+/* Object Count Dashboard Stats */
+.stat-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+}
+.stat-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.stat-box-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.1;
+    font-family: monospace;
+}
+.stat-box-lbl {
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.stat-pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+.stat-pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.stat-pill-val {
+    font-weight: 700;
+    color: var(--text-primary);
+}

@@ -5,6 +5,10 @@
     var SCRIPT_NAME = "Count Items";
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("No Illustrator document is open."));
         return;
     }
@@ -93,6 +97,32 @@
     var images = layerCount.images;
     var compounds = layerCount.compounds;
     var other = layerCount.other;
+
+    var widthPt = selBounds ? Math.abs(selBounds[2] - selBounds[0]) : 0;
+    var heightPt = selBounds ? Math.abs(selBounds[1] - selBounds[3]) : 0;
+    var selW = selBounds ? Math.round(OZO.fromPoints(widthPt, defaultUnit) * 100) / 100 : 0;
+    var selH = selBounds ? Math.round(OZO.fromPoints(heightPt, defaultUnit) * 100) / 100 : 0;
+
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        __ozoHeadlessResult = {
+            status: "success",
+            docName: doc.name,
+            colorSpace: (doc.documentColorSpace === DocumentColorSpace.CMYK) ? "CMYK" : "RGB",
+            unit: defaultUnit,
+            artboardCount: totalArtboards,
+            layerCount: totalLayers,
+            activeLayerName: (activeLayer && activeLayer.name) ? activeLayer.name : "Layer 1",
+            selection: {
+                count: selectedCount,
+                width: selW,
+                height: selH,
+                hasBounds: !!selBounds
+            },
+            activeLayerStats: layerCount,
+            documentStats: documentCount
+        };
+        return;
+    }
 
     // -----------------------------------
     // Result dialog

@@ -18,6 +18,10 @@
     var RESULT_LAYER_NAME = "[Print Job Info]";
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("No Illustrator document is open."));
         return;
     }
@@ -1099,18 +1103,7 @@
     OZO.translateWindow(dialog, OZO.getLanguage());
     OZO.applyTheme(dialog);
 
-    // Initial Live Preview
-    triggerPreviewUpdate();
-
-    var result = dialog.show();
-    if (result !== 1) {
-        cleanupPreview();
-        return;
-    }
-
-    // Final Application
-    try {
-        var finalSettings = readSettings();
+    function executePrintJobCore(finalSettings) {
         cleanupPreview();
 
         var finalTarget = getEffectiveBounds();
@@ -1126,7 +1119,6 @@
                 originalArtboardRect[2],
                 originalArtboardRect[3]
             ];
-            // Let cleanupPreview restore the artboard if rendering fails.
             currentArtboardExpandedHeight = finalGeom.headerHeight;
         }
 
@@ -1165,6 +1157,63 @@
             headerTxt.selected = true;
         } catch (eSel) {}
 
+        app.redraw();
+        return {
+            status: "success",
+            material: finalSettings.material,
+            date: finalSettings.dateStr,
+            dimensions: "w" + finalSettings.widthVal + finalSettings.unit + " x h" + finalSettings.heightVal + finalSettings.unit + " =" + finalSettings.qty + "pcs",
+            layer: RESULT_LAYER_NAME
+        };
+    }
+
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        try {
+            var hp = __ozoHeadlessParams;
+            var w = parseFloat(String(hp.widthVal !== undefined ? hp.widthVal : initWidth).replace(/,/g, "."));
+            var h = parseFloat(String(hp.heightVal !== undefined ? hp.heightVal : initHeight).replace(/,/g, "."));
+            if (!isFinite(w) || w <= 0) w = parseFloat(initWidth) || 10;
+            if (!isFinite(h) || h <= 0) h = parseFloat(initHeight) || 10;
+            var headlessSettings = {
+                material: sanitizeKhmerText(hp.material) || "Silk Light Box",
+                dateStr: trim(hp.dateStr) || getTodayFormatted(),
+                widthVal: cleanNumber(w),
+                heightVal: cleanNumber(h),
+                unit: hp.unit || defaultUnit,
+                qty: parseInt(hp.qty, 10) || 1,
+                note: sanitizeKhmerText(hp.note || ""),
+                expandArtboard: hp.expandArtboard === true,
+                darkBox: hp.darkBox === true,
+                textColorIndex: typeof hp.textColorIndex === "number" ? hp.textColorIndex : 0,
+                alignmentIndex: typeof hp.alignmentIndex === "number" ? hp.alignmentIndex : 0,
+                fontSizeIndex: typeof hp.fontSizeIndex === "number" ? hp.fontSizeIndex : 0,
+                fontChoiceIndex: typeof hp.fontChoiceIndex === "number" ? hp.fontChoiceIndex : 0
+            };
+            __ozoHeadlessResult = executePrintJobCore(headlessSettings);
+            return;
+        } catch (eHeadless) {
+            cleanupPreview();
+            __ozoHeadlessResult = {
+                status: "error",
+                message: eHeadless && eHeadless.message ? eHeadless.message : String(eHeadless)
+            };
+            return;
+        }
+    }
+
+    // Initial Live Preview
+    triggerPreviewUpdate();
+
+    var result = dialog.show();
+    if (result !== 1) {
+        cleanupPreview();
+        return;
+    }
+
+    // Final Application
+    try {
+        var finalSettings = readSettings();
+        executePrintJobCore(finalSettings);
         OZO.saveWindowState(dialog, STATE_NAMESPACE);
         app.redraw();
 

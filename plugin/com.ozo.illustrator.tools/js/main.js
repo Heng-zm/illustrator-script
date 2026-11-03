@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.4.1"; // keep in sync with CSXS/manifest.xml
+    var CURRENT_VERSION = "2.4.2"; // keep in sync with CSXS/manifest.xml
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
@@ -774,6 +774,12 @@
             renderEmbeddedCutContour();
         } else if (tool.id === "dimension") {
             renderEmbeddedDimension();
+        } else if (tool.id === "printjob") {
+            renderEmbeddedPrintJob();
+        } else if (tool.id === "count") {
+            renderEmbeddedCount();
+        } else if (tool.id === "numbering") {
+            renderEmbeddedNumbering();
         } else {
             renderEmbeddedGeneric(tool);
         }
@@ -2030,6 +2036,781 @@
     }
 
     // -------------------------------------------------------------
+    // In-Dock Print Job Info View
+    // -------------------------------------------------------------
+    function renderEmbeddedPrintJob() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_printjob_settings", "{}")); } catch (e) {}
+
+        var today = new Date();
+        var dStr = ("0" + today.getDate()).slice(-2) + " " + ("0" + (today.getMonth() + 1)).slice(-2) + " " + today.getFullYear();
+
+        var state = {
+            material: saved.material || "Silk Light Box",
+            dateStr: saved.dateStr || dStr,
+            widthVal: saved.widthVal || "",
+            heightVal: saved.heightVal || "",
+            unit: saved.unit || "cm",
+            qty: saved.qty !== undefined ? saved.qty : 1,
+            note: saved.note || "",
+            expandArtboard: saved.expandArtboard !== false,
+            darkBox: saved.darkBox === true,
+            textColorIndex: saved.textColorIndex !== undefined ? saved.textColorIndex : 0,
+            alignmentIndex: saved.alignmentIndex !== undefined ? saved.alignmentIndex : 0,
+            fontSizeIndex: saved.fontSizeIndex !== undefined ? saved.fontSizeIndex : 0,
+            fontChoiceIndex: saved.fontChoiceIndex !== undefined ? saved.fontChoiceIndex : 0
+        };
+
+        var materials = [
+            { id: "Silk Light Box", name: "Silk Light Box" },
+            { id: "Sticker / Decal", name: isKhmer() ? "Sticker (ស្ទីគ័រ)" : "Sticker / Decal" },
+            { id: "Vinyl Banner", name: isKhmer() ? "Vinyl Banner (បដា)" : "Vinyl Banner" },
+            { id: "Slim LED", name: "Slim LED" },
+            { id: "Backlit Film", name: "Backlit Film" },
+            { id: "Canvas", name: "Canvas" },
+            { id: "Clear Sticker", name: isKhmer() ? "Clear Sticker (ស្ទីគ័រថ្លា)" : "Clear Sticker" },
+            { id: "Custom", name: isKhmer() ? "ផ្សេងទៀត (Custom...)" : "Custom..." }
+        ];
+
+        var html = [];
+
+        // 1. Live Ticket Preview Card
+        html.push('<div class="embed-card" style="padding:10px 12px;background:var(--bg-surface);">');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;"><span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span></div>');
+        html.push('  <div class="print-job-ticket-card" id="pjTicketCard">');
+        html.push('    <div class="ticket-line-date" id="pjTicketDate">' + escapeHtml(state.dateStr || dStr) + '</div>');
+        html.push('    <div class="ticket-line-mat" id="pjTicketMat">' + escapeHtml(state.material) + '</div>');
+        html.push('    <div class="ticket-line-dim" id="pjTicketDim">w' + (state.widthVal || "--") + state.unit + ' x h' + (state.heightVal || "--") + state.unit + ' =' + state.qty + 'pcs</div>');
+        html.push('    <div class="ticket-line-note" id="pjTicketNote" style="' + (state.note ? "" : "display:none;") + '">' + escapeHtml(state.note) + '</div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Job Metadata
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ព័ត៌មានការងារបោះពុម្ព (Job Info)" : "Production Details") + '</span></div>');
+        html.push('  <div style="margin-bottom:8px;">');
+        html.push('    <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ប្រភេទសម្ភារៈ (Material / Media):" : "Material / Media:") + '</label>');
+        html.push('    <div style="display:flex;gap:6px;margin-top:2px;">');
+        html.push('      <select id="pjMatSelect" class="embed-select" style="flex:1;">');
+        var isKnownMat = false;
+        for (var mi = 0; mi < materials.length; mi++) {
+            var m = materials[mi];
+            if (m.id !== "Custom" && state.material === m.id) isKnownMat = true;
+        }
+        for (var mi2 = 0; mi2 < materials.length; mi2++) {
+            var m2 = materials[mi2];
+            var mSel = (state.material === m2.id || (!isKnownMat && m2.id === "Custom")) ? "selected" : "";
+            html.push('        <option value="' + escapeHtml(m2.id) + '" ' + mSel + '>' + escapeHtml(m2.name) + '</option>');
+        }
+        html.push('      </select>');
+        html.push('      <input type="text" id="pjMatCustomInput" class="embed-input" value="' + escapeHtml(state.material) + '" placeholder="Material name" style="flex:1.2;' + (!isKnownMat || state.material === "Custom" ? "" : "display:none;") + '">');
+        html.push('    </div>');
+        html.push('  </div>');
+
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "កាលបរិច្ឆេទ (Date):" : "Date (DD MM YYYY):") + '</label>');
+        html.push('      <input type="text" id="pjDateInput" class="embed-input" value="' + escapeHtml(state.dateStr) + '" placeholder="DD MM YYYY" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួន (Quantity):" : "Quantity (pcs):") + '</label>');
+        html.push('      <input type="number" id="pjQtyInput" class="embed-input" value="' + state.qty + '" min="1" step="1" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+
+        html.push('  <div style="margin-top:8px;">');
+        html.push('    <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ឈ្មោះអតិថិជន / ចំណាំ (Note / Customer):" : "Customer / Note (Optional):") + '</label>');
+        html.push('    <input type="text" id="pjNoteInput" class="embed-input" value="' + escapeHtml(state.note) + '" placeholder="e.g. OZO Brand - Urgent" style="width:100%;margin-top:2px;">');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Dimensions Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <span>' + (isKhmer() ? "ទំហំបោះពុម្ព (Print Dimensions)" : "Print Dimensions") + '</span>');
+        html.push('    <button type="button" id="btnPjSyncAb" class="embed-preset-btn" style="padding:2px 8px;font-size:10.5px;">📐 ' + (isKhmer() ? "យកទំហំ Artboard" : "Sync Artboard") + '</button>');
+        html.push('  </div>');
+        html.push('  <div class="embed-row-3col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទទឹង (W):" : "Width:") + '</label>');
+        html.push('      <input type="number" id="pjWidthInput" class="embed-input" value="' + state.widthVal + '" step="0.1" min="0.1" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "កម្ពស់ (H):" : "Height:") + '</label>');
+        html.push('      <input type="number" id="pjHeightInput" class="embed-input" value="' + state.heightVal + '" step="0.1" min="0.1" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ខ្នាត:" : "Unit:") + '</label>');
+        html.push('      <select id="pjUnitSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        var pjUnits = ["cm", "mm", "in", "m", "pt"];
+        for (var pju = 0; pju < pjUnits.length; pju++) {
+            html.push('        <option value="' + pjUnits[pju] + '" ' + (state.unit === pjUnits[pju] ? "selected" : "") + '>' + pjUnits[pju] + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Header Style & Placement
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ការកំណត់ និងម៉ូតបដា" : "Header Style & Placement") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទំហំអក្សរ:" : "Font Size:") + '</label>');
+        html.push('      <select id="pjFontSizeSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        var fSizes = [
+            isKhmer() ? "ស្វ័យប្រវត្តិ (Auto)" : "Auto (Proportional)",
+            isKhmer() ? "តូច (Small)" : "Small",
+            isKhmer() ? "មធ្យម (Medium)" : "Medium",
+            isKhmer() ? "ធំ (Large)" : "Large",
+            isKhmer() ? "ធំបំផុត (Extra Large)" : "Extra Large"
+        ];
+        for (var fsi = 0; fsi < fSizes.length; fsi++) {
+            html.push('        <option value="' + fsi + '" ' + (state.fontSizeIndex === fsi ? "selected" : "") + '>' + fSizes[fsi] + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ពណ៌អក្សរ:" : "Text Color:") + '</label>');
+        html.push('      <select id="pjColorSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        var tColors = [
+            isKhmer() ? "ខ្មៅ (Black)" : "Black",
+            isKhmer() ? "ស (White)" : "White",
+            isKhmer() ? "ខៀវ (Cyan)" : "Cyan",
+            isKhmer() ? "ក្រហមផ្កាឈូក (Magenta)" : "Magenta",
+            isKhmer() ? "លឿង (Yellow)" : "Yellow"
+        ];
+        for (var tci = 0; tci < tColors.length; tci++) {
+            html.push('        <option value="' + tci + '" ' + (state.textColorIndex === tci ? "selected" : "") + '>' + tColors[tci] + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+
+        html.push('  <div style="margin-top:8px;">');
+        html.push('    <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ការតម្រឹម (Alignment):" : "Header Alignment:") + '</label>');
+        html.push('    <div class="embed-segmented" id="pjAlignSegmented" style="margin-top:2px;">');
+        html.push('      <button type="button" class="embed-seg-btn ' + (state.alignmentIndex === 0 ? "active" : "") + '" data-align="0">' + (isKhmer() ? "ឆ្វេង (Left)" : "Left") + '</button>');
+        html.push('      <button type="button" class="embed-seg-btn ' + (state.alignmentIndex === 1 ? "active" : "") + '" data-align="1">' + (isKhmer() ? "កណ្តាល (Center)" : "Center") + '</button>');
+        html.push('      <button type="button" class="embed-seg-btn ' + (state.alignmentIndex === 2 ? "active" : "") + '" data-align="2">' + (isKhmer() ? "ស្តាំ (Right)" : "Right") + '</button>');
+        html.push('    </div>');
+        html.push('  </div>');
+
+        html.push('  <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPjExpand" ' + (state.expandArtboard ? "checked" : "") + '> ' + (isKhmer() ? "ពង្រីកកម្ពស់ Artboard ស្វ័យប្រវត្តិ" : "Auto-expand artboard height for header") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPjDark" ' + (state.darkBox ? "checked" : "") + '> ' + (isKhmer() ? "ដាក់ប្រអប់ផ្ទៃក្រោយពណ៌ខ្មៅ (Dark Box)" : "Add solid dark background box") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 5. Submit Wrap
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnPjSubmit" class="btn-action-primary">🖨️ ' + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var pjMatSelect = $("pjMatSelect");
+        var pjMatCustomInput = $("pjMatCustomInput");
+        var pjDateInput = $("pjDateInput");
+        var pjQtyInput = $("pjQtyInput");
+        var pjNoteInput = $("pjNoteInput");
+        var pjWidthInput = $("pjWidthInput");
+        var pjHeightInput = $("pjHeightInput");
+        var pjUnitSelect = $("pjUnitSelect");
+        var pjFontSizeSelect = $("pjFontSizeSelect");
+        var pjColorSelect = $("pjColorSelect");
+        var chkPjExpand = $("chkPjExpand");
+        var chkPjDark = $("chkPjDark");
+        var btnPjSyncAb = $("btnPjSyncAb");
+        var btnPjSubmit = $("btnPjSubmit");
+        var alignBtns = embeddedContent.querySelectorAll("#pjAlignSegmented .embed-seg-btn");
+
+        var pjTicketDate = $("pjTicketDate");
+        var pjTicketMat = $("pjTicketMat");
+        var pjTicketDim = $("pjTicketDim");
+        var pjTicketNote = $("pjTicketNote");
+        var pjTicketCard = $("pjTicketCard");
+
+        function getEffectiveMaterial() {
+            if (pjMatSelect.value === "Custom") {
+                return pjMatCustomInput.value.trim() || "Silk Light Box";
+            }
+            return pjMatSelect.value;
+        }
+
+        function updateTicketPreview() {
+            var mat = getEffectiveMaterial();
+            var dt = pjDateInput.value.trim() || dStr;
+            var w = pjWidthInput.value || "--";
+            var h = pjHeightInput.value || "--";
+            var u = pjUnitSelect.value;
+            var q = pjQtyInput.value || "1";
+            var n = pjNoteInput.value.trim();
+
+            pjTicketDate.textContent = dt;
+            pjTicketMat.textContent = mat;
+            pjTicketDim.textContent = "w" + w + u + " x h" + h + u + " =" + q + "pcs";
+            if (n) {
+                pjTicketNote.textContent = n;
+                pjTicketNote.style.display = "block";
+            } else {
+                pjTicketNote.style.display = "none";
+            }
+
+            // Text color preview
+            var colorIdx = parseInt(pjColorSelect.value, 10) || 0;
+            var colors = ["#ffffff", "#ffffff", "#00d2ff", "#ff2a85", "#ffd200"];
+            pjTicketMat.style.color = colors[colorIdx] || "#ffffff";
+
+            // Dark box preview
+            pjTicketCard.style.background = chkPjDark.checked ? "#080808" : "#111418";
+            pjTicketCard.style.border = chkPjDark.checked ? "1px solid #333" : "1px solid var(--border-color)";
+        }
+
+        function saveState() {
+            state.material = getEffectiveMaterial();
+            state.dateStr = pjDateInput.value.trim();
+            state.qty = parseInt(pjQtyInput.value, 10) || 1;
+            state.note = pjNoteInput.value.trim();
+            state.widthVal = pjWidthInput.value;
+            state.heightVal = pjHeightInput.value;
+            state.unit = pjUnitSelect.value;
+            state.fontSizeIndex = parseInt(pjFontSizeSelect.value, 10) || 0;
+            state.textColorIndex = parseInt(pjColorSelect.value, 10) || 0;
+            state.expandArtboard = chkPjExpand.checked;
+            state.darkBox = chkPjDark.checked;
+            store.setDebounced("ozo_printjob_settings", JSON.stringify(state), 250);
+            updateTicketPreview();
+        }
+
+        pjMatSelect.addEventListener("change", function() {
+            if (this.value === "Custom") {
+                pjMatCustomInput.style.display = "block";
+                pjMatCustomInput.focus();
+            } else {
+                pjMatCustomInput.style.display = "none";
+                pjMatCustomInput.value = this.value;
+            }
+            saveState();
+        });
+
+        pjMatCustomInput.addEventListener("input", saveState);
+        pjDateInput.addEventListener("input", saveState);
+        pjQtyInput.addEventListener("input", saveState);
+        pjNoteInput.addEventListener("input", saveState);
+        pjWidthInput.addEventListener("input", saveState);
+        pjHeightInput.addEventListener("input", saveState);
+        pjUnitSelect.addEventListener("change", saveState);
+        pjFontSizeSelect.addEventListener("change", saveState);
+        pjColorSelect.addEventListener("change", saveState);
+        chkPjExpand.addEventListener("change", saveState);
+        chkPjDark.addEventListener("change", saveState);
+
+        for (var ai = 0; ai < alignBtns.length; ai++) {
+            alignBtns[ai].addEventListener("click", function() {
+                for (var ab = 0; ab < alignBtns.length; ab++) alignBtns[ab].classList.remove("active");
+                this.classList.add("active");
+                state.alignmentIndex = parseInt(this.getAttribute("data-align"), 10);
+                saveState();
+            });
+        }
+
+        function fetchArtboardDefaults() {
+            if (!csInterface) return;
+            csInterface.evalScript("ozoGetPrintJobDefaults()", function(raw) {
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+                if (res && res.status === "success") {
+                    if (!pjWidthInput.value || pjWidthInput.value === "0") pjWidthInput.value = res.width;
+                    if (!pjHeightInput.value || pjHeightInput.value === "0") pjHeightInput.value = res.height;
+                    if (!pjDateInput.value) pjDateInput.value = res.dateStr;
+                    pjUnitSelect.value = res.unit;
+                    saveState();
+                }
+            });
+        }
+
+        btnPjSyncAb.addEventListener("click", function() {
+            if (!csInterface) return;
+            csInterface.evalScript("ozoGetPrintJobDefaults()", function(raw) {
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+                if (res && res.status === "success") {
+                    pjWidthInput.value = res.width;
+                    pjHeightInput.value = res.height;
+                    pjUnitSelect.value = res.unit;
+                    if (res.dateStr) pjDateInput.value = res.dateStr;
+                    saveState();
+                    setStatus(isKhmer() ? "បានទាញយកទំហំ " + res.width + " x " + res.height + " " + res.unit : "Synced " + res.width + " x " + res.height + " " + res.unit + " from " + res.artboardName, "success", 3000);
+                } else {
+                    showError(isKhmer() ? "ពុំអាចយកទំហំបានទេ" : "Sync Failed", (res && res.message) || String(raw));
+                }
+            });
+        });
+
+        btnPjSubmit.addEventListener("click", function() {
+            hideError();
+            var w = parseFloat(pjWidthInput.value);
+            var h = parseFloat(pjHeightInput.value);
+            if (!w || w <= 0 || !h || h <= 0) {
+                showError(isKhmer() ? "ទំហំមិនត្រឹមត្រូវ" : "Invalid Dimensions", isKhmer() ? "សូមបញ្ចូលទទឹង និងកម្ពស់ធំជាង 0" : "Width and Height must be greater than zero.");
+                return;
+            }
+
+            btnPjSubmit.disabled = true;
+            btnPjSubmit.textContent = isKhmer() ? "⏳ កំពុងបង្កើត..." : "⏳ Generating Header...";
+            setStatus(isKhmer() ? "កំពុងបង្កើតក្បាល File Print..." : "Creating print production header...", "running");
+
+            var params = {
+                material: getEffectiveMaterial(),
+                dateStr: pjDateInput.value.trim() || dStr,
+                widthVal: w,
+                heightVal: h,
+                unit: pjUnitSelect.value,
+                qty: parseInt(pjQtyInput.value, 10) || 1,
+                note: pjNoteInput.value.trim(),
+                expandArtboard: chkPjExpand.checked,
+                darkBox: chkPjDark.checked,
+                textColorIndex: parseInt(pjColorSelect.value, 10) || 0,
+                alignmentIndex: state.alignmentIndex,
+                fontSizeIndex: parseInt(pjFontSizeSelect.value, 10) || 0,
+                fontChoiceIndex: 0
+            };
+
+            if (!csInterface) {
+                setTimeout(function() {
+                    btnPjSubmit.disabled = false;
+                    btnPjSubmit.textContent = "🖨️ " + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header");
+                    setStatus("Simulated Print Job Header Created (Browser Preview)", "success", 4000);
+                }, 1000);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecutePrintJob(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
+                btnPjSubmit.disabled = false;
+                btnPjSubmit.textContent = "🖨️ " + (isKhmer() ? "បង្កើតក្បាល File Print ឥឡូវនេះ" : "Generate Print Job Header");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "success") {
+                    var okMsg = isKhmer() ? "បានបង្កើតក្បាល File Print ដោយជោគជ័យលើ Layer " + res.layer : "Created Print Header (" + res.material + " | " + res.dimensions + ") on layer " + res.layer;
+                    setStatus(okMsg, "success", 5000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to generate print job header");
+                    showError(isKhmer() ? "ការបង្កើតបដាបរាជ័យ" : "Print Job Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        });
+
+        // Initialize defaults if width/height are empty
+        if (!state.widthVal || !state.heightVal) {
+            fetchArtboardDefaults();
+        } else {
+            updateTicketPreview();
+        }
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock Object Count & Prepress Inspector View
+    // -------------------------------------------------------------
+    function renderEmbeddedCount() {
+        embeddedContent.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--text-muted);font-size:12px;">⏳ ' + (isKhmer() ? "កំពុងវិភាគឯកសារ..." : "Analyzing artwork...") + '</div>';
+
+        function loadStats() {
+            if (!csInterface) {
+                renderCountDashboard({
+                    status: "success",
+                    docName: "Active Artwork.ai",
+                    colorSpace: "CMYK",
+                    unit: "cm",
+                    artboardCount: 1,
+                    layerCount: 4,
+                    activeLayerName: "Layer 1",
+                    selection: { count: 6, width: 38.2, height: 18.5, hasBounds: true },
+                    activeLayerStats: { total: 42, paths: 28, groups: 4, texts: 4, images: 2, compounds: 4, other: 0 },
+                    documentStats: { total: 120, paths: 85, groups: 12, texts: 10, images: 5, compounds: 8, other: 0 }
+                });
+                return;
+            }
+
+            csInterface.evalScript("ozoGetObjectCountStats()", function (raw) {
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+                if (res && res.status === "success") {
+                    renderCountDashboard(res);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to analyze artwork");
+                    embeddedContent.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:12px;">' + escapeHtml(errMsg) + '</div>';
+                }
+            });
+        }
+
+        function renderCountDashboard(data) {
+            var html = [];
+            var sel = data.selection || { count: 0 };
+            var act = data.activeLayerStats || { total: 0, paths: 0, groups: 0, texts: 0, images: 0, compounds: 0, other: 0 };
+            var docS = data.documentStats || { total: 0, paths: 0, groups: 0, texts: 0, images: 0, compounds: 0, other: 0 };
+
+            // 1. Selection Inspector Card
+            html.push('<div class="embed-card">');
+            html.push('  <div class="embed-card-header">');
+            html.push('    <span>' + (isKhmer() ? "វត្ថុដែលបានជ្រើសរើស (Selection)" : "Selection Inspector") + '</span>');
+            html.push('    <span class="tool-badge ' + (sel.count > 0 ? "badge-prepress" : "") + '" style="font-weight:700;">' + sel.count + ' ' + (isKhmer() ? "វត្ថុ" : "selected") + '</span>');
+            html.push('  </div>');
+            if (sel.count > 0 && sel.hasBounds) {
+                html.push('  <div class="stat-summary-grid">');
+                html.push('    <div class="stat-box">');
+                html.push('      <span class="stat-box-val">' + sel.width + ' <small style="font-size:11px;">' + data.unit + '</small></span>');
+                html.push('      <span class="stat-box-lbl">' + (isKhmer() ? "ទទឹង (Width)" : "Selection Width") + '</span>');
+                html.push('    </div>');
+                html.push('    <div class="stat-box">');
+                html.push('      <span class="stat-box-val">' + sel.height + ' <small style="font-size:11px;">' + data.unit + '</small></span>');
+                html.push('      <span class="stat-box-lbl">' + (isKhmer() ? "កម្ពស់ (Height)" : "Selection Height") + '</span>');
+                html.push('    </div>');
+                html.push('  </div>');
+            } else {
+                html.push('  <div style="font-size:11px;color:var(--text-muted);padding:4px 0;">' + (isKhmer() ? "ពុំទាន់បានជ្រើសរើស Artwork ទេ - បង្ហាញស្ថិតិទូទៅខាងក្រោម" : "No artwork selected. Displaying active layer & document stats below.") + '</div>');
+            }
+            html.push('</div>');
+
+            // 2. Document & Layer Overview
+            html.push('<div class="embed-card">');
+            html.push('  <div class="embed-card-header">');
+            html.push('    <span>' + (isKhmer() ? "ស្ថិតិឯកសារ (Document Overview)" : "Document Overview") + '</span>');
+            html.push('    <span class="tool-badge" style="font-family:monospace;font-size:10px;">' + escapeHtml(data.colorSpace) + '</span>');
+            html.push('  </div>');
+            html.push('  <div class="stat-summary-grid">');
+            html.push('    <div class="stat-box">');
+            html.push('      <span class="stat-box-val">' + data.artboardCount + '</span>');
+            html.push('      <span class="stat-box-lbl">' + (isKhmer() ? "ផ្ទាំងគំនូរ (Artboards)" : "Artboards") + '</span>');
+            html.push('    </div>');
+            html.push('    <div class="stat-box">');
+            html.push('      <span class="stat-box-val">' + data.layerCount + '</span>');
+            html.push('      <span class="stat-box-lbl">' + (isKhmer() ? "ស្រទាប់ (Layers)" : "Layers") + '</span>');
+            html.push('    </div>');
+            html.push('    <div class="stat-box">');
+            html.push('      <span class="stat-box-val">' + act.total + '</span>');
+            html.push('      <span class="stat-box-lbl">' + (isKhmer() ? "Layer សកម្ម (" + escapeHtml(data.activeLayerName) + ")" : "Active Layer (" + escapeHtml(data.activeLayerName) + ")") + '</span>');
+            html.push('    </div>');
+            html.push('    <div class="stat-box">');
+            html.push('      <span class="stat-box-val">' + docS.total + '</span>');
+            html.push('      <span class="stat-box-lbl">' + (isKhmer() ? "វត្ថុសរុបក្នុងឯកសារ" : "Total Document Items") + '</span>');
+            html.push('    </div>');
+            html.push('  </div>');
+            html.push('</div>');
+
+            // 3. Object Types Breakdown
+            html.push('<div class="embed-card">');
+            html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ប្រភេទវត្ថុក្នុង Layer សកម្ម (Active Layer Types)" : "Active Layer Type Breakdown") + '</span></div>');
+            html.push('  <div class="stat-pill-list">');
+            html.push('    <div class="stat-pill"><span>☡ ' + (isKhmer() ? "Paths:" : "Paths:") + '</span><span class="stat-pill-val">' + act.paths + '</span></div>');
+            html.push('    <div class="stat-pill"><span>📁 ' + (isKhmer() ? "Groups:" : "Groups:") + '</span><span class="stat-pill-val">' + act.groups + '</span></div>');
+            html.push('    <div class="stat-pill"><span>🔤 ' + (isKhmer() ? "Text:" : "Text:") + '</span><span class="stat-pill-val">' + act.texts + '</span></div>');
+            html.push('    <div class="stat-pill"' + (act.images > 0 ? ' style="border-color:#e6a23c;"' : '') + '><span>🖼️ ' + (isKhmer() ? "Images:" : "Images:") + '</span><span class="stat-pill-val"' + (act.images > 0 ? ' style="color:#e6a23c;"' : '') + '>' + act.images + '</span></div>');
+            html.push('    <div class="stat-pill"><span>⯃ ' + (isKhmer() ? "Compounds:" : "Compounds:") + '</span><span class="stat-pill-val">' + act.compounds + '</span></div>');
+            html.push('    <div class="stat-pill"><span>⋯ ' + (isKhmer() ? "Other:" : "Other:") + '</span><span class="stat-pill-val">' + act.other + '</span></div>');
+            html.push('  </div>');
+            html.push('</div>');
+
+            // 4. Quick Actions
+            html.push('<div class="embed-action-wrap" style="gap:8px;">');
+            html.push('  <button type="button" id="btnCountRefresh" class="btn-action-primary">🔄 ' + (isKhmer() ? "វិភាគម្ដងទៀត (Refresh)" : "Refresh Statistics") + '</button>');
+            html.push('  <div style="display:flex;gap:8px;width:100%;">');
+            html.push('    <button type="button" id="btnCountSelectAb" class="btn-action-secondary" style="flex:1;">⤢ ' + (isKhmer() ? "ជ្រើសលើ Artboard" : "Select Artboard") + '</button>');
+            html.push('    <button type="button" id="btnCountDeselect" class="btn-action-secondary" style="flex:1;">✕ ' + (isKhmer() ? "ដោះការជ្រើសរើស" : "Deselect") + '</button>');
+            html.push('  </div>');
+            html.push('</div>');
+
+            embeddedContent.innerHTML = html.join("\n");
+
+            $("btnCountRefresh").addEventListener("click", loadStats);
+            $("btnCountSelectAb").addEventListener("click", function() {
+                if (csInterface) {
+                    csInterface.evalScript("ozoSelectAllOnActiveArtboard()", function() { loadStats(); });
+                }
+            });
+            $("btnCountDeselect").addEventListener("click", function() {
+                if (csInterface) {
+                    csInterface.evalScript("ozoDeselectAll()", function() { loadStats(); });
+                }
+            });
+        }
+
+        loadStats();
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock Sequential Numbering View
+    // -------------------------------------------------------------
+    function renderEmbeddedNumbering() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_numbering_settings", "{}")); } catch (e) {}
+
+        var state = {
+            start: saved.start !== undefined ? saved.start : 1,
+            end: saved.end !== undefined ? saved.end : 10,
+            prefix: saved.prefix || "",
+            suffix: saved.suffix || "",
+            padding: saved.padding !== undefined ? saved.padding : 3,
+            layout: saved.layout !== undefined ? saved.layout : 0, // 0: Grid, 1: Artboards
+            columns: saved.columns !== undefined ? saved.columns : 5,
+            horizontalStep: saved.horizontalStep !== undefined ? saved.horizontalStep : 30,
+            verticalStep: saved.verticalStep !== undefined ? saved.verticalStep : 15,
+            unit: saved.unit || "mm",
+            templateAction: saved.templateAction !== undefined ? saved.templateAction : 0 // 0: Hide, 1: Lock, 2: Keep
+        };
+
+        var html = [];
+
+        // Helper function for format preview
+        function formatSample(num, pad) {
+            var s = String(num);
+            while (s.length < pad) s = "0" + s;
+            return s;
+        }
+
+        // 1. Live Sample Preview Card
+        html.push('<div class="embed-card" style="padding:10px 12px;background:var(--bg-surface);">');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់លេខរៀង (Live Number Preview)" : "Live Number Preview") + '</span>');
+        html.push('    <span id="numTotalBadge" class="tool-badge badge-prepress" style="font-weight:700;">10 numbers</span>');
+        html.push('  </div>');
+        html.push('  <div id="numSamplePill" style="background:#111418;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:8px 10px;font-family:monospace;font-size:12px;color:var(--accent);text-align:center;letter-spacing:0.5px;">');
+        html.push('    001  ...  010');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Sequence Values Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "តម្លៃលេខរៀង (Sequence Range)" : "Sequence Range") + '</span></div>');
+        html.push('  <div class="embed-row-3col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចាប់ផ្តើម:" : "Start:") + '</label>');
+        html.push('      <input type="number" id="numStartInput" class="embed-input" value="' + state.start + '" step="1" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "បញ្ចប់:" : "End:") + '</label>');
+        html.push('      <input type="number" id="numEndInput" class="embed-input" value="' + state.end + '" step="1" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួនខ្ទង់:" : "Digits:") + '</label>');
+        html.push('      <select id="numPaddingSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        var pads = [
+            { v: 0, l: "None (1, 2...)" },
+            { v: 2, l: "2 (01, 02...)" },
+            { v: 3, l: "3 (001, 002...)" },
+            { v: 4, l: "4 (0001...)" },
+            { v: 5, l: "5 (00001...)" },
+            { v: 6, l: "6 (000001...)" }
+        ];
+        for (var pi = 0; pi < pads.length; pi++) {
+            html.push('        <option value="' + pads[pi].v + '" ' + (state.padding === pads[pi].v ? "selected" : "") + '>' + pads[pi].l + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Affixes Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "អក្សរមុខ-ក្រោយ (Prefix & Suffix)" : "Prefix & Suffix") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "អក្សរខាងមុខ (Prefix):" : "Prefix:") + '</label>');
+        html.push('      <input type="text" id="numPrefixInput" class="embed-input" value="' + escapeHtml(state.prefix) + '" placeholder="e.g. INV-" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "អក្សរខាងក្រោយ (Suffix):" : "Suffix:") + '</label>');
+        html.push('      <input type="text" id="numSuffixInput" class="embed-input" value="' + escapeHtml(state.suffix) + '" placeholder="e.g. -A" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Layout Mode Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់នៃការរៀបចំ (Placement)" : "Placement Mode") + '</span></div>');
+        html.push('  <div class="embed-segmented" id="numLayoutSegmented">');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.layout === 0 ? "active" : "") + '" data-layout="0">⊞ ' + (isKhmer() ? "ក្រឡាចត្រង្គ (Grid Repeat)" : "Grid Repeat") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.layout === 1 ? "active" : "") + '" data-layout="1">📑 ' + (isKhmer() ? "តាម Artboards" : "Across Artboards") + '</button>');
+        html.push('  </div>');
+
+        html.push('  <div id="numGridOptions" style="margin-top:10px;' + (state.layout === 0 ? "" : "display:none;") + '">');
+        html.push('    <div class="embed-row-3col">');
+        html.push('      <div>');
+        html.push('        <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួនជួរឈរ:" : "Columns:") + '</label>');
+        html.push('        <input type="number" id="numColsInput" class="embed-input" value="' + state.columns + '" min="1" max="100" style="width:100%;margin-top:2px;">');
+        html.push('      </div>');
+        html.push('      <div>');
+        html.push('        <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាតដេក (X):" : "Step X:") + '</label>');
+        html.push('        <input type="number" id="numStepXInput" class="embed-input" value="' + state.horizontalStep + '" step="1" style="width:100%;margin-top:2px;">');
+        html.push('      </div>');
+        html.push('      <div>');
+        html.push('        <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាតឈរ (Y):" : "Step Y:") + '</label>');
+        html.push('        <input type="number" id="numStepYInput" class="embed-input" value="' + state.verticalStep + '" step="1" style="width:100%;margin-top:2px;">');
+        html.push('      </div>');
+        html.push('    </div>');
+        html.push('    <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ខ្នាតគម្លាត:" : "Step Unit:") + '</label>');
+        html.push('      <select id="numUnitSelect" class="embed-select" style="width:80px;">');
+        var nUnits = ["mm", "cm", "in", "pt"];
+        for (var nu = 0; nu < nUnits.length; nu++) {
+            html.push('        <option value="' + nUnits[nu] + '" ' + (state.unit === nUnits[nu] ? "selected" : "") + '>' + nUnits[nu] + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('  </div>');
+
+        html.push('  <div id="numAbOptions" style="margin-top:10px;' + (state.layout === 1 ? "" : "display:none;") + '">');
+        html.push('    <div style="font-size:11px;color:var(--text-muted);line-height:1.4;">' + (isKhmer() ? "ដាក់លេខរៀង ១ លើផ្ទាំងគំនូរ Artboard នីមួយៗ ដោយយកទីតាំងតាមប្រអប់អត្ថបទគំរូ" : "Places 1 sequential number on each Artboard at the exact relative position of the template text.") + '</div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 5. Template Action Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "សកម្មភាពលើអក្សរគំរូ (Template Frame)" : "Template Text Frame") + '</span></div>');
+        html.push('  <select id="numTemplateSelect" class="embed-select" style="width:100%;">');
+        var tActions = [
+            isKhmer() ? "លាក់អក្សរគំរូដើម (Hide original - Recommended)" : "Hide original text frame (Recommended)",
+            isKhmer() ? "ចាក់សោអក្សរគំរូដើម (Lock original)" : "Lock original text frame",
+            isKhmer() ? "រក្សាទុកធម្មតា (Keep original)" : "Keep original text frame untouched"
+        ];
+        for (var tai = 0; tai < tActions.length; tai++) {
+            html.push('    <option value="' + tai + '" ' + (state.templateAction === tai ? "selected" : "") + '>' + tActions[tai] + '</option>');
+        }
+        html.push('  </select>');
+        html.push('</div>');
+
+        // 6. Action Wrap
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnNumSubmit" class="btn-action-primary">🔢 ' + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var numStartInput = $("numStartInput");
+        var numEndInput = $("numEndInput");
+        var numPaddingSelect = $("numPaddingSelect");
+        var numPrefixInput = $("numPrefixInput");
+        var numSuffixInput = $("numSuffixInput");
+        var numColsInput = $("numColsInput");
+        var numStepXInput = $("numStepXInput");
+        var numStepYInput = $("numStepYInput");
+        var numUnitSelect = $("numUnitSelect");
+        var numTemplateSelect = $("numTemplateSelect");
+        var btnNumSubmit = $("btnNumSubmit");
+        var numSamplePill = $("numSamplePill");
+        var numTotalBadge = $("numTotalBadge");
+        var layoutBtns = embeddedContent.querySelectorAll("#numLayoutSegmented .embed-seg-btn");
+        var numGridOptions = $("numGridOptions");
+        var numAbOptions = $("numAbOptions");
+
+        function updateSamplePreview() {
+            var st = parseInt(numStartInput.value, 10) || 1;
+            var en = parseInt(numEndInput.value, 10) || 10;
+            var pad = parseInt(numPaddingSelect.value, 10) || 0;
+            var pfx = numPrefixInput.value || "";
+            var sfx = numSuffixInput.value || "";
+            var cnt = Math.abs(en - st) + 1;
+
+            numTotalBadge.textContent = cnt + (isKhmer() ? " លេខ" : " numbers");
+            var sample1 = pfx + formatSample(st, pad) + sfx;
+            var sample2 = pfx + formatSample(en, pad) + sfx;
+            numSamplePill.textContent = sample1 + "  ...  " + sample2;
+        }
+
+        function saveNumState() {
+            state.start = parseInt(numStartInput.value, 10) || 1;
+            state.end = parseInt(numEndInput.value, 10) || 10;
+            state.padding = parseInt(numPaddingSelect.value, 10) || 0;
+            state.prefix = numPrefixInput.value;
+            state.suffix = numSuffixInput.value;
+            state.columns = parseInt(numColsInput.value, 10) || 5;
+            state.horizontalStep = parseFloat(numStepXInput.value) || 30;
+            state.verticalStep = parseFloat(numStepYInput.value) || 15;
+            state.unit = numUnitSelect.value;
+            state.templateAction = parseInt(numTemplateSelect.value, 10) || 0;
+            store.setDebounced("ozo_numbering_settings", JSON.stringify(state), 250);
+            updateSamplePreview();
+        }
+
+        numStartInput.addEventListener("input", saveNumState);
+        numEndInput.addEventListener("input", saveNumState);
+        numPaddingSelect.addEventListener("change", saveNumState);
+        numPrefixInput.addEventListener("input", saveNumState);
+        numSuffixInput.addEventListener("input", saveNumState);
+        numColsInput.addEventListener("input", saveNumState);
+        numStepXInput.addEventListener("input", saveNumState);
+        numStepYInput.addEventListener("input", saveNumState);
+        numUnitSelect.addEventListener("change", saveNumState);
+        numTemplateSelect.addEventListener("change", saveNumState);
+
+        for (var li = 0; li < layoutBtns.length; li++) {
+            layoutBtns[li].addEventListener("click", function() {
+                for (var lb = 0; lb < layoutBtns.length; lb++) layoutBtns[lb].classList.remove("active");
+                this.classList.add("active");
+                state.layout = parseInt(this.getAttribute("data-layout"), 10);
+                if (state.layout === 0) {
+                    numGridOptions.style.display = "block";
+                    numAbOptions.style.display = "none";
+                } else {
+                    numGridOptions.style.display = "none";
+                    numAbOptions.style.display = "block";
+                }
+                saveNumState();
+            });
+        }
+
+        btnNumSubmit.addEventListener("click", function() {
+            hideError();
+            btnNumSubmit.disabled = true;
+            btnNumSubmit.textContent = isKhmer() ? "⏳ កំពុងដំណើរការ..." : "⏳ Generating...";
+            setStatus(isKhmer() ? "កំពុងបង្កើតលេខរៀង..." : "Generating sequential numbers...", "running");
+
+            var params = {
+                start: parseInt(numStartInput.value, 10) || 1,
+                end: parseInt(numEndInput.value, 10) || 10,
+                prefix: numPrefixInput.value || "",
+                suffix: numSuffixInput.value || "",
+                padding: parseInt(numPaddingSelect.value, 10) || 0,
+                layout: state.layout,
+                columns: parseInt(numColsInput.value, 10) || 5,
+                horizontalStep: parseFloat(numStepXInput.value) || 30,
+                verticalStep: parseFloat(numStepYInput.value) || 15,
+                unit: numUnitSelect.value,
+                templateAction: parseInt(numTemplateSelect.value, 10) || 0
+            };
+
+            if (!csInterface) {
+                setTimeout(function() {
+                    btnNumSubmit.disabled = false;
+                    btnNumSubmit.textContent = "🔢 " + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers");
+                    setStatus("Simulated Numbers Generated (Browser Preview)", "success", 4000);
+                }, 1000);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteSequentialNumbering(" + JSON.stringify(JSON.stringify(params)) + ")", function(raw) {
+                btnNumSubmit.disabled = false;
+                btnNumSubmit.textContent = "🔢 " + (isKhmer() ? "បង្កើតលេខរៀងឥឡូវនេះ" : "Generate Sequence Numbers");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "success") {
+                    var okMsg = isKhmer() ? "បានបង្កើតលេខរៀង " + res.count + " ដោយជោគជ័យលើ Layer " + res.layer : "Generated " + res.count + " numbers on layer " + res.layer;
+                    setStatus(okMsg, "success", 5000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to generate sequence numbers");
+                    showError(isKhmer() ? "ការបង្កើតលេខរៀងបរាជ័យ" : "Numbering Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        });
+
+        updateSamplePreview();
+    }
+
+    // -------------------------------------------------------------
     // Generic In-Dock View (for other tools)
     // -------------------------------------------------------------
     function renderEmbeddedGeneric(tool) {
@@ -2209,6 +2990,9 @@
             else if (activeEmbeddedTool.id === "qr") renderEmbeddedQR();
             else if (activeEmbeddedTool.id === "cutcontour") renderEmbeddedCutContour();
             else if (activeEmbeddedTool.id === "dimension") renderEmbeddedDimension();
+            else if (activeEmbeddedTool.id === "printjob") renderEmbeddedPrintJob();
+            else if (activeEmbeddedTool.id === "count") renderEmbeddedCount();
+            else if (activeEmbeddedTool.id === "numbering") renderEmbeddedNumbering();
             else renderEmbeddedGeneric(activeEmbeddedTool);
         } else {
             renderTools();

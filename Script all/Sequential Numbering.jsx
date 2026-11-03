@@ -7,6 +7,10 @@
     var RESULT_LAYER_NAME = "[Sequential Numbers]";
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("Open a document and select one template text frame."));
         return;
     }
@@ -14,6 +18,10 @@
     var doc = app.activeDocument;
     var currentSelection = doc.selection;
     if (!currentSelection || currentSelection.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "Please select one template text frame in Illustrator." };
+            return;
+        }
         alert(OZO.tr("Select one template text frame before running Sequential Numbering."));
         return;
     }
@@ -51,10 +59,18 @@
     }
 
     if (selectedFrames.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "Please select one template text frame in Illustrator." };
+            return;
+        }
         alert(OZO.tr("Select one template text frame before running Sequential Numbering."));
         return;
     }
     if (selectedFrames.length !== 1) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "Please select exactly one template text frame." };
+            return;
+        }
         alert(OZO.isKhmer() ?
             "\u179f\u17bc\u1798\u1787\u17d2\u179a\u17be\u179f\u1794\u17d2\u179a\u17a2\u1794\u17cb\u17a2\u178f\u17d2\u1790\u1794\u1791\u1796\u17bb\u1798\u17d2\u1796\u178f\u17c2\u1798\u17bd\u1799\u17d4\n\n\u1794\u17d2\u179a\u17a2\u1794\u17cb\u178a\u17c2\u179b\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u1795\u17d2\u178a\u179b\u17cb\u1796\u17bb\u1798\u17d2\u1796\u17a2\u1780\u17d2\u179f\u179a \u1791\u17c6\u17a0\u17c6 \u1796\u178e\u17cc \u1780\u17b6\u179a\u178f\u1798\u17d2\u179a\u17b9\u1798 \u1793\u17b7\u1784\u179a\u1785\u1793\u17b6\u1794\u17d0\u1791\u17d2\u1798\u17d4" :
             "Select exactly one template text frame.\n\nThe selected frame supplies the font, size, color, alignment, and styling.");
@@ -629,16 +645,7 @@
     OZO.translateWindow(dialog, OZO.getLanguage());
     OZO.applyTheme(dialog);
 
-    startInput.active = true;
-
-    var dialogResult = dialog.show();
-    if (dialogResult !== 1) {
-        cleanupPreview();
-        return;
-    }
-
-    try {
-        var finalSettings = readSettings();
+    function executeNumberingCore(finalSettings) {
         if (!previewLayer || previewSignature !== settingsSignature(finalSettings)) {
             generatePreview(finalSettings);
         }
@@ -671,16 +678,75 @@
                 }
             } catch (ignoreItemSelect) {}
         }
-        OZO.saveWindowState(dialog, "sequential_numbering");
-        app.redraw();
-        alert((OZO.isKhmer() ?
-            "\u1794\u17b6\u1793\u1794\u1789\u17d2\u1785\u1794\u17cb\u179b\u17c1\u1781\u179a\u17c0\u1784\u17d4\n\n\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f " + previewItems.length +
-                " \u179b\u17c1\u1781\u179b\u17be\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb " + finalLayerName + "\u17d4" :
-            SCRIPT_NAME + " completed.\n\nGenerated " + previewItems.length +
-                " number(s) on layer " + finalLayerName + ".") + "\n\n" + OZO.credit());
+
+        var createdCount = previewItems.length;
         previewLayer = null;
         previewItems = [];
         previewSignature = null;
+        app.redraw();
+
+        return {
+            status: "success",
+            count: createdCount,
+            layer: finalLayerName,
+            start: finalSettings.start,
+            end: finalSettings.end
+        };
+    }
+
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        try {
+            var hp = __ozoHeadlessParams;
+            var startNum = parseInt(hp.start, 10) || 1;
+            var endNum = parseInt(hp.end, 10) || 10;
+            var cnt = Math.abs(endNum - startNum) + 1;
+            var uFactor = unitFactor(hp.unit || defaultDocUnit);
+            var templatePt = frameReferencePoint(template);
+            var headlessSettings = {
+                start: startNum,
+                end: endNum,
+                count: cnt,
+                prefix: hp.prefix || "",
+                suffix: hp.suffix || "",
+                padding: typeof hp.padding === "number" ? hp.padding : 3,
+                layout: typeof hp.layout === "number" ? hp.layout : 0,
+                columns: parseInt(hp.columns, 10) || 5,
+                horizontalStep: (parseFloat(hp.horizontalStep) || 20) * uFactor,
+                verticalStep: (parseFloat(hp.verticalStep) || 10) * uFactor,
+                templateAction: typeof hp.templateAction === "number" ? hp.templateAction : 0,
+                startX: templatePt[0],
+                startY: templatePt[1],
+                startArtboard: typeof hp.startArtboard === "number" ? hp.startArtboard : 0
+            };
+            __ozoHeadlessResult = executeNumberingCore(headlessSettings);
+            return;
+        } catch (eHeadless) {
+            cleanupPreview();
+            __ozoHeadlessResult = {
+                status: "error",
+                message: eHeadless && eHeadless.message ? eHeadless.message : String(eHeadless)
+            };
+            return;
+        }
+    }
+
+    startInput.active = true;
+
+    var dialogResult = dialog.show();
+    if (dialogResult !== 1) {
+        cleanupPreview();
+        return;
+    }
+
+    try {
+        var finalSettings = readSettings();
+        var numRes = executeNumberingCore(finalSettings);
+        OZO.saveWindowState(dialog, "sequential_numbering");
+        alert((OZO.isKhmer() ?
+            "\u1794\u17b6\u1793\u1794\u1789\u17d2\u1785\u1794\u17cb\u179b\u17c1\u1781\u179a\u17c0\u1784\u17d4\n\n\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f " + numRes.count +
+                " \u179b\u17c1\u1781\u179b\u17be\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb " + numRes.layer + "\u17d4" :
+            SCRIPT_NAME + " completed.\n\nGenerated " + numRes.count +
+                " number(s) on layer " + numRes.layer + ".") + "\n\n" + OZO.credit());
     } catch (error) {
         cleanupPreview();
         alert((OZO.isKhmer() ? "\u1780\u17b6\u179a\u1794\u1784\u17d2\u1780\u17be\u178f\u179b\u17c1\u1781\u179a\u17c0\u1784\u1794\u179a\u17b6\u1787\u17d0\u1799\u17d4" : SCRIPT_NAME + " failed.") +
