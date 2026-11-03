@@ -1853,3 +1853,226 @@ body.theme-light {
 .script-item {
     contain: content;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Tool Preview Panel  (add-preview-screen.js)
+   ═══════════════════════════════════════════════════════════ */
+
+.view-preview {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    background: var(--bg-main);
+    animation: previewSlideIn 0.18s ease-out;
+}
+.view-preview.is-open { display: flex; }
+@keyframes previewSlideIn {
+    from { transform: translateX(24px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+.preview-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.preview-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    flex-shrink: 0;
+    font-family: inherit;
+}
+.preview-back-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.preview-back-btn:active { background: var(--bg-surface-active); }
+.preview-header-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    flex: 1;
+    text-align: center;
+}
+.preview-body {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+.preview-body::-webkit-scrollbar { width: 6px; }
+.preview-body::-webkit-scrollbar-track { background: transparent; }
+.preview-body::-webkit-scrollbar-thumb { background-color: var(--border-strong); border-radius: 3px; }
+.preview-hero {
+    background: linear-gradient(160deg, var(--bg-surface) 0%, var(--bg-main) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 20px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+}
+.preview-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb),0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+.preview-icon-wrap {
+    width: 52px; height: 52px;
+    border-radius: 13px;
+    background: var(--bg-surface-active);
+    border: 1px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+.preview-icon-wrap svg { width: 26px; height: 26px; }
+.preview-tool-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    line-height: 1.3;
+}
+.preview-tool-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.preview-tool-badge.badge-prepress { background: rgba(var(--prepress-rgb),0.18); color: rgb(var(--prepress-rgb)); }
+.preview-tool-badge.badge-layout   { background: rgba(var(--layout-rgb),0.18);   color: rgb(var(--layout-rgb)); }
+.preview-tool-badge.badge-utilities{ background: rgba(var(--util-rgb),0.18);     color: rgb(var(--util-rgb)); }
+.preview-tool-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.6;
+    max-width: 90%;
+}
+.preview-illustration {
+    max-width: 180px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+}
+.preview-illustration svg { width: 72px; height: 72px; color: var(--text-secondary); }
+.preview-section {
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+.preview-section:last-of-type { border-bottom: none; }
+.preview-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+.preview-features { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.preview-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 11.5px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+.preview-feat-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 5px;
+}
+.preview-feat-dot.dot-prepress  { background: rgb(var(--prepress-rgb)); }
+.preview-feat-dot.dot-layout    { background: rgb(var(--layout-rgb)); }
+.preview-feat-dot.dot-utilities { background: rgb(var(--util-rgb)); }
+.preview-actions {
+    padding: 12px 14px;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-color);
+}
+.preview-open-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+}
+.preview-open-btn:hover  { background: var(--accent-hover); }
+.preview-open-btn:active { background: var(--accent-active); }
+.preview-run-btn {
+    padding: 8px 12px;
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+.preview-run-btn:hover { background: var(--bg-surface-active); }
+/* Info button on tool cards */
+.preview-card-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border: none;
+    background: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+}
+.preview-card-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.preview-card-btn svg { width: 13px; height: 13px; }
+.view-grid .preview-card-btn { width: 20px; height: 20px; }
+
+.preview-illustration.illu-prepress svg { color: rgb(var(--prepress-rgb)); }
+.preview-illustration.illu-layout svg   { color: rgb(var(--layout-rgb)); }
+.preview-illustration.illu-utilities svg{ color: rgb(var(--util-rgb)); }

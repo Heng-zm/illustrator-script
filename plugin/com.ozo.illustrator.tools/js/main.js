@@ -85,7 +85,13 @@
             "update.err.notfound": "No releases found",
             "update.err.http": "Could not fetch release info",
             "update.err.network": "Could not connect to GitHub",
-            "update.err.timeout": "GitHub connection timed out"
+            "update.err.timeout": "GitHub connection timed out",
+            "preview.title": "Tool Preview",
+            "preview.features": "Key Features",
+            "preview.open": "Open Tool",
+            "preview.run": "Quick Run",
+            "preview.close": "Back",
+            "preview.btn": "Preview"
         },
         km: {
             "cat.all": "ទាំងអស់", "cat.favorites": "សំណព្វ", "cat.prepress": "មុនបោះពុម្ព",
@@ -147,7 +153,13 @@
             "update.err.notfound": "រកមិនឃើញកំណែថ្មីទេ",
             "update.err.http": "មិនអាចស្វែងរកកំណែថ្មីបានទេ",
             "update.err.network": "មិនអាចភ្ជាប់ទៅ GitHub បានទេ",
-            "update.err.timeout": "ការតភ្ជាប់ទៅ GitHub យឺតពេក"
+            "update.err.timeout": "ការតភ្ជាប់ទៅ GitHub យឺតពេក",
+            "preview.title": "ព័តឹម័នឡបករណ៍",
+            "preview.features": "លក្ខណែសំខាញ។",
+            "preview.open": "បើកឡបករណ៍",
+            "preview.run": "តំណើរការភ្លាម",
+            "preview.close": "ត្រជល័ប",
+            "preview.btn": "មើលព័តឹម័ន"
         }
     };
 
@@ -216,91 +228,142 @@
             nameEn: "Generate QR Code", nameKm: "បង្កើតកូដ QR",
             descEn: "Offline vector QR (Standard & Telegram 2026)",
             descKm: "កូដ QR វ៉ិចទ័រគ្មានអ៊ីនធឺណិត (ស្តង់ដារ និង Telegram)",
-            icon: svgIcon('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="7" y="7" width="1" height="1"/><rect x="18" y="7" width="1" height="1"/><rect x="7" y="18" width="1" height="1"/>')
+            icon: svgIcon('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="7" y="7" width="1" height="1"/><rect x="18" y="7" width="1" height="1"/><rect x="7" y="18" width="1" height="1"/>'),
+            featuresEn: ["100% offline — no internet required","Standard QR & Telegram 2026 deep-link style","Pure vector SVG output — infinitely scalable","Configurable size, margin & module color"],
+            featuresKm: ["ដំណើរការគ្មានអ៊ីនធឺណិត 100%","ម៉ូដស្តង់ដារ QR និង Telegram 2026","លទ្ធផលជា Vector SVG អាចពង្រីកតាមចិត្ត","កំណត់ទំហំ គែម និងពណ៌តាមតម្រូវការ"],
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"5\" y=\"5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"16\" y=\"5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"5\" y=\"16\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>"
+
         },
         {
             id: "cutcontour", file: "CutContour Generator.jsx", category: "prepress",
             nameEn: "CutContour Generator", nameKm: "បង្កើតខ្សែបន្ទាត់កាត់",
             descEn: "Die-cut lines, bleed offset & spot registration",
             descKm: "ខ្សែបន្ទាត់កាត់ Die-cut, Bleed និង Spot Color",
-            icon: svgIcon('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>')
+            icon: svgIcon('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>'),
+            featuresEn: ["Automated die-cut path generation","Configurable bleed offset per side","Spot color registration for RIP compatibility","Works on any selected artwork or group"],
+            featuresKm: ["បង្កើតខ្សែបន្ទាត់កាត់ Die-cut ស្វ័យប្រវត្តិ","កំណត់កម្រិត Bleed offset លើគ្រប់ជ្រុង","Spot Color ស្តង់ដារត្រូវជាមួយប្រព័ន្ធ RIP","ដំណើរការលើរូបរាង ឬក្រុមដែលបានជ្រើស"],
+            previewSvgInner: "<circle cx=\"6\" cy=\"6\" r=\"3\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><line x1=\"20\" y1=\"4\" x2=\"8.12\" y2=\"15.88\"/><line x1=\"14.47\" y1=\"14.48\" x2=\"20\" y2=\"20\"/><line x1=\"8.12\" y1=\"8.12\" x2=\"12\" y2=\"12\"/>"
+
         },
         {
             id: "printjob", file: "Print Job Info.jsx", category: "prepress",
             nameEn: "Print Job Info", nameKm: "ព័ត៌មានការងារបោះពុម្ព",
             descEn: "Metadata banner, dimensions & color separations",
             descKm: "បដាព័ត៌មានការងារ, ទំហំ និងពណ៌បោះពុម្ព",
-            icon: svgIcon('<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>')
+            icon: svgIcon('<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>'),
+            featuresEn: ["Production metadata banner on artboard","Width × height with live unit conversion","Active ink separation color preview","Auto-expand artboard to fit banner"],
+            featuresKm: ["បដាព័ត៌មានការងារបោះពុម្ពលើផ្ទាំងគំនូរ","បង្ហាញទំហំ ទទឹង × កម្ពស់ តាមខ្នាតជាក់ស្តែង","មើលពណ៌ Ink Separation មុនបោះពុម្ព","ពង្រីកផ្ទាំង Artboard ដោយស្វ័យប្រវត្តិ"],
+            previewSvgInner: "<polyline points=\"6 9 6 2 18 2 18 9\"/><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"/><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\"/>"
+
         },
         {
             id: "nesting", file: "Nesting.jsx", category: "prepress",
             nameEn: "Nesting (Sheet Packing)", nameKm: "រៀបចំប្លង់កាត់ Nesting",
             descEn: "Shape packing & material waste optimization",
             descKm: "តម្រៀបប្លង់សន្សំសំចៃផ្ទៃក្រដាស/សម្ភារៈ",
-            icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="5" height="5"/><rect x="13" y="6" width="5" height="8"/><rect x="6" y="13" width="5" height="5"/>')
+            icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="5" height="5"/><rect x="13" y="6" width="5" height="8"/><rect x="6" y="13" width="5" height="5"/>'),
+            featuresEn: ["Bin-packing algorithm minimizes sheet waste","Configurable sheet size, spacing & bleed","Supports mixed shapes and rotations","Real-time fill efficiency percentage"],
+            featuresKm: ["តម្រៀបប្លង់កាត់សន្សំសំចៃផ្ទៃក្រដាស/សម្ភារៈ","កំណត់ទំហំសន្លឹក គម្លាត និង Bleed","គាំទ្ររូបរាងចម្រុះ និងការបង្វិលមុំ","បង្ហាញភាគរយផ្ទៃប្រើប្រាស់ភ្លាមៗ"],
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><rect x=\"6\" y=\"6\" width=\"5\" height=\"5\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.7\"/><rect x=\"13\" y=\"6\" width=\"5\" height=\"8\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.5\"/><rect x=\"6\" y=\"13\" width=\"5\" height=\"5\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.6\"/><rect x=\"13\" y=\"15\" width=\"5\" height=\"3\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.4\"/>"
+
         },
         {
             id: "exporter", file: "Batch Production Exporter.jsx", category: "prepress",
             nameEn: "Batch Production Exporter", nameKm: "នាំចេញឯកសារជាកញ្ចប់",
             descEn: "Batch export artboards to PDF, TIFF, PNG & JPEG",
             descKm: "នាំចេញផ្ទាំងគំនូរជា PDF, TIFF, PNG, JPG តាមឈ្មោះកំណត់",
-            icon: svgIcon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>')
+            icon: svgIcon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
+            featuresEn: ["Batch export to PDF, TIFF, PNG & JPEG","Multi-page or separate PDF per artboard","Dynamic filename tokens: [doc] [ab] [num] [date]","Custom output folder with one-click open"],
+            featuresKm: ["នាំចេញជា PDF, TIFF, PNG និង JPEG ជាកញ្ចប់","ជម្រើស PDF ច្រើនទំព័រ ឬបំបែកតាម Artboard","កំណត់ឈ្មោះឯកសារស្វ័យប្រវត្តិតាម Token","ជ្រើសរើសថតផ្ទុកឯកសារ និងបើកបានភ្លាមៗ"],
+            previewSvgInner: "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/>"
+
         },
         {
             id: "dimension", file: "Smart Dimension.jsx", category: "layout",
             nameEn: "Smart Dimension", nameKm: "វាស់ទំហំស្វ័យប្រវត្តិ",
             descEn: "Automated linear, radial & bounding dimensions",
             descKm: "ដាក់វិមាត្រស្វ័យប្រវត្តិ (ប្រវែង, កាំ, ប្រអប់)",
-            icon: svgIcon('<line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="5" x2="2" y2="19"/><line x1="22" y1="5" x2="22" y2="19"/><polyline points="5 9 2 12 5 15"/><polyline points="19 9 22 12 19 15"/>')
+            icon: svgIcon('<line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="5" x2="2" y2="19"/><line x1="22" y1="5" x2="22" y2="19"/><polyline points="5 9 2 12 5 15"/><polyline points="19 9 22 12 19 15"/>'),
+            featuresEn: ["Linear, radial & bounding-box dimension types","Auto-detects object shape for best annotation","Smart leader text placement avoids overlaps","Non-destructive annotation layer"],
+            featuresKm: ["វាស់ប្រវែង រង្វាស់កាំ និងប្រអប់វិមាត្រ","ស្វែងរកទម្រង់វត្ថុស្វ័យប្រវត្តិសម្រាប់ដាក់ខ្នាត","រៀបចំអក្សរវិមាត្រមិនឱ្យជាន់គ្នា","បង្កើតលើ Layer ដាច់ដោយឡែកមិនខូចគំនូរ"],
+            previewSvgInner: "<line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"/><line x1=\"2\" y1=\"5\" x2=\"2\" y2=\"19\"/><line x1=\"22\" y1=\"5\" x2=\"22\" y2=\"19\"/><polyline points=\"5 9 2 12 5 15\"/><polyline points=\"19 9 22 12 19 15\"/>"
+
         },
         {
             id: "pathfinder", file: "Pathfinder.jsx", category: "layout",
             nameEn: "Pathfinder Pro", nameKm: "ឧបករណ៍ Pathfinder",
             descEn: "Enhanced boolean operations & shape unification",
             descKm: "កាត់តបញ្ចូលរាងវ៉ិចទ័រ និងសំអាត Path",
-            icon: svgIcon('<circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/>')
+            icon: svgIcon('<circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/>'),
+            featuresEn: ["Unite, Minus Front/Back, Intersect, Exclude","Divide, Trim, Merge, Crop, Outline","Shape tools: Round Rect, compound paths","One-click boolean with live preview"],
+            featuresKm: ["Unite, Minus Front/Back, Intersect, Exclude","Divide, Trim, Merge, Crop, Outline","ឧបករណ៍កែប្រែជ្រុងមូល និង Compound Paths","ដំណើរការ Boolean រហ័សដោយចុចតែម្តង"],
+            previewSvgInner: "<circle cx=\"9\" cy=\"12\" r=\"6\"/><circle cx=\"15\" cy=\"12\" r=\"6\"/>"
+
         },
         {
             id: "guide", file: "New Guide Layout.jsx", category: "layout",
             nameEn: "New Guide Layout", nameKm: "បង្កើតបន្ទាត់ណែនាំ Grid",
             descEn: "Columns, rows, margins & artboard grid guides",
             descKm: "បន្ទាត់ជួរឈរ ជួរដេក និងគែមសងខាង",
-            icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>')
+            icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>'),
+            featuresEn: ["Column & row grids with configurable gutters","Precise margin control on all four sides","Apply to active artboard or all artboards","Option to clear existing guides first"],
+            featuresKm: ["បង្កើតបន្ទាត់ Grid ជួរឈរ និងជួរដេក","កំណត់គម្លាត Margin ទាំង ៤ ជ្រុងច្បាស់លាស់","អនុវត្តលើ Artboard សកម្ម ឬគ្រប់ Artboards","ជម្រើសលុបបន្ទាត់ Guide ចាស់ៗជាមុន"],
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"3\" y1=\"9\" x2=\"21\" y2=\"9\"/><line x1=\"3\" y1=\"15\" x2=\"21\" y2=\"15\"/><line x1=\"9\" y1=\"3\" x2=\"9\" y2=\"21\"/><line x1=\"15\" y1=\"3\" x2=\"15\" y2=\"21\"/>"
+
         },
         {
             id: "repeat", file: "Object Repeat.jsx", category: "layout",
             nameEn: "Object Repeat", nameKm: "ចម្លងវត្ថុជាជួរ/រង្វង់",
             descEn: "Grid repeat, radial arrays & step-and-repeat",
             descKm: "ចម្លងក្រឡាចត្រង្គ រង្វង់មូល និងគម្លាតច្បាស់លាស់",
-            icon: svgIcon('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>')
+            icon: svgIcon('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>'),
+            featuresEn: ["Grid array with configurable rows & columns","Radial/circular arrangement with rotation","Fit-to-Artboard mode for perfect spacing","Offset & step options for alternating rows"],
+            featuresKm: ["ចម្លងវត្ថុជាក្រឡាចត្រង្គ ជួរឈរ និងជួរដេក","ចម្លងជារង្វង់មូលជាមួយការបង្វិលមុំ","មុខងារ Fit-to-Artboard រៀបចំស្មើផ្ទាំងគំនូរ","កំណត់គម្លាត Offset និងលំនាំចន្លោះជួរ"],
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/>"
+
         },
         {
             id: "icons", file: "Icon Importer.jsx", category: "utilities",
             nameEn: "Icon Importer", nameKm: "ស្វែងរក និងទាញយក Icon",
             descEn: "Direct SVG icon search & vector placement",
             descKm: "ស្វែងរក និងទាញយក icon វ៉ិចទ័ររាប់ពាន់",
-            icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>')
+            icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'),
+            featuresEn: ["Search 200,000+ SVG icons (Iconify library)","Place crisp vector icons at any size","Filter by icon set (Material, Feather, etc.)","Copy SVG markup or place in document"],
+            featuresKm: ["ស្វែងរក Icon ជាង ២០០,០០០ (បណ្ណាល័យ Iconify)","ដាក់រូប Icon វ៉ិចទ័រច្បាស់លើឯកសារភ្លាមៗ","ច្រោះតាមក្រុម Icon (Material, Feather...)","ចម្លងកូដ SVG ឬទាញទម្លាក់ចូលគំនូរផ្ទាល់"],
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\"/><polyline points=\"21 15 16 10 5 21\"/>"
+
         },
         {
             id: "numbering", file: "Sequential Numbering.jsx", category: "utilities",
             nameEn: "Sequential Numbering", nameKm: "វាយលេខរៀងស្វ័យប្រវត្តិ",
             descEn: "Serialized labels, batch stamps & barcode prep",
             descKm: "វាយលេខរៀងបន្តបន្ទាប់លើស្លាកសញ្ញា",
-            icon: svgIcon('<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>')
+            icon: svgIcon('<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>'),
+            featuresEn: ["Serial numbering for labels & tickets","Configurable start number, step & padding","Grid layout or across-artboard placement","Barcode-ready sequential text preparation"],
+            featuresKm: ["វាយលេខរៀងស្វ័យប្រវត្តិនៃស្លាក និងសំបុត្រ","កំណត់លេខចាប់ផ្តើម ចន្លោះរាប់ និងចំនួនខ្ទង់","រៀបចំជា Grid ឬតាមផ្ទាំង Artboard នីមួយៗ","ត្រៀមទិន្នន័យអក្សរសម្រាប់បារកូដបានងាយស្រួល"],
+            previewSvgInner: "<line x1=\"4\" y1=\"9\" x2=\"20\" y2=\"9\"/><line x1=\"4\" y1=\"15\" x2=\"20\" y2=\"15\"/><line x1=\"10\" y1=\"3\" x2=\"8\" y2=\"21\"/><line x1=\"16\" y1=\"3\" x2=\"14\" y2=\"21\"/>"
+
         },
         {
             id: "count", file: "Count.jsx", category: "utilities",
             nameEn: "Object Count", nameKm: "រាប់ចំនួនវត្ថុ",
             descEn: "Vector item statistics & selection count",
             descKm: "រាប់ចំនួនវត្ថុវ៉ិចទ័រ និងស្ថិតិលម្អិត",
-            icon: svgIcon('<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>')
+            icon: svgIcon('<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>'),
+            featuresEn: ["Total item count by object type","Selection statistics (selected vs. total)","Per-layer breakdown dashboard","Auto-refreshes when selection changes"],
+            featuresKm: ["រាប់ចំនួនវត្ថុសរុបបែងចែកតាមប្រភេទ","ស្ថិតិវត្ថុដែលបានជ្រើសរើស ធៀបនឹងចំនួនសរុប","តារាងបង្ហាញទិន្នន័យលម្អិតតាម Layer","ធ្វើបច្ចុប្បន្នភាពស្វ័យប្រវត្តិតាមការជ្រើសរើស"],
+            previewSvgInner: "<line x1=\"18\" y1=\"20\" x2=\"18\" y2=\"10\"/><line x1=\"12\" y1=\"20\" x2=\"12\" y2=\"4\"/><line x1=\"6\" y1=\"20\" x2=\"6\" y2=\"14\"/>"
+
         },
         {
             id: "launcher", file: "Script Launcher.jsx", category: "utilities",
             nameEn: "Script Launcher Window", nameKm: "ផ្ទាំងបញ្ជា Launcher",
             descEn: "Floating modeless palette with full browser",
             descKm: "ផ្ទាំងបញ្ជាកម្មវិធីជំនួយអណ្តែតលើអេក្រង់",
-            icon: svgIcon('<polygon points="5 3 19 12 5 21 5 3"/>')
+            icon: svgIcon('<polygon points="5 3 19 12 5 21 5 3"/>'),
+            featuresEn: ["Floating modeless palette stays on top","Browse any folder for .jsx/.js scripts","Pin favorite scripts for one-click access","Custom folder bookmarks across sessions"],
+            featuresKm: ["ផ្ទាំងបញ្ជាអណ្តែតពីលើមិនរំខានការងារ","ស្វែងរក និងដំណើរការស្គ្រីប .jsx/.js ពីគ្រប់ថត","ចំណាំស្គ្រីបសំណព្វដើម្បីបើកបានរហ័ស","ចងចាំថតឯកសារដែលបាន Bookmark ទុក"],
+            previewSvgInner: "<polygon points=\"5 3 19 12 5 21 5 3\"/>"
         }
     ];
 
@@ -448,6 +511,7 @@
 
     var viewCatalog = $("viewCatalog");
     var viewEmbedded = $("viewEmbedded");
+    viewPreview = $("viewPreview");
     var embeddedBackBtn = $("embeddedBackBtn");
     var embeddedToolIcon = $("embeddedToolIcon");
     var embeddedToolTitle = $("embeddedToolTitle");
@@ -730,6 +794,9 @@
                 '<button type="button" class="fav-btn' + (fav ? " active" : "") + (popFavId === tool.id ? " pop" : "") + '" tabindex="-1" aria-pressed="' + fav + '" title="' + escapeHtml(t("fav.toggle")) + '" aria-label="' + escapeHtml(t("fav.aria", { name: name })) + '">' +
                     STAR_SVG.replace("{fill}", fav ? "currentColor" : "none") +
                 "</button>" +
+                '<button type="button" class="preview-card-btn" tabindex="-1" title="' + escapeHtml(t("preview.btn") + ': ' + name) + '" aria-label="' + escapeHtml(t("preview.btn") + ': ' + name) + '" data-preview="' + tool.id + '">' +
+                    '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                '</button>' +
                 '<button type="button" class="run-btn" tabindex="-1" title="' + escapeHtml(t("run.title", { name: name })) + '">' + escapeHtml(t("run.label")) + "</button>" +
             "</div>";
 
@@ -909,7 +976,95 @@
         }
     }
 
-    function closeEmbeddedView() {
+
+    // ------------------------------------------------------------------
+    // Tool Preview Screen
+    // ------------------------------------------------------------------
+    var activePreviewTool = null;
+    var viewPreview = null;
+
+    function openPreviewPanel(toolId) {
+        var tool = toolById[toolId];
+        if (!tool) return;
+        activePreviewTool = tool;
+        hideError();
+        if (!viewPreview) viewPreview = document.getElementById('viewPreview');
+        if (!viewPreview) return;
+
+        var name = toolName(tool);
+        var desc = toolDesc(tool);
+        var feats = (currentLang === 'km' && tool.featuresKm && tool.featuresKm.length)
+            ? tool.featuresKm : (tool.featuresEn || []);
+        var catClass = 'badge-' + tool.category;
+        var dotClass = 'dot-' + tool.category;
+
+        var featsHtml = '';
+        for (var i = 0; i < feats.length; i++) {
+            featsHtml += '<li><span class="preview-feat-dot ' + dotClass + '"></span>' +
+                '<span>' + escapeHtml(feats[i]) + '</span></li>';
+        }
+
+        var illuHtml = '';
+        if (tool.previewSvgInner) {
+            illuHtml = '<div class="preview-illustration illu-' + tool.category + '">' +
+                '<svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="currentColor"' +
+                ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                tool.previewSvgInner + '</svg></div>';
+        }
+
+        viewPreview.innerHTML =
+            '<div class="preview-header">' +
+                '<button type="button" class="preview-back-btn" id="previewBackBtn" title="' + escapeHtml(t('preview.close')) + '">' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                        '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>' +
+                    '</svg><span>' + escapeHtml(t('preview.close')) + '</span>' +
+                '</button>' +
+                '<span class="preview-header-title">' + escapeHtml(t('preview.title')) + '</span>' +
+                '<span style="width:56px"></span>' +
+            '</div>' +
+            '<div class="preview-body">' +
+                '<div class="preview-hero">' +
+                    '<div class="preview-icon-wrap">' + tool.icon + '</div>' +
+                    '<div class="preview-tool-name">' + escapeHtml(name) + '</div>' +
+                    '<span class="preview-tool-badge ' + catClass + '">' + escapeHtml(t('cat.' + tool.category)) + '</span>' +
+                    '<p class="preview-tool-desc">' + escapeHtml(desc) + '</p>' +
+                    illuHtml +
+                '</div>' +
+                (featsHtml ? '<div class="preview-section"><div class="preview-section-title">' +
+                    escapeHtml(t('preview.features')) + '</div><ul class="preview-features">' +
+                    featsHtml + '</ul></div>' : '') +
+            '</div>' +
+            '<div class="preview-actions">' +
+                '<button type="button" class="preview-open-btn" id="previewOpenBtn">' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>' +
+                    escapeHtml(t('preview.open')) +
+                '</button>' +
+                '<button type="button" class="preview-run-btn" id="previewRunBtn">' + escapeHtml(t('preview.run')) + '</button>' +
+            '</div>';
+
+        viewCatalog.style.display = 'none';
+        viewEmbedded.style.display = 'none';
+        viewPreview.classList.add('is-open');
+
+        var backBtn = document.getElementById('previewBackBtn');
+        var openBtn = document.getElementById('previewOpenBtn');
+        var runBtn  = document.getElementById('previewRunBtn');
+        if (backBtn) backBtn.onclick = closePreviewPanel;
+        if (openBtn) openBtn.onclick = function () { closePreviewPanel(); openEmbeddedView(tool.id); };
+        if (runBtn)  runBtn.onclick  = function () { closePreviewPanel(); runScript(tool); };
+    }
+
+    function closePreviewPanel() {
+        if (!viewPreview) return;
+        activePreviewTool = null;
+        viewPreview.classList.remove('is-open');
+        viewPreview.innerHTML = '';
+        viewEmbedded.style.display = 'none';
+        viewCatalog.style.display = 'flex';
+        renderTools();
+    }
+
+function closeEmbeddedView() {
         activeEmbeddedTool = null;
         viewEmbedded.style.display = "none";
         viewCatalog.style.display = "flex";
@@ -4321,6 +4476,7 @@
         if (!card) return;
         var tool = toolById[card.getAttribute("data-id")];
         if (!tool) return;
+        if (closest(e.target, ".preview-card-btn", card)) { openPreviewPanel(card.getAttribute("data-id")); return; }
         if (closest(e.target, ".fav-btn", card)) toggleFavorite(tool.id);
         else openEmbeddedView(tool.id);
     });
@@ -4388,7 +4544,9 @@
             searchInput.focus();
             searchInput.select();
         } else if (key === "Escape") {
-            if (activeEmbeddedTool && !editing) {
+            if (activePreviewTool) {
+                closePreviewPanel();
+            } else if (activeEmbeddedTool && !editing) {
                 closeEmbeddedView();
             } else if (searchInput.value) {
                 clearSearch(false);
@@ -4428,7 +4586,9 @@
         currentLang = isKhmer() ? "en" : "km";
         store.set("ozo_lang", currentLang);
         applyI18n();
-        if (activeEmbeddedTool) {
+        if (activePreviewTool) {
+            openPreviewPanel(activePreviewTool.id);
+        } else if (activeEmbeddedTool) {
             openEmbeddedView(activeEmbeddedTool.id);
         } else {
             renderTools();
@@ -4459,7 +4619,9 @@
     donateBtn.addEventListener("click", function () { openExternalURL(DONATE_URL); });
 
     refreshBtn.addEventListener("click", function () {
-        if (activeEmbeddedTool) {
+        if (activePreviewTool) {
+            openPreviewPanel(activePreviewTool.id);
+        } else if (activeEmbeddedTool) {
             if (activeEmbeddedTool.id === "exporter") renderEmbeddedExporter();
             else if (activeEmbeddedTool.id === "qr") renderEmbeddedQR();
             else if (activeEmbeddedTool.id === "cutcontour") renderEmbeddedCutContour();
