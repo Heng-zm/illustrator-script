@@ -553,7 +553,7 @@
         }
 
         // 2. Dual Outer Perf-Cut Path
-        if (settings.perfEnabled && settings.perfOffsetPt > 0) {
+        if (settings.perfEnabled && settings.perfOffsetPt >= 0) {
             var perfSpot = getOrCreateSpotColor(doc, settings.perfName, settings.perfCmyk);
             var perfSettings = {
                 shapeIndex: settings.shapeIndex,
@@ -722,7 +722,8 @@
     }
 
     function mmToUnit(mm) {
-        return formatQuantity(mm / unitFactor(currentUnit()));
+        var pt = OZO.toPoints(mm, "mm");
+        return formatQuantity(OZO.fromPoints(pt, currentUnit()));
     }
 
     // Offsets & Dimensions Row

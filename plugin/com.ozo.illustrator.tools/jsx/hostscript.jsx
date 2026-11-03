@@ -331,9 +331,11 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "$tempDir = Join-Path $env:TEMP ('ozo_ext_' + [guid]::NewGuid().ToString('N'))",
                 "try {",
                 "    try {",
-                "        Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing -TimeoutSec 60",
+                "        Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing -UserAgent 'OzoTools-Updater' -TimeoutSec 60",
                 "    } catch {",
-                "        (New-Object System.Net.WebClient).DownloadFile($zipUrl, $tempZip)",
+                "        $wc = New-Object System.Net.WebClient",
+                "        $wc.Headers.Add('User-Agent', 'OzoTools-Updater')",
+                "        $wc.DownloadFile($zipUrl, $tempZip)",
                 "    }",
                 "    if (-not (Test-Path $tempZip) -or (Get-Item $tempZip).Length -lt 1000) {",
                 "        throw 'Downloaded package is empty or invalid'",
@@ -371,11 +373,11 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "        }",
                 "    } catch {}",
                 "    $json = '{\"status\":\"success\",\"version\":\"' + $versionTag + '\"}'",
-                "    Set-Content -Path $resultFile -Value $json -Encoding UTF8 -Force",
+                "    [System.IO.File]::WriteAllText($resultFile, $json, [System.Text.Encoding]::ASCII)",
                 "} catch {",
                 "    $errMsg = $_.Exception.Message.Replace('\"', '`\"').Replace(\"`r\", ' ').Replace(\"`n\", ' ')",
                 "    $json = '{\"status\":\"error\",\"message\":\"' + $errMsg + '\"}'",
-                "    Set-Content -Path $resultFile -Value $json -Encoding UTF8 -Force",
+                "    [System.IO.File]::WriteAllText($resultFile, $json, [System.Text.Encoding]::ASCII)",
                 "} finally {",
                 "    try { Remove-Item -Path $tempZip -Force -ErrorAction SilentlyContinue } catch {}",
                 "    try { Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue } catch {}",
@@ -389,7 +391,7 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
             runnerFile.write(psScript);
             runnerFile.close();
 
-            var sysCmd = 'powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -Command "& { & \'' + runnerFile.fsName.replace(/'/g, "''") + '\' }"';
+            var sysCmd = 'powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "' + runnerFile.fsName.replace(/"/g, '""') + '"';
             app.system(sysCmd);
 
             try { runnerFile.remove(); } catch (eRem) {}
@@ -405,7 +407,7 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "TEMP_ZIP=\"/tmp/ozo_dl_" + timestamp + ".zip\"",
                 "TEMP_DIR=\"/tmp/ozo_ext_" + timestamp + "\"",
                 "mkdir -p \"$TEMP_DIR\"",
-                "curl -s -L \"$ZIP_URL\" -o \"$TEMP_ZIP\"",
+                "curl -s -L -A \"OzoTools-Updater\" \"$ZIP_URL\" -o \"$TEMP_ZIP\"",
                 "if [ $? -ne 0 ] || [ ! -f \"$TEMP_ZIP\" ]; then",
                 "    echo '{\"status\":\"error\",\"message\":\"Failed to download update package\"}' > \"$RESULT_FILE\"",
                 "    rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\"",
@@ -440,14 +442,21 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
         }
 
         var resultText = "";
+        for (var waitCount = 0; waitCount < 30; waitCount++) {
+            if (resultFile.exists) break;
+            $.sleep(100);
+        }
         if (resultFile.exists) {
-            resultFile.open("r");
-            resultText = resultFile.read();
-            resultFile.close();
+            resultFile.encoding = "UTF-8";
+            if (resultFile.open("r")) {
+                resultText = resultFile.read();
+                resultFile.close();
+            }
             try { resultFile.remove(); } catch (eRemResult) {}
         }
 
         if (resultText && resultText.length > 0) {
+            resultText = resultText.replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "");
             return resultText;
         }
         return ozoJsonStringify({ status: "error", message: "Update completed without status output" });

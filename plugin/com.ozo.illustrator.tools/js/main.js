@@ -525,7 +525,8 @@
             }
 
             try {
-                var res = JSON.parse(rawResult);
+                var clean = String(rawResult || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "");
+                var res = JSON.parse(clean);
                 if (res.status === "success") {
                     var successMsg = res.message || ((isKhmer() ? "បានបញ្ចប់ " : "Finished ") + title);
                     setStatus(successMsg, "success", 4000);
@@ -905,7 +906,8 @@
             var success = false;
             var message = "";
             try {
-                var res = JSON.parse(rawResult);
+                var clean = String(rawResult || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "");
+                var res = JSON.parse(clean);
                 if (res && res.status === "success") {
                     success = true;
                     message = res.version ? ("v" + res.version.replace(/^v/i, "")) : "";

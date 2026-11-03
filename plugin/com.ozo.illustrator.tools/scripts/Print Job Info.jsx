@@ -1090,7 +1090,10 @@
     OZO.makeNumericSmooth(qtyInput, {step: 1, min: 1, max: 9999});
 
     OZO.restoreWindowState(dialog, STATE_NAMESPACE);
-    previousUnit = unitList.selection ? unitList.selection.text : "cm";
+    var restoredUnit = unitList.selection ? unitList.selection.text : defaultUnit;
+    previousUnit = restoredUnit;
+    widthInput.text = cleanNumber(pointsToUnit(initialTarget.widthPt, restoredUnit));
+    heightInput.text = cleanNumber(pointsToUnit(initialTarget.heightPt, restoredUnit));
     restoringState = false;
 
     OZO.translateWindow(dialog, OZO.getLanguage());

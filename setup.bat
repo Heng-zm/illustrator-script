@@ -490,7 +490,7 @@ function Do-Uninstall {
 }
 
 # --- Action Dispatcher ---
-$act = $Action.Trim().ToLower()
+$act = if ($Action) { $Action.Trim().ToLower() } else { "" }
 if ($act -eq "install" -or $act -eq "1" -or $act -eq "-install") {
     Do-Install
 } elseif ($act -eq "update" -or $act -eq "sync" -or $act -eq "2" -or $act -eq "-update") {
