@@ -389,6 +389,14 @@
     var updateBtnState = "idle";
     var favorites = loadFavorites();
 
+    // Live document tracking. The panel used to learn about the document only
+    // on focus/Refresh, so opening, closing or switching a document left the
+    // footer stale. A light poll keeps it current without user action.
+    var DOC_POLL_INTERVAL = 1200;
+    var docPollTimer = null;
+    var docPollInFlight = false;
+    var lastDocSignature = null;
+
     function loadFavorites() {
         var out = [];
         try {
@@ -527,38 +535,89 @@
         statusDot.title = docName ? t("status.docActive", { name: docName }) : msg;
     }
 
+    function docSignature(info) {
+        if (!info || !info.hasDoc) return "none";
+        return [
+            info.name || "",
+            info.colorSpace || "",
+            info.artboardsCount || 0,
+            info.selectedCount || 0
+        ].join("|");
+    }
+
+    function applyDocumentStatus(info) {
+        if (!info) return;
+
+        if (info.hasDoc) {
+            var name = info.name || "Untitled";
+            var detail = [];
+            if (info.colorSpace) detail.push(info.colorSpace);
+            if (typeof info.artboardsCount === "number") {
+                detail.push(info.artboardsCount + " " + (isKhmer() ? "ផ្ទាំង" : (info.artboardsCount === 1 ? "artboard" : "artboards")));
+            }
+            if (info.selectedCount && info.selectedCount > 0) {
+                detail.push(info.selectedCount + " " + (isKhmer() ? "បានជ្រើស" : "sel"));
+            } else if (typeof info.itemCount === "number" && info.itemCount > 0) {
+                detail.push(t("status.items", { n: info.itemCount }));
+            }
+            setIdleStatus(name + " (" + detail.join(" \u2022 ") + ")", name);
+        } else {
+            setIdleStatus(t("status.noDoc"));
+        }
+
+        var sig = docSignature(info);
+        var prev = lastDocSignature;
+        lastDocSignature = sig;
+        if (prev !== null && prev !== sig) handleDocumentChange(prev, sig);
+    }
+
+    // Keep the embedded view in step when a document opens or closes. Forms the
+    // user has already filled in are left alone; only the no-document card and
+    // the read-only count dashboard are rebuilt, so typing is never lost.
+    function handleDocumentChange(prevSig, sig) {
+        var hadDoc = prevSig !== "none";
+        var hasDoc = sig !== "none";
+        if (hadDoc === hasDoc) return; // selection or document switch only
+        if (!activeEmbeddedTool) return;
+
+        var id = activeEmbeddedTool.id;
+        if (id === "exporter") {
+            var showingNoDoc = !!document.getElementById("btnRetryDoc");
+            // Re-render only when the card is out of step with the host state.
+            if (hasDoc === showingNoDoc) renderEmbeddedExporter();
+        } else if (id === "count") {
+            renderEmbeddedCount();
+        }
+    }
+
     function refreshDocumentStatus() {
         if (runningId || statusTimer) return; // don't overwrite a message that is still showing
-
         if (!csInterface) {
             setIdleStatus(t("status.ready"));
             return;
         }
+        if (docPollInFlight) return; // previous round-trip has not answered yet
 
-        csInterface.evalScript("ozoGetDocumentStatus()", function (raw) {
-            if (runningId || statusTimer) return;
-            var info = null;
-            try { info = JSON.parse(raw); } catch (e) {}
+        docPollInFlight = true;
+        try {
+            csInterface.evalScript("ozoGetDocumentStatus()", function (raw) {
+                docPollInFlight = false;
+                if (runningId || statusTimer) return;
+                var info = null;
+                try { info = JSON.parse(raw); } catch (e) {}
+                applyDocumentStatus(info);
+            });
+        } catch (ePoll) {
+            docPollInFlight = false;
+        }
+    }
 
-            if (info && info.hasDoc) {
-                var name = info.name || "Untitled";
-                var detail = [];
-                if (info.colorSpace) detail.push(info.colorSpace);
-                if (typeof info.artboardsCount === "number") {
-                    detail.push(info.artboardsCount + " " + (isKhmer() ? "ផ្ទាំង" : (info.artboardsCount === 1 ? "artboard" : "artboards")));
-                }
-                if (info.selectedCount && info.selectedCount > 0) {
-                    detail.push(info.selectedCount + " " + (isKhmer() ? "បានជ្រើស" : "sel"));
-                } else if (typeof info.itemCount === "number" && info.itemCount > 0) {
-                    detail.push(t("status.items", { n: info.itemCount }));
-                }
-                setIdleStatus(name + " (" + detail.join(" \u2022 ") + ")", name);
-            } else if (info) {
-                setIdleStatus(t("status.noDoc"));
-            } else {
-                setIdleStatus(t("status.ready"));
-            }
-        });
+    function startDocumentMonitor() {
+        if (!csInterface || docPollTimer) return;
+        docPollTimer = setInterval(function () {
+            if (document.hidden) return; // panel collapsed or tab is in the background
+            refreshDocumentStatus();
+        }, DOC_POLL_INTERVAL);
     }
 
     // ------------------------------------------------------------------
@@ -937,7 +996,7 @@
                     '<div class="embed-generic-card">' +
                         '<div class="embed-generic-icon">' + svgIcon('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>') + '</div>' +
                         '<div class="embed-generic-title">' + (isKhmer() ? "គ្មានឯកសារបើកក្នុង Illustrator" : "No Document Open") + '</div>' +
-                        '<div class="embed-generic-desc">' + (isKhmer() ? "សូមបើកឯកសារគំនូរក្នុង Illustrator រួចចុច Refresh ដើម្បីប្រើប្រាស់មុខងារនាំចេញជាកញ្ចប់។" : "Open an artwork document in Illustrator, then click Refresh to configure batch artboard export.") + '</div>' +
+                        '<div class="embed-generic-desc">' + (isKhmer() ? "សូមបើកឯកសារគំនូរក្នុង Illustrator ដើម្បីកំណត់ការនាំចេញជាកញ្ចប់។ ផ្ទាំងនឹងផ្ទុកដោយស្វ័យប្រវត្តិ។" : "Open an artwork document in Illustrator to configure batch artboard export. This panel updates automatically.") + '</div>' +
                         '<button type="button" id="btnRetryDoc" class="btn-action-primary" style="margin-top:8px;">' + (isKhmer() ? "ផ្ទុកឡើងវិញ (Refresh)" : "Refresh Document") + '</button>' +
                     '</div>';
                 var btnRetry = $("btnRetryDoc");
@@ -4733,5 +4792,6 @@
     updateViewMode();
     renderTools();
     refreshDocumentStatus();
+    startDocumentMonitor();
     checkForUpdates(false);
 })();
