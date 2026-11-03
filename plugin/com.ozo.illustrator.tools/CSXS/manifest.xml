@@ -21,12 +21,10 @@
                 <Resources>
                     <MainPath>./index.html</MainPath>
                     <ScriptPath>./jsx/hostscript.jsx</ScriptPath>
-                    <CEPEngine>
-                        <CommandLine>
-                            <Parameter>--enable-nodejs</Parameter>
-                            <Parameter>--mixed-context</Parameter>
-                        </CommandLine>
-                    </CEPEngine>
+                    <CEFCommandLine>
+                        <Parameter>--enable-nodejs</Parameter>
+                        <Parameter>--mixed-context</Parameter>
+                    </CEFCommandLine>
                 </Resources>
                 <Lifecycle>
                     <AutoVisible>true</AutoVisible>

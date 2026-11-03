@@ -724,8 +724,13 @@
         try {
             var extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
             if (extPath) {
-                csInterface.evalScript('ozoInitExtensionPath(' +
-                    JSON.stringify(extPath.replace(/\\/g, "/")) + ')');
+                var safePath = extPath.replace(/\\/g, "/");
+                csInterface.evalScript('typeof ozoRunScript', function (type) {
+                    if (type !== 'function') {
+                        csInterface.evalScript('try { $.evalFile(new File("' + safePath + '/jsx/hostscript.jsx")); } catch(e){}');
+                    }
+                    csInterface.evalScript('ozoInitExtensionPath(' + JSON.stringify(safePath) + ')');
+                });
             }
         } catch (eInit) {}
     }

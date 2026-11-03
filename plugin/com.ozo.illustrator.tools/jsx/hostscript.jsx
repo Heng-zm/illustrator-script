@@ -289,7 +289,7 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
         }
 
         // Validate URL format (http/https only, reject shell metacharacters)
-        if (!/^https?:\/\/[a-zA-Z0-9\.\-_~:/?#[\]@!$&'()*+,;=%]+$/i.test(zipUrl)) {
+        if (!/^https?:\/\/[^\s"'`<>;&|]+$/i.test(zipUrl)) {
             return ozoJsonStringify({ status: "error", message: "Invalid or unsupported URL" });
         }
 
