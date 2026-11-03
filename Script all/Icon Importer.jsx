@@ -166,8 +166,10 @@
                 }
                 if (!executed) {
                     try {
-                        app.system('cmd.exe /c start "" /b ' + command);
-                        executed = true;
+                        if (typeof app.system === "function") {
+                            app.system('cmd.exe /c start "" /b ' + command);
+                            executed = true;
+                        }
                     } catch (ignoreSystem) {}
                 }
                 if (!executed) {
@@ -261,9 +263,13 @@
                     runnerFile.writeln('fi');
                 }
                 runnerFile.close();
-                try {
-                    app.system('chmod +x "' + runnerFile.fsName + '" && "' + runnerFile.fsName + '" &');
-                } catch (ignoreSystem) {}
+                var macOk = false;
+                try { macOk = runnerFile.execute(); } catch (eExec) {}
+                if (!macOk && typeof app.system === "function") {
+                    try {
+                        app.system('chmod +x "' + runnerFile.fsName + '" && "' + runnerFile.fsName + '" &');
+                    } catch (ignoreSystem) {}
+                }
             }
 
             var batchCount = (mode === "DownloadBatch" && iconId) ?

@@ -822,9 +822,13 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         if (!folderToOpen.execute()) {
             try {
                 if (isWindows) {
-                    app.system('explorer.exe "' + folderToOpen.fsName.replace(/"/g, '""') + '"');
+                    if (typeof app.system === "function") {
+                        app.system('explorer.exe "' + folderToOpen.fsName.replace(/"/g, '""') + '"');
+                    }
                 } else {
-                    app.system('open "' + folderToOpen.fsName.replace(/"/g, '\\"') + '"');
+                    if (typeof app.system === "function") {
+                        app.system('open "' + folderToOpen.fsName.replace(/"/g, '\\"') + '"');
+                    }
                 }
             } catch (ignoreOpen) {
                 alert("Could not open the scripts folder.");

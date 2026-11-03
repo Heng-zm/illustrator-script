@@ -225,7 +225,11 @@
                     macRunner.writeln('    mv "$OUT.part" "$OUT"');
                     macRunner.writeln('fi');
                     macRunner.close();
-                    app.system('chmod +x "' + macRunner.fsName + '" && "' + macRunner.fsName + '" &');
+                    var macOk = false;
+                    try { macOk = macRunner.execute(); } catch (eExec) {}
+                    if (!macOk && typeof app.system === "function") {
+                        try { app.system('chmod +x "' + macRunner.fsName + '" && "' + macRunner.fsName + '" &'); } catch (eSys) {}
+                    }
                 } else {
                     throw new Error("Could not create the macOS QR decoder helper in the temporary folder.");
                 }
@@ -300,8 +304,10 @@
             }
             if (!executed) {
                 try {
-                    app.system('cmd.exe /c start "" /b ' + command);
-                    executed = true;
+                    if (typeof app.system === "function") {
+                        app.system('cmd.exe /c start "" /b ' + command);
+                        executed = true;
+                    }
                 } catch (ignoreSystem) {}
             }
             if (!executed) {

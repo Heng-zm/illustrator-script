@@ -66,19 +66,42 @@
     function enablePlayerDebugMode() {
         if (isWindows) {
             try {
-                // Add PlayerDebugMode = 1 for CSXS versions 6 through 16 in single batch execution
-                app.system('cmd.exe /c "for /L %v in (6,1,16) do reg add HKCU\\Software\\Adobe\\CSXS.%v /v PlayerDebugMode /t REG_SZ /d 1 /f" >nul 2>&1');
+                var bat = new File(Folder.temp.fsName + "/ozo_debug_mode.bat");
+                bat.open("w");
+                bat.writeln("@echo off");
+                bat.writeln('for /L %%v in (6,1,16) do reg add HKCU\\Software\\Adobe\\CSXS.%%v /v PlayerDebugMode /t REG_SZ /d 1 /f >nul 2>&1');
+                bat.close();
+                bat.execute();
+                $.sleep(300);
+                try { bat.remove(); } catch (eRem) {}
                 return true;
             } catch (e) {
+                if (typeof app.system === "function") {
+                    try {
+                        app.system('cmd.exe /c "for /L %v in (6,1,16) do reg add HKCU\\Software\\Adobe\\CSXS.%v /v PlayerDebugMode /t REG_SZ /d 1 /f" >nul 2>&1');
+                        return true;
+                    } catch (eSys) {}
+                }
                 return false;
             }
         } else {
             try {
-                // Single quotes keep the outer shell from expanding $v before bash
-                // runs the loop.
-                app.system("bash -c 'for v in {6..16}; do defaults write com.adobe.CSXS.$v PlayerDebugMode 1; done' >/dev/null 2>&1");
+                var cmd = new File(Folder.temp.fsName + "/ozo_debug_mode.command");
+                cmd.open("w");
+                cmd.writeln("#!/bin/sh");
+                cmd.writeln('for v in 6 7 8 9 10 11 12 13 14 15 16; do defaults write com.adobe.CSXS.$v PlayerDebugMode 1; done >/dev/null 2>&1');
+                cmd.close();
+                cmd.execute();
+                $.sleep(300);
+                try { cmd.remove(); } catch (eRem) {}
                 return true;
             } catch (e) {
+                if (typeof app.system === "function") {
+                    try {
+                        app.system("bash -c 'for v in {6..16}; do defaults write com.adobe.CSXS.$v PlayerDebugMode 1; done' >/dev/null 2>&1");
+                        return true;
+                    } catch (eSys) {}
+                }
                 return false;
             }
         }
@@ -156,7 +179,7 @@
     dlg.preferredSize.width = 480;
 
     if (hasOzo && OZO.addDialogHeader) {
-        OZO.addDialogHeader(dlg, _tr("Install Ozo Tools Plugin"), "v2.2.4 \u2022 Suite Setup & Integration");
+        OZO.addDialogHeader(dlg, _tr("Install Ozo Tools Plugin"), "v2.3.0 \u2022 Suite Setup & Integration");
     } else {
         var header = dlg.add("group");
         header.orientation = "column";

@@ -7,22 +7,24 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- All visible text is owned by js/main.js (data-i18n* attributes); the English below is the no-JS fallback. -->
+
     <!-- Top Header -->
     <header class="panel-header">
         <div class="brand">
-            <div class="brand-icon">OZ</div>
+            <div class="brand-icon" aria-hidden="true">OZ</div>
             <span class="brand-title">OZO TOOLS</span>
-            <span class="brand-badge">v2.2</span>
+            <button type="button" id="brandBadge" class="brand-badge" data-i18n-title="badge.title">v2.3.0</button>
         </div>
         <div class="header-actions">
-            <button type="button" id="viewToggleBtn" class="icon-btn" title="Toggle Grid / List View (ប្តូរទិដ្ឋភាព Grid / បញ្ជី)">
-                <svg id="viewIconGrid" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" id="viewToggleBtn" class="icon-btn" aria-pressed="false" data-i18n-title="view.toggle" title="Toggle Grid / List View">
+                <svg id="viewIconGrid" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <rect x="3" y="3" width="7" height="7"></rect>
                     <rect x="14" y="3" width="7" height="7"></rect>
                     <rect x="14" y="14" width="7" height="7"></rect>
                     <rect x="3" y="14" width="7" height="7"></rect>
                 </svg>
-                <svg id="viewIconList" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <svg id="viewIconList" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
                     <line x1="8" y1="6" x2="21" y2="6"></line>
                     <line x1="8" y1="12" x2="21" y2="12"></line>
                     <line x1="8" y1="18" x2="21" y2="18"></line>
@@ -31,77 +33,84 @@
                     <line x1="3" y1="18" x2="3.01" y2="18"></line>
                 </svg>
             </button>
-            <button type="button" id="langToggleBtn" class="lang-btn" title="Toggle Language (English / ភាសាខ្មែរ)">EN</button>
-            <button type="button" id="openFolderBtn" class="icon-btn" title="Open Scripts Directory">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" id="langToggleBtn" class="lang-btn" data-i18n-title="lang.toggle" title="Switch language">EN</button>
+            <button type="button" id="openFolderBtn" class="icon-btn" data-i18n-title="folder" title="Open Scripts Directory">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
             </button>
-            <button type="button" id="refreshBtn" class="icon-btn" title="Refresh Panel">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" id="refreshBtn" class="icon-btn" data-i18n-title="refresh" title="Refresh Panel">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
                 </svg>
             </button>
         </div>
     </header>
 
-    <!-- Update Notification Banner (Visible when new GitHub release is available) -->
-    <div id="updateBanner" class="update-banner" style="display: none;">
+    <!-- Update Notification Banner (shown when a newer GitHub release exists) -->
+    <div id="updateBanner" class="update-banner" hidden>
         <div class="update-banner-content">
-            <span class="update-icon">&#9889;</span>
-            <span class="update-text" id="updateBannerText">New version available!</span>
+            <span class="update-icon" aria-hidden="true">&#9889;</span>
+            <span class="update-text" id="updateBannerText"></span>
         </div>
         <div class="update-banner-actions">
-            <button type="button" id="updateNowBtn" class="update-btn" title="Download & update to latest release">Update</button>
-            <button type="button" id="updateDismissBtn" class="update-dismiss" title="Dismiss notification">&times;</button>
+            <button type="button" id="updateNowBtn" class="update-btn" data-i18n-title="update.btnTitle" title="Download & update to latest release">Update</button>
+            <button type="button" id="updateDismissBtn" class="update-dismiss" data-i18n-title="update.dismiss" title="Dismiss notification">&times;</button>
         </div>
+    </div>
+
+    <!-- Script / update error banner (replaces blocking alert() dialogs) -->
+    <div id="errorBanner" class="error-banner" role="alert" hidden>
+        <div class="error-banner-body">
+            <strong id="errorTitle" class="error-banner-title"></strong>
+            <div id="errorMessage" class="error-banner-message"></div>
+        </div>
+        <button type="button" id="errorDismissBtn" class="update-dismiss" data-i18n-title="dismiss" title="Dismiss">&times;</button>
     </div>
 
     <!-- Search Input -->
     <div class="search-container" role="search">
         <div class="search-input-wrap">
-            <svg class="search-icon" viewBox="0 0 24 24">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
             </svg>
-            <input type="text" id="searchInput" class="search-input" autocomplete="off" spellcheck="false" placeholder="Search scripts... / ស្វែងរក...">
-            <kbd id="searchKbdHint" aria-hidden="true" class="search-kbd" title="Press / to search">/</kbd>
-            <button type="button" id="searchClearBtn" class="search-clear" aria-label="Clear search">&times;</button>
+            <input type="text" id="searchInput" class="search-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="search.placeholder" placeholder="Search tools...">
+            <kbd id="searchKbdHint" aria-hidden="true" class="search-kbd" data-i18n-title="search.hint" title="Press / to search">/</kbd>
+            <button type="button" id="searchClearBtn" class="search-clear" data-i18n-title="search.clear" title="Clear search">&times;</button>
         </div>
     </div>
 
     <!-- Category Tabs -->
-    <div class="tabs-container" role="tablist">
-        <button type="button" id="tabAll" class="tab-btn active" data-category="all"><span id="tabAllText">All</span> <span id="allCount" class="tab-count has-count">13</span></button>
-        <button type="button" id="tabFavs" class="tab-btn" data-category="favorites"><span class="tab-star">&#9733;</span> <span id="tabFavsText">Favorites</span> <span id="favsCount" class="tab-count"></span></button>
-        <button type="button" id="tabPrepress" class="tab-btn" data-category="prepress"><span id="tabPrepressText">Prepress</span> <span id="prepressCount" class="tab-count has-count">5</span></button>
-        <button type="button" id="tabLayout" class="tab-btn" data-category="layout"><span id="tabLayoutText">Layout</span> <span id="layoutCount" class="tab-count has-count">4</span></button>
-        <button type="button" id="tabUtilities" class="tab-btn" data-category="utilities"><span id="tabUtilitiesText">Utilities</span> <span id="utilCount" class="tab-count has-count">4</span></button>
+    <div id="tabs" class="tabs-container" role="tablist">
+        <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-category="all"><span data-i18n="cat.all">All</span> <span class="tab-count" data-count="all"></span></button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="favorites"><span class="tab-star" aria-hidden="true">&#9733;</span> <span data-i18n="cat.favorites">Favorites</span> <span class="tab-count" data-count="favorites"></span></button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="prepress"><span data-i18n="cat.prepress">Prepress</span> <span class="tab-count" data-count="prepress"></span></button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="layout"><span data-i18n="cat.layout">Layout</span> <span class="tab-count" data-count="layout"></span></button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="utilities"><span data-i18n="cat.utilities">Utilities</span> <span class="tab-count" data-count="utilities"></span></button>
     </div>
 
-    <!-- Tool Card List -->
-    <main id="toolList" class="tool-list">
-        <!-- Rendered dynamically by js/main.js -->
-    </main>
+    <!-- Tool Card List (rendered by js/main.js) -->
+    <main id="toolList" class="tool-list"></main>
 
-    <!-- Empty Search State -->
-    <div id="emptyState" class="empty-state">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <!-- Empty State (no search match / no favorites yet) -->
+    <div id="emptyState" class="empty-state" hidden>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <p id="emptyText">No scripts match your search.</p>
-        <button id="emptyClearBtn" class="empty-clear-btn" type="button">Clear search</button>
+        <p id="emptyText"></p>
+        <button type="button" id="emptyClearBtn" class="empty-clear-btn" data-i18n="empty.clear" data-i18n-title="empty.clearTitle">Clear search</button>
     </div>
 
     <!-- Bottom Footer -->
     <footer class="panel-footer">
         <div class="status-indicator" role="status" aria-live="polite">
             <span id="statusDot" class="status-dot"></span>
-            <span id="statusMessage">Ready • 13 tools available</span>
+            <span id="statusMessage">Ready</span>
         </div>
         <div class="footer-links">
-            <button type="button" id="donateBtn" class="donate-link" title="Support developer">
-                &#10084;&#65039; <span id="donateText">Donate</span>
+            <button type="button" id="donateBtn" class="donate-link" data-i18n-title="donate.title" title="Support developer via ABA Pay">
+                <span aria-hidden="true">&#10084;&#65039;</span> <span data-i18n="donate.text">Donate</span>
             </button>
         </div>
     </footer>

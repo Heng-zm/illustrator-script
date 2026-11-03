@@ -213,11 +213,16 @@ function ozoOpenScriptsFolder() {
             if (!opened) {
                 try {
                     if (Folder.fs === "Windows") {
-                        app.system('explorer.exe "' + folder.fsName.replace(/"/g, '""') + '"');
+                        if (typeof app.system === "function") {
+                            app.system('explorer.exe "' + folder.fsName.replace(/"/g, '""') + '"');
+                            opened = true;
+                        }
                     } else {
-                        app.system('open "' + folder.fsName.replace(/"/g, '\\"') + '"');
+                        if (typeof app.system === "function") {
+                            app.system('open "' + folder.fsName.replace(/"/g, '\\"') + '"');
+                            opened = true;
+                        }
                     }
-                    opened = true;
                 } catch (eSys) {}
             }
             return ozoJsonStringify({ status: "success" });
@@ -263,16 +268,38 @@ function ozoOpenURL(url) {
                 }
             } catch (ignoreLocalFile) {}
 
-            // Only plain web links reach the shell. Quotes, shell variables,
-            // and backslashes are rejected so the URL cannot break out of the
-            // quoted argument.
+            // Only plain web links reach the shell.
             if (!/^https?:\/\/[^\s"'`$\\]+$/i.test(url)) {
                 return ozoJsonStringify({ status: "error", message: "Only http and https links can be opened." });
             }
             if (Folder.fs === "Windows") {
-                app.system('explorer.exe "' + url + '"');
+                try {
+                    var sc = new File(Folder.temp.fsName + "/ozo_url_" + (new Date().getTime()) + ".url");
+                    sc.open("w");
+                    sc.writeln("[InternetShortcut]");
+                    sc.writeln("URL=" + url);
+                    sc.close();
+                    sc.execute();
+                    try { sc.remove(); } catch (eRemSc) {}
+                } catch (eWinUrl) {
+                    if (typeof app.system === "function") {
+                        app.system('explorer.exe "' + url + '"');
+                    }
+                }
             } else {
-                app.system('open "' + url + '"');
+                try {
+                    var cmd = new File(Folder.temp.fsName + "/ozo_url_" + (new Date().getTime()) + ".command");
+                    cmd.open("w");
+                    cmd.writeln("#!/bin/sh");
+                    cmd.writeln('open "' + url.replace(/"/g, '\\"') + '"');
+                    cmd.close();
+                    cmd.execute();
+                    try { cmd.remove(); } catch (eRemCmd) {}
+                } catch (eMacUrl) {
+                    if (typeof app.system === "function") {
+                        app.system('open "' + url + '"');
+                    }
+                }
             }
             return ozoJsonStringify({ status: "success" });
         }
@@ -313,8 +340,13 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
             try { resultFile.remove(); } catch (e) {}
         }
 
+        var runnerFile = null;
+        var runnerBat = null;
+        var runnerCommand = null;
+
         if (Folder.fs === "Windows") {
-            var runnerFile = new File(tempFolder.fsName + "/ozo_update_runner_" + timestamp + ".ps1");
+            runnerFile = new File(tempFolder.fsName + "/ozo_update_runner_" + timestamp + ".ps1");
+            runnerBat = new File(tempFolder.fsName + "/ozo_update_launcher_" + timestamp + ".bat");
             var targetFsPath = targetFolder.fsName.replace(/'/g, "''");
             var resultFsPath = resultFile.fsName.replace(/'/g, "''");
             var safeZipUrl = zipUrl.replace(/'/g, "''");
@@ -367,6 +399,12 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "        }",
                 "        Copy-Item -Path \"$($scriptsDir.FullName)\\*\" -Destination $destScripts -Recurse -Force",
                 "    }",
+                "    $topLibDir = Get-ChildItem -Path $tempDir -Recurse -Directory -Filter 'lib' -ErrorAction SilentlyContinue | Select-Object -First 1",
+                "    if ($topLibDir -and $scriptsDir) {",
+                "        $destLib = Join-Path (Join-Path $targetDir 'scripts') 'lib'",
+                "        if (-not (Test-Path $destLib)) { New-Item -Path $destLib -ItemType Directory -Force | Out-Null }",
+                "        Copy-Item -Path \"$($topLibDir.FullName)\\*\" -Destination $destLib -Recurse -Force -ErrorAction SilentlyContinue",
+                "    }",
                 "    try {",
                 "        if (Test-Path (Join-Path $targetDir '..\\..\\Script all')) {",
                 "            if ($scriptsDir) { Copy-Item -Path \"$($scriptsDir.FullName)\\*\" -Destination (Join-Path $targetDir '..\\..\\Script all') -Recurse -Force -ErrorAction SilentlyContinue }",
@@ -391,13 +429,30 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
             runnerFile.write(psScript);
             runnerFile.close();
 
-            var sysCmd = 'powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "' + runnerFile.fsName.replace(/"/g, '""') + '"';
-            app.system(sysCmd);
+            runnerBat.encoding = "UTF-8";
+            if (!runnerBat.open("w")) {
+                return ozoJsonStringify({ status: "error", message: "Failed to write launcher batch file" });
+            }
+            runnerBat.writeln("@echo off");
+            runnerBat.writeln('powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "' + runnerFile.fsName + '"');
+            runnerBat.close();
 
-            try { runnerFile.remove(); } catch (eRem) {}
+            var executed = runnerBat.execute();
+            if (!executed && typeof app.system === "function") {
+                try {
+                    app.system('cmd.exe /c start "" /min "' + runnerBat.fsName + '"');
+                    executed = true;
+                } catch (eSysWin) {}
+            }
+            if (!executed) {
+                try { runnerFile.remove(); } catch (eRem1) {}
+                try { runnerBat.remove(); } catch (eRem2) {}
+                return ozoJsonStringify({ status: "error", message: "Failed to launch update process" });
+            }
         } else {
             // macOS POSIX
-            var runnerFile = new File(tempFolder.fsName + "/ozo_update_runner_" + timestamp + ".sh");
+            runnerFile = new File(tempFolder.fsName + "/ozo_update_runner_" + timestamp + ".sh");
+            runnerCommand = new File(tempFolder.fsName + "/ozo_update_launcher_" + timestamp + ".command");
             var shScript = [
                 "#!/bin/sh",
                 "ZIP_URL=\"" + zipUrl.replace(/"/g, '\\"') + "\"",
@@ -437,12 +492,31 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
             runnerFile.write(shScript);
             runnerFile.close();
 
-            app.system('chmod +x "' + runnerFile.fsName + '" && "' + runnerFile.fsName + '"');
-            try { runnerFile.remove(); } catch (eRem) {}
+            runnerCommand.encoding = "UTF-8";
+            if (!runnerCommand.open("w")) {
+                return ozoJsonStringify({ status: "error", message: "Failed to write launcher command" });
+            }
+            runnerCommand.writeln("#!/bin/sh");
+            runnerCommand.writeln('chmod +x "' + runnerFile.fsName + '"');
+            runnerCommand.writeln('"' + runnerFile.fsName + '"');
+            runnerCommand.close();
+
+            var executed = runnerCommand.execute();
+            if (!executed && typeof app.system === "function") {
+                try {
+                    app.system('chmod +x "' + runnerFile.fsName + '" && "' + runnerFile.fsName + '"');
+                    executed = true;
+                } catch (eSysMac) {}
+            }
+            if (!executed) {
+                try { runnerFile.remove(); } catch (eRem1) {}
+                try { runnerCommand.remove(); } catch (eRem2) {}
+                return ozoJsonStringify({ status: "error", message: "Failed to launch update process" });
+            }
         }
 
         var resultText = "";
-        for (var waitCount = 0; waitCount < 30; waitCount++) {
+        for (var waitCount = 0; waitCount < 600; waitCount++) {
             if (resultFile.exists) break;
             $.sleep(100);
         }
@@ -455,11 +529,15 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
             try { resultFile.remove(); } catch (eRemResult) {}
         }
 
+        try { if (runnerFile && runnerFile.exists) runnerFile.remove(); } catch (eRemRunner) {}
+        try { if (runnerBat && runnerBat.exists) runnerBat.remove(); } catch (eRemBat) {}
+        try { if (runnerCommand && runnerCommand.exists) runnerCommand.remove(); } catch (eRemCmd) {}
+
         if (resultText && resultText.length > 0) {
             resultText = resultText.replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "");
             return resultText;
         }
-        return ozoJsonStringify({ status: "error", message: "Update completed without status output" });
+        return ozoJsonStringify({ status: "error", message: "Update timed out or completed without status output" });
     } catch (e) {
         return ozoJsonStringify({ status: "error", message: String(e && e.message ? e.message : e) });
     }

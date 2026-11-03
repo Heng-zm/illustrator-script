@@ -1128,9 +1128,13 @@
             } catch (eOpen) {
                 try {
                     if (Folder.fs === "Windows") {
-                        app.system('explorer.exe "' + targetFolder.fsName.replace(/"/g, '""') + '"');
+                        if (typeof app.system === "function") {
+                            app.system('explorer.exe "' + targetFolder.fsName.replace(/"/g, '""') + '"');
+                        }
                     } else {
-                        app.system('open "' + targetFolder.fsName.replace(/"/g, '\\"') + '"');
+                        if (typeof app.system === "function") {
+                            app.system('open "' + targetFolder.fsName.replace(/"/g, '\\"') + '"');
+                        }
                     }
                 } catch (eSys) {}
             }

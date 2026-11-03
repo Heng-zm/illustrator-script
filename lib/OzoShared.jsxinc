@@ -748,19 +748,37 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                     f.writeln("[InternetShortcut]");
                     f.writeln("URL=" + url);
                     f.close();
-                    if (!f.execute()) {
-                        app.system('cmd.exe /c start "" "' + url + '"');
+                    var ok = false;
+                    try { ok = f.execute(); } catch (eExec) {}
+                    if (!ok && typeof app.system === "function") {
+                        try { app.system('cmd.exe /c start "" "' + url + '"'); } catch (eSys1) {}
                     }
                     try { f.remove(); } catch (ignoreRem) {}
                 } else {
-                    app.system('open "' + url.replace(/"/g, '\\"') + '"');
+                    var okMac = false;
+                    try {
+                        var fMac = new File(Folder.temp.fsName + "/open_link_" + (new Date().getTime()) + ".command");
+                        fMac.open("w");
+                        fMac.writeln("#!/bin/sh");
+                        fMac.writeln('open "' + url.replace(/"/g, '\\"') + '"');
+                        fMac.close();
+                        okMac = fMac.execute();
+                        try { fMac.remove(); } catch (eRemMac) {}
+                    } catch (eMac1) {}
+                    if (!okMac && typeof app.system === "function") {
+                        try { app.system('open "' + url.replace(/"/g, '\\"') + '"'); } catch (eSysMac1) {}
+                    }
                 }
             } catch (e1) {
                 try {
                     if (isWin) {
-                        app.system('cmd.exe /c start "" "' + url + '"');
+                        if (typeof app.system === "function") {
+                            app.system('cmd.exe /c start "" "' + url + '"');
+                        }
                     } else {
-                        app.system('open "' + url.replace(/"/g, '\\"') + '"');
+                        if (typeof app.system === "function") {
+                            app.system('open "' + url.replace(/"/g, '\\"') + '"');
+                        }
                     }
                 } catch (e2) {}
             }
@@ -981,7 +999,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         }
 
         return {
-            version: "2.2.4",
+            version: "2.3.0",
             addLanguageSelector: addLanguageSelector,
             addDonateButton: addDonateButton,
             addDialogHeader: addDialogHeader,
