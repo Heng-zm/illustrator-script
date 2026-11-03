@@ -13,6 +13,10 @@
     var PREVIEW_LAYER_NAME = "__CutContour_Preview__";
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("No Illustrator document is open."));
         return;
     }
@@ -20,14 +24,34 @@
     var doc = app.activeDocument;
     var selectionValue = doc.selection;
     if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
-        if (confirm(OZO.isKhmer() ?
-            "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f Artwork \u1791\u17c1\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
-            "No artwork is selected. Would you like to select all items on the active artboard automatically?")) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
             doc.selectObjectsOnActiveArtboard();
             selectionValue = doc.selection;
-        }
-        if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
-            return;
+            if (!selectionValue || selectionValue.length === 0) {
+                try {
+                    var actLayer = doc.activeLayer;
+                    if (actLayer && actLayer.pageItems && actLayer.pageItems.length > 0) {
+                        for (var pi = 0; pi < actLayer.pageItems.length; pi++) {
+                            try { actLayer.pageItems[pi].selected = true; } catch (eSel) {}
+                        }
+                        selectionValue = doc.selection;
+                    }
+                } catch (eAct) {}
+            }
+            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
+                __ozoHeadlessResult = { status: "error", message: "Please select artwork in Illustrator to create CutContour." };
+                return;
+            }
+        } else {
+            if (confirm(OZO.isKhmer() ?
+                "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f Artwork \u1791\u17c1\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
+                "No artwork is selected. Would you like to select all items on the active artboard automatically?")) {
+                doc.selectObjectsOnActiveArtboard();
+                selectionValue = doc.selection;
+            }
+            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
+                return;
+            }
         }
     }
 
@@ -624,6 +648,114 @@
         return {status: status, message: (status === "WARNING" ? "⚠ WARNING: " : "✕ ERROR: ") + issues.join(" | ")};
     }
 
+    // -------------------------------------------------------------
+    // Core CutContour Generator Engine (Headless & Dialog shared)
+    // -------------------------------------------------------------
+    function executeCutContourCore(finalSettings) {
+        if (!finalSettings.kissEnabled && !finalSettings.perfEnabled) {
+            throw new Error(OZO.isKhmer() ?
+                "ត្រូវតែជ្រើសរើសយ៉ាងហោចណាស់ Kiss-Cut ឬ Die-Cut មួយ។" :
+                "Please enable at least Kiss-Cut or Die-Cut before generating.");
+        }
+        generatePreview(finalSettings);
+
+        // Move previewGroup to destination production layer
+        var layerName = finalSettings.layerName || "CutContour";
+        var finalLayer = null;
+        for (var lIdx = 0; lIdx < doc.layers.length; lIdx++) {
+            if (doc.layers[lIdx].name === layerName && doc.layers[lIdx] !== previewLayer) {
+                finalLayer = doc.layers[lIdx];
+                break;
+            }
+        }
+        if (!finalLayer) {
+            finalLayer = doc.layers.add();
+            finalLayer.name = layerName;
+        }
+        finalLayer.locked = false;
+        finalLayer.visible = true;
+        finalLayer.zOrder(ZOrderMethod.BRINGTOFRONT);
+
+        var finalGroup = previewGroup;
+        if (previewGroup) {
+            previewGroup.move(finalLayer, ElementPlacement.PLACEATEND);
+        }
+        cleanupPreview(false);
+
+        doc.selection = null;
+        if (finalGroup) {
+            try { finalGroup.selected = true; } catch (ignoreSel) {}
+        }
+        return { count: 1, layerName: layerName };
+    }
+
+    // -------------------------------------------------------------
+    // Headless Execution Bypass (for in-dock CEP panel execution)
+    // -------------------------------------------------------------
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        try {
+            var hp = __ozoHeadlessParams;
+            var unit = hp.unit || "mm";
+            var factor = unitFactor(unit);
+
+            var shapeIdx = typeof hp.shapeIndex === "number" ? hp.shapeIndex : 0;
+            var offsetVal = typeof hp.offset === "number" ? hp.offset : 2.0;
+            var radiusVal = typeof hp.radius === "number" ? hp.radius : 3.0;
+
+            var kissEn = hp.kissEnabled !== false;
+            var kissOffsetVal = typeof hp.kissOffset === "number" ? hp.kissOffset : offsetVal;
+            var kissName = trim(hp.kissName) || "CutContour";
+
+            var perfEn = hp.perfEnabled === true;
+            var perfOffsetVal = typeof hp.perfOffset === "number" ? hp.perfOffset : 5.0;
+            var perfName = trim(hp.perfName) || "PerfCutContour";
+
+            var cmykMagenta = [0, 100, 0, 0];
+            var cmykCyan = [100, 0, 0, 0];
+            if (hp.cmykKiss) cmykMagenta = hp.cmykKiss;
+            if (hp.cmykPerf) cmykCyan = hp.cmykPerf;
+
+            var headlessSettings = {
+                shapeIndex: shapeIdx,
+                radiusPt: radiusVal * factor,
+                perfectSquare: hp.perfectSquare === true,
+                holeMode: typeof hp.holeMode === "number" ? hp.holeMode : 0,
+                kissEnabled: kissEn,
+                kissName: kissName,
+                kissCmyk: cmykMagenta,
+                kissOffsetPt: kissOffsetVal * factor,
+                perfEnabled: perfEn,
+                perfName: perfName,
+                perfCmyk: cmykCyan,
+                perfOffsetPt: perfOffsetVal * factor,
+                strokeWeight: typeof hp.strokeWeight === "number" ? hp.strokeWeight : 0.25,
+                overprint: hp.overprint !== false,
+                optimizePath: hp.optimizePath !== false,
+                addRegMarks: hp.addRegMarks === true,
+                layerName: hp.layerName || "CutContour"
+            };
+
+            var execResult = executeCutContourCore(headlessSettings);
+            __ozoHeadlessResult = {
+                status: "success",
+                count: execResult.count,
+                layerName: execResult.layerName,
+                shapeIndex: shapeIdx,
+                offset: offsetVal,
+                unit: unit
+            };
+            return;
+        } catch (eHeadless) {
+            cleanupPreview(true);
+            restoreSelection();
+            __ozoHeadlessResult = {
+                status: "error",
+                message: eHeadless && eHeadless.message ? eHeadless.message : String(eHeadless)
+            };
+            return;
+        }
+    }
+
     // Initial analysis
     var initialStats = analyzeSelection(sourceItems);
 
@@ -1062,45 +1194,12 @@
 
     try {
         var finalSettings = readSettings();
-        if (!finalSettings.kissEnabled && !finalSettings.perfEnabled) {
-            throw new Error(OZO.isKhmer() ?
-                "ត្រូវតែជ្រើសរើសយ៉ាងហោចណាស់ Kiss-Cut ឬ Die-Cut មួយ។" :
-                "Please enable at least Kiss-Cut or Die-Cut before generating.");
-        }
-        generatePreview(finalSettings);
-
-        // Move previewGroup to destination production layer
-        var finalLayer = null;
-        for (var lIdx = 0; lIdx < doc.layers.length; lIdx++) {
-            if (doc.layers[lIdx].name === finalSettings.layerName && doc.layers[lIdx] !== previewLayer) {
-                finalLayer = doc.layers[lIdx];
-                break;
-            }
-        }
-        if (!finalLayer) {
-            finalLayer = doc.layers.add();
-            finalLayer.name = finalSettings.layerName;
-        }
-        finalLayer.locked = false;
-        finalLayer.visible = true;
-        finalLayer.zOrder(ZOrderMethod.BRINGTOFRONT);
-
-        var finalGroup = previewGroup;
-        if (previewGroup) {
-            previewGroup.move(finalLayer, ElementPlacement.PLACEATEND);
-        }
-        cleanupPreview(false);
-
-        doc.selection = null;
-        if (finalGroup) {
-            try { finalGroup.selected = true; } catch (ignoreSel) {}
-        }
-
+        var execRes = executeCutContourCore(finalSettings);
         OZO.saveWindowState(dialog, STATE_NAMESPACE);
         app.redraw();
         alert(OZO.isKhmer() ?
-            "\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb CutContour \u178a\u17c4\u1799\u1787\u17c4\u1782\u1787\u17d0\u1799\u179b\u17be\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb " + finalSettings.layerName + "\u17d4\n\n" + OZO.credit() :
-            "CutContour PRO generated successfully on layer " + finalSettings.layerName + ".\n\n" + OZO.credit());
+            "\u1794\u17b6\u1793\u1794\u1784\u17d2\u1780\u17be\u178f\u1794\u1793\u17d2\u1791\u17b6\u178f\u17cb\u1780\u17b6\u178f\u17cb CutContour \u178a\u17c4\u1799\u1787\u17c4\u1782\u1787\u17d0\u1799\u179b\u17be\u179f\u17d2\u179a\u1791\u17b6\u1794\u17cb " + execRes.layerName + "\u17d4\n\n" + OZO.credit() :
+            "CutContour PRO generated successfully on layer " + execRes.layerName + ".\n\n" + OZO.credit());
     } catch (error) {
         cleanupPreview(true);
         restoreSelection();

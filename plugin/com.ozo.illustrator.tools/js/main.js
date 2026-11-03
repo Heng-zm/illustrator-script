@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.4.0"; // keep in sync with CSXS/manifest.xml
+    var CURRENT_VERSION = "2.4.1"; // keep in sync with CSXS/manifest.xml
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
@@ -770,6 +770,10 @@
             renderEmbeddedExporter();
         } else if (tool.id === "qr") {
             renderEmbeddedQR();
+        } else if (tool.id === "cutcontour") {
+            renderEmbeddedCutContour();
+        } else if (tool.id === "dimension") {
+            renderEmbeddedDimension();
         } else {
             renderEmbeddedGeneric(tool);
         }
@@ -1559,6 +1563,473 @@
     }
 
     // -------------------------------------------------------------
+    // In-Dock CutContour Generator View
+    // -------------------------------------------------------------
+    function renderEmbeddedCutContour() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_cutcontour_settings", "{}")); } catch (e) {}
+
+        var PRESETS_LIST = [
+            { name: "Roland VersaWorks", kiss: "CutContour", perf: "PerfCutContour", stroke: 0.25, cmykKiss: [0, 100, 0, 0], cmykPerf: [100, 0, 0, 0] },
+            { name: "Mimaki RasterLink", kiss: "CutContour", perf: "HalfCutContour", stroke: 0.30, cmykKiss: [0, 100, 0, 0], cmykPerf: [100, 0, 0, 0] },
+            { name: "Summa / WinPlot", kiss: "OPOS", perf: "FlexCut", stroke: 0.25, cmykKiss: [0, 100, 100, 0], cmykPerf: [100, 0, 100, 0] },
+            { name: "Graphtec FC", kiss: "FC Cut", perf: "PerfCut", stroke: 0.25, cmykKiss: [0, 100, 0, 0], cmykPerf: [100, 0, 0, 0] },
+            { name: "Onyx / Caldera", kiss: "CutContour", perf: "ThruCut", stroke: 0.25, cmykKiss: [0, 100, 0, 0], cmykPerf: [100, 0, 0, 0] }
+        ];
+
+        var SHAPES_LIST = [
+            { id: 4, name: isKhmer() ? "រាងតាមរូប" : "Tight Silhouette", icon: "✂" },
+            { id: 0, name: isKhmer() ? "ចតុកោណមូល" : "Rounded Rect", icon: "▢" },
+            { id: 1, name: isKhmer() ? "ចតុកោណកែង" : "Rectangle", icon: "▭" },
+            { id: 2, name: isKhmer() ? "រង្វង់ / ពងក្រពើ" : "Circle / Oval", icon: "○" },
+            { id: 3, name: isKhmer() ? "កន្សោមថ្នាំ" : "Capsule", icon: "⬭" },
+            { id: 5, name: isKhmer() ? "ប្រាំមួយជ្រុង" : "Hexagon", icon: "⬡" },
+            { id: 6, name: isKhmer() ? "ប្រាំបីជ្រុង" : "Octagon", icon: "⯃" }
+        ];
+
+        var state = {
+            preset: saved.preset !== undefined ? saved.preset : 0,
+            shape: saved.shape !== undefined ? saved.shape : 4,
+            offset: saved.offset !== undefined ? saved.offset : 2.0,
+            radius: saved.radius !== undefined ? saved.radius : 3.0,
+            unit: saved.unit || "mm",
+            perfectSquare: saved.perfectSquare === true,
+            kissEnabled: saved.kissEnabled !== false,
+            kissName: saved.kissName || "CutContour",
+            kissOffset: saved.kissOffset !== undefined ? saved.kissOffset : 2.0,
+            perfEnabled: saved.perfEnabled === true,
+            perfName: saved.perfName || "PerfCutContour",
+            perfOffset: saved.perfOffset !== undefined ? saved.perfOffset : 5.0,
+            strokeWeight: saved.strokeWeight !== undefined ? saved.strokeWeight : 0.25,
+            overprint: saved.overprint !== false,
+            optimizePath: saved.optimizePath !== false,
+            addRegMarks: saved.addRegMarks === true
+        };
+
+        var html = [];
+
+        // 1. Machine RIP Preset Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ម៉ាស៊ីន / RIP Preset" : "Machine / RIP Preset") + '</span></div>');
+        html.push('  <select id="cutPresetSelect" class="embed-select" style="width:100%;">');
+        for (var p = 0; p < PRESETS_LIST.length; p++) {
+            html.push('    <option value="' + p + '" ' + (state.preset == p ? "selected" : "") + '>' + escapeHtml(PRESETS_LIST[p].name) + '</option>');
+        }
+        html.push('  </select>');
+        html.push('</div>');
+
+        // 2. Shape Geometry Card (Segmented Grid)
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់រាងបន្ទាត់កាត់ (Geometry)" : "Cutline Geometry") + '</span></div>');
+        html.push('  <div class="embed-shape-grid" id="cutShapeGrid">');
+        for (var sh = 0; sh < SHAPES_LIST.length; sh++) {
+            var sItem = SHAPES_LIST[sh];
+            var isAct = (state.shape == sItem.id);
+            html.push('    <button type="button" class="embed-shape-btn ' + (isAct ? "active" : "") + '" data-shape="' + sItem.id + '">');
+            html.push('      <span class="shape-icon">' + sItem.icon + '</span>');
+            html.push('      <span class="shape-lbl">' + escapeHtml(sItem.name) + '</span>');
+            html.push('    </button>');
+        }
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Offset & Dimensions Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "គម្លាតកាត់ (Offset & Radius)" : "Offset & Dimensions") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាត Offset:" : "Offset / Bleed:") + '</label>');
+        html.push('      <div style="display:flex;gap:4px;margin-top:2px;">');
+        html.push('        <input type="number" id="cutOffsetInput" class="embed-input" value="' + state.offset + '" step="0.5" style="flex:1;">');
+        html.push('        <select id="cutUnitSelect" class="embed-select" style="width:58px;">');
+        var uList = ["mm", "cm", "pt", "in"];
+        for (var u = 0; u < uList.length; u++) {
+            html.push('          <option value="' + uList[u] + '" ' + (state.unit === uList[u] ? "selected" : "") + '>' + uList[u] + '</option>');
+        }
+        html.push('        </select>');
+        html.push('      </div>');
+        html.push('    </div>');
+        html.push('    <div id="wrapCornerRadius" style="display:' + (state.shape === 0 ? "block" : "none") + ';">');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "កាំជ្រុង Radius:" : "Corner Radius:") + '</label>');
+        html.push('      <input type="number" id="cutRadiusInput" class="embed-input" value="' + state.radius + '" step="0.5" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <label class="embed-check-row" style="margin-top:4px;"><input type="checkbox" id="chkCutSquare" ' + (state.perfectSquare ? "checked" : "") + '> ' + (isKhmer() ? "ទទឹង និងបណ្តោយស្មើគ្នា (Square / Circle)" : "Equal width & height (Square/Circle)") + '</label>');
+        html.push('</div>');
+
+        // 4. Cut Types & Spot Colors Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ប្រភេទបន្ទាត់ និងពណ៌ Spot" : "Cut Types & Spot Layers") + '</span></div>');
+
+        // Kiss-Cut row
+        html.push('  <div style="display:flex;flex-direction:column;gap:5px;padding-bottom:6px;border-bottom:1px solid var(--border-color);">');
+        html.push('    <label class="embed-check-row" style="font-weight:600;"><input type="checkbox" id="chkKiss" ' + (state.kissEnabled ? "checked" : "") + '> ' + (isKhmer() ? "Kiss-Cut (កាត់រាក់ខាងក្នុង)" : "Kiss-Cut (Inner Cut)") + '</label>');
+        html.push('    <div id="kissFields" style="display:' + (state.kissEnabled ? "flex" : "none") + ';gap:6px;align-items:center;">');
+        html.push('      <input type="text" id="cutKissNameInput" class="embed-input embed-input-mono" value="' + escapeHtml(state.kissName) + '" placeholder="Spot Name" style="flex:1;">');
+        html.push('      <div style="display:flex;align-items:center;gap:3px;">');
+        html.push('        <span style="font-size:10.5px;color:var(--text-secondary);">+</span>');
+        html.push('        <input type="number" id="cutKissOffsetInput" class="embed-input" value="' + state.kissOffset + '" step="0.5" style="width:52px;" title="Kiss-Cut Offset">');
+        html.push('        <span class="cutUnitLbl" style="font-size:10.5px;color:var(--text-secondary);">' + state.unit + '</span>');
+        html.push('      </div>');
+        html.push('    </div>');
+        html.push('  </div>');
+
+        // Die-Cut row
+        html.push('  <div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;">');
+        html.push('    <label class="embed-check-row" style="font-weight:600;"><input type="checkbox" id="chkPerf" ' + (state.perfEnabled ? "checked" : "") + '> ' + (isKhmer() ? "Die-Cut / Perf-Cut (កាត់ដាច់ក្រៅ)" : "Die-Cut / Perf-Cut (Outer Backing)") + '</label>');
+        html.push('    <div id="perfFields" style="display:' + (state.perfEnabled ? "flex" : "none") + ';gap:6px;align-items:center;">');
+        html.push('      <input type="text" id="cutPerfNameInput" class="embed-input embed-input-mono" value="' + escapeHtml(state.perfName) + '" placeholder="Perf Spot Name" style="flex:1;">');
+        html.push('      <div style="display:flex;align-items:center;gap:3px;">');
+        html.push('        <span style="font-size:10.5px;color:var(--text-secondary);">+</span>');
+        html.push('        <input type="number" id="cutPerfOffsetInput" class="embed-input" value="' + state.perfOffset + '" step="0.5" style="width:52px;" title="Die-Cut Offset">');
+        html.push('        <span class="cutUnitLbl" style="font-size:10.5px;color:var(--text-secondary);">' + state.unit + '</span>');
+        html.push('      </div>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 5. Prepress & Production Options Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ការកំណត់មុនបោះពុម្ព (Prepress)" : "Prepress & RIP Options") + '</span></div>');
+        html.push('  <div style="display:flex;gap:12px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkCutOverprint" ' + (state.overprint ? "checked" : "") + '> Overprint Stroke</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkCutOpt" ' + (state.optimizePath ? "checked" : "") + '> ' + (isKhmer() ? "បង្កើនគុណភាព Path" : "Optimize Path") + '</label>');
+        html.push('  </div>');
+        html.push('  <label class="embed-check-row" style="margin-top:3px;"><input type="checkbox" id="chkCutReg" ' + (state.addRegMarks ? "checked" : "") + '> ' + (isKhmer() ? "បន្ថែមសញ្ញាសម្គាល់ (Registration Marks)" : "Add Registration Marks") + '</label>');
+        html.push('</div>');
+
+        // 6. Action Wrap
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnCutSubmit" class="btn-action-primary">✂ ' + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var cutPresetSelect = $("cutPresetSelect");
+        var shapeBtns = embeddedContent.querySelectorAll("#cutShapeGrid .embed-shape-btn");
+        var cutOffsetInput = $("cutOffsetInput");
+        var cutUnitSelect = $("cutUnitSelect");
+        var cutRadiusInput = $("cutRadiusInput");
+        var wrapCornerRadius = $("wrapCornerRadius");
+        var chkCutSquare = $("chkCutSquare");
+        var chkKiss = $("chkKiss");
+        var kissFields = $("kissFields");
+        var cutKissNameInput = $("cutKissNameInput");
+        var cutKissOffsetInput = $("cutKissOffsetInput");
+        var chkPerf = $("chkPerf");
+        var perfFields = $("perfFields");
+        var cutPerfNameInput = $("cutPerfNameInput");
+        var cutPerfOffsetInput = $("cutPerfOffsetInput");
+        var chkCutOverprint = $("chkCutOverprint");
+        var chkCutOpt = $("chkCutOpt");
+        var chkCutReg = $("chkCutReg");
+        var btnCutSubmit = $("btnCutSubmit");
+
+        function updateCutState() {
+            state.preset = parseInt(cutPresetSelect.value, 10) || 0;
+            state.offset = parseFloat(cutOffsetInput.value) || 2.0;
+            state.radius = parseFloat(cutRadiusInput.value) || 3.0;
+            state.unit = cutUnitSelect.value;
+            state.perfectSquare = chkCutSquare.checked;
+            state.kissEnabled = chkKiss.checked;
+            state.kissName = cutKissNameInput.value.trim() || "CutContour";
+            state.kissOffset = parseFloat(cutKissOffsetInput.value) || state.offset;
+            state.perfEnabled = chkPerf.checked;
+            state.perfName = cutPerfNameInput.value.trim() || "PerfCutContour";
+            state.perfOffset = parseFloat(cutPerfOffsetInput.value) || 5.0;
+            state.overprint = chkCutOverprint.checked;
+            state.optimizePath = chkCutOpt.checked;
+            state.addRegMarks = chkCutReg.checked;
+
+            wrapCornerRadius.style.display = (state.shape === 0) ? "block" : "none";
+            kissFields.style.display = state.kissEnabled ? "flex" : "none";
+            perfFields.style.display = state.perfEnabled ? "flex" : "none";
+
+            var uLabels = embeddedContent.querySelectorAll(".cutUnitLbl");
+            for (var ul = 0; ul < uLabels.length; ul++) uLabels[ul].textContent = state.unit;
+
+            store.setDebounced("ozo_cutcontour_settings", JSON.stringify(state), 250);
+        }
+
+        cutPresetSelect.addEventListener("change", function () {
+            var idx = parseInt(this.value, 10) || 0;
+            var p = PRESETS_LIST[idx];
+            if (p) {
+                cutKissNameInput.value = p.kiss;
+                cutPerfNameInput.value = p.perf;
+                state.strokeWeight = p.stroke;
+            }
+            updateCutState();
+        });
+
+        for (var sb = 0; sb < shapeBtns.length; sb++) {
+            shapeBtns[sb].addEventListener("click", function () {
+                for (var b = 0; b < shapeBtns.length; b++) shapeBtns[b].classList.remove("active");
+                this.classList.add("active");
+                state.shape = parseInt(this.getAttribute("data-shape"), 10);
+                updateCutState();
+            });
+        }
+
+        cutOffsetInput.addEventListener("input", function () {
+            cutKissOffsetInput.value = this.value;
+            updateCutState();
+        });
+        cutRadiusInput.addEventListener("input", updateCutState);
+        cutUnitSelect.addEventListener("change", updateCutState);
+        chkCutSquare.addEventListener("change", updateCutState);
+        chkKiss.addEventListener("change", updateCutState);
+        cutKissNameInput.addEventListener("input", updateCutState);
+        cutKissOffsetInput.addEventListener("input", updateCutState);
+        chkPerf.addEventListener("change", updateCutState);
+        cutPerfNameInput.addEventListener("input", updateCutState);
+        cutPerfOffsetInput.addEventListener("input", updateCutState);
+        chkCutOverprint.addEventListener("change", updateCutState);
+        chkCutOpt.addEventListener("change", updateCutState);
+        chkCutReg.addEventListener("change", updateCutState);
+
+        btnCutSubmit.addEventListener("click", function () {
+            if (!chkKiss.checked && !chkPerf.checked) {
+                showError("CutContour", isKhmer() ? "សូមជ្រើសរើសយ៉ាងហោច Kiss-Cut ឬ Die-Cut មួយ។" : "Please enable at least Kiss-Cut or Die-Cut.");
+                return;
+            }
+
+            hideError();
+            btnCutSubmit.disabled = true;
+            btnCutSubmit.textContent = isKhmer() ? "⏳ កំពុងបង្កើត..." : "⏳ Generating...";
+            setStatus(isKhmer() ? "កំពុងបង្កើតបន្ទាត់កាត់ CutContour..." : "Generating CutContour paths...", "running");
+
+            var pObj = PRESETS_LIST[state.preset] || PRESETS_LIST[0];
+            var params = {
+                shapeIndex: state.shape,
+                unit: state.unit,
+                offset: parseFloat(cutOffsetInput.value) || 2.0,
+                radius: parseFloat(cutRadiusInput.value) || 3.0,
+                perfectSquare: chkCutSquare.checked,
+                kissEnabled: chkKiss.checked,
+                kissName: cutKissNameInput.value.trim() || "CutContour",
+                kissOffset: parseFloat(cutKissOffsetInput.value) || 2.0,
+                cmykKiss: pObj.cmykKiss,
+                perfEnabled: chkPerf.checked,
+                perfName: cutPerfNameInput.value.trim() || "PerfCutContour",
+                perfOffset: parseFloat(cutPerfOffsetInput.value) || 5.0,
+                cmykPerf: pObj.cmykPerf,
+                strokeWeight: pObj.stroke || 0.25,
+                overprint: chkCutOverprint.checked,
+                optimizePath: chkCutOpt.checked,
+                addRegMarks: chkCutReg.checked,
+                layerName: pObj.name === "Roland VersaWorks" ? "CUTTING" : "CutContour"
+            };
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btnCutSubmit.disabled = false;
+                    btnCutSubmit.textContent = "✂ " + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now");
+                    setStatus("Simulated CutContour Generated (Browser Preview)", "success", 4000);
+                }, 1000);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteCutContour(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
+                btnCutSubmit.disabled = false;
+                btnCutSubmit.textContent = "✂ " + (isKhmer() ? "បង្កើតខ្សែបន្ទាត់កាត់ឥឡូវនេះ" : "Generate CutContour Now");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "success") {
+                    var okMsg = isKhmer() ? "បានបង្កើតខ្សែបន្ទាត់កាត់ CutContour ជោគជ័យលើ Layer " + res.layerName : "CutContour created on layer " + res.layerName;
+                    setStatus(okMsg, "success", 5000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to generate CutContour");
+                    showError(isKhmer() ? "ការបង្កើត CutContour បរាជ័យ" : "CutContour Generation Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        });
+
+        updateCutState();
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock Smart Dimension View
+    // -------------------------------------------------------------
+    function renderEmbeddedDimension() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_dimension_settings", "{}")); } catch (e) {}
+
+        var state = {
+            mode: saved.mode !== undefined ? saved.mode : 0,
+            unit: saved.unit || "mm",
+            precision: saved.precision !== undefined ? saved.precision : 2,
+            showUnit: saved.showUnit !== false,
+            offset: saved.offset !== undefined ? saved.offset : 5.0,
+            textSize: saved.textSize !== undefined ? saved.textSize : 10,
+            arrow: saved.arrow !== undefined ? saved.arrow : 5,
+            stroke: saved.stroke !== undefined ? saved.stroke : 0.5,
+            labelBackground: saved.labelBackground !== false,
+            boundsProperty: saved.boundsProperty || "visibleBounds"
+        };
+
+        var html = [];
+
+        // 1. Placement Mode (Segmented)
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទិសដៅវាស់ (Direction)" : "Dimension Direction") + '</span></div>');
+        html.push('  <div class="embed-segmented" id="dimModeSegmented">');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 0 ? "active" : "") + '" data-mode="0">⤢ ' + (isKhmer() ? "ទទឹង & កម្ពស់" : "Both (W+H)") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 1 ? "active" : "") + '" data-mode="1">↔ ' + (isKhmer() ? "ទទឹង" : "Width") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 2 ? "active" : "") + '" data-mode="2">↕ ' + (isKhmer() ? "កម្ពស់" : "Height") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.mode === 3 ? "active" : "") + '" data-mode="3">▢ ' + (isKhmer() ? "ប្រអប់" : "Box") + '</button>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Units & Offset Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ខ្នាត និងគម្លាត (Units & Offset)" : "Units & Distance") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ខ្នាតរង្វាស់:" : "Unit:") + '</label>');
+        html.push('      <select id="dimUnitSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        var dimUnits = ["mm", "cm", "in", "pt", "m"];
+        for (var du = 0; du < dimUnits.length; du++) {
+            html.push('        <option value="' + dimUnits[du] + '" ' + (state.unit === dimUnits[du] ? "selected" : "") + '>' + dimUnits[du] + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាតពីគែម (Offset):" : "Offset Distance:") + '</label>');
+        html.push('      <input type="number" id="dimOffsetInput" class="embed-input" value="' + state.offset + '" step="1" min="0" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div class="embed-row-2col" style="margin-top:4px;">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចំនួនក្បៀស (Precision):" : "Precision:") + '</label>');
+        html.push('      <select id="dimPrecisionSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        for (var p = 0; p <= 3; p++) {
+            html.push('        <option value="' + p + '" ' + (state.precision === p ? "selected" : "") + '>' + p + (p === 0 ? " (e.g. 50)" : (p === 2 ? " (e.g. 50.25)" : "")) + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('    <div style="display:flex;align-items:flex-end;padding-bottom:5px;">');
+        html.push('      <label class="embed-check-row"><input type="checkbox" id="chkDimShowUnit" ' + (state.showUnit ? "checked" : "") + '> ' + (isKhmer() ? "បង្ហាញឈ្មោះខ្នាត" : "Display unit text") + '</label>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Style & Font Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទំហំអក្សរ និងសញ្ញាព្រួញ" : "Style & Appearance") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទំហំអក្សរ (pt):" : "Text Size (pt):") + '</label>');
+        html.push('      <input type="number" id="dimTextSizeInput" class="embed-input" value="' + state.textSize + '" min="4" max="100" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទំហំក្បាលព្រួញ:" : "Arrow Size (pt):") + '</label>');
+        html.push('      <input type="number" id="dimArrowInput" class="embed-input" value="' + state.arrow + '" min="1" max="50" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div style="display:flex;gap:12px;margin-top:4px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkDimBg" ' + (state.labelBackground ? "checked" : "") + '> ' + (isKhmer() ? "ផ្ទៃសពីក្រោយអក្សរ (White Pill)" : "White Label Background") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Action Wrap
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnDimSubmit" class="btn-action-primary">📏 ' + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var modeBtns = embeddedContent.querySelectorAll("#dimModeSegmented .embed-seg-btn");
+        var dimUnitSelect = $("dimUnitSelect");
+        var dimOffsetInput = $("dimOffsetInput");
+        var dimPrecisionSelect = $("dimPrecisionSelect");
+        var chkDimShowUnit = $("chkDimShowUnit");
+        var dimTextSizeInput = $("dimTextSizeInput");
+        var dimArrowInput = $("dimArrowInput");
+        var chkDimBg = $("chkDimBg");
+        var btnDimSubmit = $("btnDimSubmit");
+
+        function updateDimState() {
+            state.unit = dimUnitSelect.value;
+            state.offset = parseFloat(dimOffsetInput.value) || 5.0;
+            state.precision = parseInt(dimPrecisionSelect.value, 10) || 2;
+            state.showUnit = chkDimShowUnit.checked;
+            state.textSize = parseFloat(dimTextSizeInput.value) || 10;
+            state.arrow = parseFloat(dimArrowInput.value) || 5;
+            state.labelBackground = chkDimBg.checked;
+
+            store.setDebounced("ozo_dimension_settings", JSON.stringify(state), 250);
+        }
+
+        for (var m = 0; m < modeBtns.length; m++) {
+            modeBtns[m].addEventListener("click", function () {
+                for (var mb = 0; mb < modeBtns.length; mb++) modeBtns[mb].classList.remove("active");
+                this.classList.add("active");
+                state.mode = parseInt(this.getAttribute("data-mode"), 10);
+                updateDimState();
+            });
+        }
+
+        dimUnitSelect.addEventListener("change", updateDimState);
+        dimOffsetInput.addEventListener("input", updateDimState);
+        dimPrecisionSelect.addEventListener("change", updateDimState);
+        chkDimShowUnit.addEventListener("change", updateDimState);
+        dimTextSizeInput.addEventListener("input", updateDimState);
+        dimArrowInput.addEventListener("input", updateDimState);
+        chkDimBg.addEventListener("change", updateDimState);
+
+        btnDimSubmit.addEventListener("click", function () {
+            hideError();
+            btnDimSubmit.disabled = true;
+            btnDimSubmit.textContent = isKhmer() ? "⏳ កំពុងគណនា..." : "⏳ Adding dimensions...";
+            setStatus(isKhmer() ? "កំពុងដាក់វិមាត្រទំហំ..." : "Adding dimensions to artwork...", "running");
+
+            var params = {
+                mode: state.mode,
+                unit: state.unit,
+                offset: parseFloat(dimOffsetInput.value) || 5.0,
+                precision: parseInt(dimPrecisionSelect.value, 10) || 2,
+                showUnit: chkDimShowUnit.checked,
+                scale: 1,
+                textSize: parseFloat(dimTextSizeInput.value) || 10,
+                arrow: parseFloat(dimArrowInput.value) || 5,
+                stroke: 0.5,
+                labelBackground: chkDimBg.checked,
+                boundsProperty: "visibleBounds"
+            };
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btnDimSubmit.disabled = false;
+                    btnDimSubmit.textContent = "📏 " + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now");
+                    setStatus("Simulated Dimensions Placed (Browser Preview)", "success", 4000);
+                }, 1000);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteSmartDimension(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
+                btnDimSubmit.disabled = false;
+                btnDimSubmit.textContent = "📏 " + (isKhmer() ? "ដាក់វិមាត្រទំហំឥឡូវនេះ" : "Add Dimensions Now");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                if (res && res.status === "success") {
+                    var okMsg = isKhmer() ? "បានបង្កើតវិមាត្រ " + res.count + " ដោយជោគជ័យលើ Layer " + res.layer : "Created " + res.count + " dimensions on layer " + res.layer;
+                    setStatus(okMsg, "success", 5000);
+                } else {
+                    var errMsg = (res && res.message) || String(raw || "Failed to add dimensions");
+                    showError(isKhmer() ? "ការដាក់វិមាត្របរាជ័យ" : "Dimension Failed", errMsg);
+                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                }
+            });
+        });
+
+        updateDimState();
+    }
+
+    // -------------------------------------------------------------
     // Generic In-Dock View (for other tools)
     // -------------------------------------------------------------
     function renderEmbeddedGeneric(tool) {
@@ -1736,6 +2207,8 @@
         if (activeEmbeddedTool) {
             if (activeEmbeddedTool.id === "exporter") renderEmbeddedExporter();
             else if (activeEmbeddedTool.id === "qr") renderEmbeddedQR();
+            else if (activeEmbeddedTool.id === "cutcontour") renderEmbeddedCutContour();
+            else if (activeEmbeddedTool.id === "dimension") renderEmbeddedDimension();
             else renderEmbeddedGeneric(activeEmbeddedTool);
         } else {
             renderTools();

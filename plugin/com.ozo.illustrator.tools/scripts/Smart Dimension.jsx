@@ -6,6 +6,10 @@
     var PREVIEW_LAYER_NAME = "__Smart Dimension Preview__";
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { status: "error", message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("Open a document and select artwork to dimension."));
         return;
     }
@@ -13,14 +17,34 @@
     var doc = app.activeDocument;
     var selectionValue = doc.selection;
     if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
-        if (confirm(OZO.isKhmer() ?
-            "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f Artwork \u1791\u17c1\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u179c\u17b6\u179f\u17cb\u1794\u17d2\u179a\u179c\u17c2\u1784\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
-            "No artwork is selected. Would you like to dimension all items on the active artboard automatically?")) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
             doc.selectObjectsOnActiveArtboard();
             selectionValue = doc.selection;
-        }
-        if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
-            return;
+            if (!selectionValue || selectionValue.length === 0) {
+                try {
+                    var actLayer = doc.activeLayer;
+                    if (actLayer && actLayer.pageItems && actLayer.pageItems.length > 0) {
+                        for (var pi = 0; pi < actLayer.pageItems.length; pi++) {
+                            try { actLayer.pageItems[pi].selected = true; } catch (eSel) {}
+                        }
+                        selectionValue = doc.selection;
+                    }
+                } catch (eAct) {}
+            }
+            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
+                __ozoHeadlessResult = { status: "error", message: "Please select artwork in Illustrator to add dimensions." };
+                return;
+            }
+        } else {
+            if (confirm(OZO.isKhmer() ?
+                "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f Artwork \u1791\u17c1\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u179c\u17b6\u179f\u17cb\u1794\u17d2\u179a\u179c\u17c2\u1784\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
+                "No artwork is selected. Would you like to dimension all items on the active artboard automatically?")) {
+                doc.selectObjectsOnActiveArtboard();
+                selectionValue = doc.selection;
+            }
+            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
+                return;
+            }
         }
     }
 
@@ -411,13 +435,19 @@
         }
     }
 
-    function createDimensions(settings) {
+    function createDimensions(settings, targetLayerName) {
         var specs = buildDimensionSpecs(settings);
+        var effectiveLayerName = targetLayerName || PREVIEW_LAYER_NAME;
         if (!previewLayer) {
             cleanupPreview(true);
             normalizeEditingContext();
-            previewLayer = doc.layers.add();
-            previewLayer.name = PREVIEW_LAYER_NAME;
+            if (targetLayerName) {
+                try { previewLayer = doc.layers.getByName(targetLayerName); } catch (eFindLayer) { previewLayer = null; }
+            }
+            if (!previewLayer) {
+                previewLayer = doc.layers.add();
+                previewLayer.name = effectiveLayerName;
+            }
             previewLayer.locked = false;
             previewLayer.visible = true;
         } else {
@@ -436,7 +466,7 @@
                 addVerticalDimension(drawingTarget, specs.vertical[i], settings);
             }
             previewGroup = previewLayer.groupItems.add();
-            previewGroup.name = "Smart Dimensions Preview";
+            previewGroup.name = targetLayerName ? targetLayerName : "Smart Dimensions Preview";
             for (var moveIndex = createdItems.length - 1; moveIndex >= 0; moveIndex--) {
                 try {
                     createdItems[moveIndex].move(previewGroup, ElementPlacement.PLACEATEND);
@@ -460,6 +490,63 @@
         }
         app.redraw();
         return specs.horizontal.length + specs.vertical.length;
+    }
+
+    function executeDimensionCore(finalSettings) {
+        var dimensionCount = createDimensions(finalSettings, "Smart Dimensions");
+        if (previewLayer && previewLayer.name !== "Smart Dimensions") {
+            previewLayer.name = "Smart Dimensions";
+        }
+        if (previewGroup) {
+            previewGroup.name = "Smart Dimensions";
+            doc.selection = null;
+            try { previewGroup.selected = true; } catch (ignoreSel2) {}
+        }
+        previewLayer = null;
+        previewGroup = null;
+        return { count: dimensionCount, layer: "Smart Dimensions" };
+    }
+
+    if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+        try {
+            var hp = __ozoHeadlessParams;
+            var unit = hp.unit || "mm";
+            var factor = unitFactor(unit);
+
+            var headlessSettings = {
+                mode: typeof hp.mode === "number" ? hp.mode : 0,
+                boundsProperty: hp.boundsProperty || "visibleBounds",
+                unit: unit,
+                precision: typeof hp.precision === "number" ? hp.precision : 2,
+                showUnit: hp.showUnit !== false,
+                scale: typeof hp.scale === "number" ? hp.scale : 1,
+                offset: (typeof hp.offset === "number" ? hp.offset : 5.0) * factor,
+                textSize: typeof hp.textSize === "number" ? hp.textSize : 10,
+                arrow: typeof hp.arrow === "number" ? hp.arrow : 5,
+                stroke: typeof hp.stroke === "number" ? hp.stroke : 0.5,
+                labelBackground: hp.labelBackground !== false,
+                fontName: hp.fontName || "Auto",
+                widthPrefix: hp.widthPrefix || "",
+                heightPrefix: hp.heightPrefix || "",
+                color: blackColor()
+            };
+
+            var dimRes = executeDimensionCore(headlessSettings);
+            __ozoHeadlessResult = {
+                status: "success",
+                count: dimRes.count,
+                layer: dimRes.layer,
+                unit: unit
+            };
+            return;
+        } catch (eDim) {
+            cleanupPreview();
+            __ozoHeadlessResult = {
+                status: "error",
+                message: eDim && eDim.message ? eDim.message : String(eDim)
+            };
+            return;
+        }
     }
 
     var defaultDocUnit = OZO.getDocDefaultUnit(doc);

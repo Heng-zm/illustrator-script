@@ -746,3 +746,75 @@ function ozoExecuteGenerateQR(paramsJsonStr) {
         return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
     }
 }
+
+function ozoExecuteCutContour(paramsJsonStr) {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/CutContour Generator.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/CutContour Generator.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "CutContour Generator.jsx not found" });
+        }
+
+        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
+            ? JSON.parse(paramsJsonStr)
+            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "CutContour completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+function ozoExecuteSmartDimension(paramsJsonStr) {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Smart Dimension.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Smart Dimension.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Smart Dimension.jsx not found" });
+        }
+
+        __ozoHeadlessParams = (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function")
+            ? JSON.parse(paramsJsonStr)
+            : (new Function("return " + paramsJsonStr))();
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "Smart Dimension completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
