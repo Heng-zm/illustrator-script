@@ -434,38 +434,39 @@
     // Right Column: 3. Dynamic Naming & 4. Destination Folder
     // =============================================================
 
-    // Panel: Naming Template
-    var namePanel = rightCol.add("panel", undefined, OZO.tr("Dynamic File Naming"));
+    // Panel: File Naming
+    var namePanel = rightCol.add("panel", undefined, OZO.tr("File Naming"));
     namePanel.orientation = "column";
     namePanel.alignChildren = ["fill", "top"];
     namePanel.margins = [12, 14, 12, 10];
     namePanel.spacing = 8;
+
+    // Presets Definition: Friendly Label -> Token Pattern
+    var namingPresets = [
+        { label: OZO.tr("Doc_Artboard_Size"), pattern: "[doc]_[ab]_[w]x[h][unit]" },
+        { label: OZO.tr("Doc_Artboard"), pattern: "[doc]_[ab]" },
+        { label: OZO.tr("Artboard_Size"), pattern: "[ab]_[w]x[h][unit]" },
+        { label: OZO.tr("01_Doc_Artboard"), pattern: "[num]_[doc]_[ab]" },
+        { label: OZO.tr("Doc_01"), pattern: "[doc]_[num]" },
+        { label: OZO.tr("Artboard Only"), pattern: "[ab]" },
+        { label: OZO.tr("Custom Pattern..."), pattern: "" }
+    ];
 
     var presetUnitRow = namePanel.add("group");
     presetUnitRow.orientation = "row";
     presetUnitRow.alignChildren = ["left", "center"];
     presetUnitRow.spacing = 6;
 
-    presetUnitRow.add("statictext", undefined, OZO.tr("Preset:"));
-    var namingPresetList = presetUnitRow.add("dropdownlist", undefined, [
-        "[doc]_[ab]_[w]x[h][unit]",
-        "[doc]_[ab]",
-        "[ab]_[w]x[h][unit]",
-        "[num]_[doc]_[ab]",
-        "[doc]_[num]",
-        "Custom..."
-    ]);
-    namingPresetList.selection = 0;
-    namingPresetList.preferredSize.width = 165;
+    var presetLabel = presetUnitRow.add("statictext", undefined, OZO.tr("Preset:"));
+    presetLabel.preferredSize.width = 46;
 
-    function selectPresetByText(presetText) {
-        for (var np = 0; np < namingPresetList.items.length; np++) {
-            if (namingPresetList.items[np].text === presetText) {
-                namingPresetList.selection = np;
-                return;
-            }
-        }
+    var presetLabels = [];
+    for (var pi = 0; pi < namingPresets.length; pi++) {
+        presetLabels.push(namingPresets[pi].label);
     }
+    var namingPresetList = presetUnitRow.add("dropdownlist", undefined, presetLabels);
+    namingPresetList.selection = 0;
+    namingPresetList.preferredSize.width = 168;
 
     presetUnitRow.add("statictext", undefined, OZO.tr("Unit:"));
     var unitList = presetUnitRow.add("dropdownlist", undefined, ["mm", "cm", "in", "pt"]);
@@ -474,56 +475,102 @@
     else if (defaultUnit === "in" || defaultUnit === "inches") defaultUnitIndex = 2;
     else if (defaultUnit === "pt" || defaultUnit === "points") defaultUnitIndex = 3;
     unitList.selection = defaultUnitIndex;
-    unitList.preferredSize.width = 65;
+    unitList.preferredSize.width = 58;
 
-    var templateInput = namePanel.add("edittext", undefined, "[doc]_[ab]_[w]x[h][unit]");
-    templateInput.preferredSize.width = 315;
+    // Pattern Input & Tag Inserter Row
+    var patternRow = namePanel.add("group");
+    patternRow.orientation = "row";
+    patternRow.alignChildren = ["left", "center"];
+    patternRow.spacing = 6;
+
+    var patternLabel = patternRow.add("statictext", undefined, OZO.tr("Pattern:"));
+    patternLabel.preferredSize.width = 46;
+
+    var templateInput = patternRow.add("edittext", undefined, namingPresets[0].pattern);
+    templateInput.preferredSize.width = 168;
     templateInput.helpTip = "Tokens: [doc] [ab] [num] [raw_num] [w] [h] [unit] [date] [time] [color] [fmt]";
 
-    // Interactive Token Insert Chips
-    var chipRow = namePanel.add("group");
-    chipRow.orientation = "row";
-    chipRow.alignChildren = ["left", "center"];
-    chipRow.spacing = 3;
+    var tagDropdown = patternRow.add("dropdownlist", undefined, [
+        OZO.tr("+ Tag..."),
+        OZO.tr("Document [doc]"),
+        OZO.tr("Artboard [ab]"),
+        OZO.tr("Size [w]x[h]"),
+        OZO.tr("Width [w]"),
+        OZO.tr("Height [h]"),
+        OZO.tr("Unit [unit]"),
+        OZO.tr("Number [num]"),
+        OZO.tr("Date [date]"),
+        OZO.tr("Time [time]"),
+        OZO.tr("Color [color]")
+    ]);
+    tagDropdown.selection = 0;
+    tagDropdown.preferredSize.width = 88;
 
-    var tokens = ["[doc]", "[ab]", "[w]x[h]", "[unit]", "[num]", "[date]", "[color]"];
-    var tokenWidths = {
-        "[ab]": 34,
-        "[doc]": 38,
-        "[num]": 38,
-        "[unit]": 42,
-        "[date]": 42,
-        "[w]x[h]": 46,
-        "[color]": 48
+    var tagTokens = ["", "[doc]", "[ab]", "[w]x[h]", "[w]", "[h]", "[unit]", "[num]", "[date]", "[time]", "[color]"];
+    tagDropdown.onChange = function () {
+        if (!tagDropdown.selection || tagDropdown.selection.index === 0) return;
+        var tkn = tagTokens[tagDropdown.selection.index];
+        if (tkn) {
+            var cur = templateInput.text;
+            if (!cur || cur.charAt(cur.length - 1) === "_") {
+                templateInput.text = cur + tkn;
+            } else {
+                templateInput.text = cur + "_" + tkn;
+            }
+            selectCustomPreset();
+            updatePreviewName();
+        }
+        tagDropdown.selection = 0;
     };
-    for (var tk = 0; tk < tokens.length; tk++) {
-        (function (tokenStr) {
-            var chip = chipRow.add("button", undefined, tokenStr);
-            var w = tokenWidths[tokenStr] || 40;
-            chip.preferredSize = [w, 22];
-            chip.helpTip = OZO.tr("Click to insert ") + tokenStr;
-            chip.onClick = function () {
-                var cur = templateInput.text;
-                if (!cur || cur.charAt(cur.length - 1) === "_") {
-                    templateInput.text = cur + tokenStr;
-                } else {
-                    templateInput.text = cur + "_" + tokenStr;
-                }
-                selectPresetByText("Custom...");
-                updatePreviewName();
-            };
-        })(tokens[tk]);
+
+    function selectCustomPreset() {
+        namingPresetList.selection = namingPresets.length - 1; // Custom Pattern...
     }
 
-    // Live Sample Preview Box
-    var samplePreviewPanel = namePanel.add("panel", undefined, OZO.tr("Live Filename Preview"));
+    function syncPresetToInput() {
+        var txt = templateInput.text;
+        for (var i = 0; i < namingPresets.length - 1; i++) {
+            if (namingPresets[i].pattern === txt) {
+                namingPresetList.selection = i;
+                return;
+            }
+        }
+        selectCustomPreset();
+    }
+
+    namingPresetList.onChange = function () {
+        if (namingPresetList.selection && namingPresetList.selection.index < namingPresets.length - 1) {
+            templateInput.text = namingPresets[namingPresetList.selection.index].pattern;
+        }
+        updatePreviewName();
+    };
+
+    templateInput.onChanging = function () {
+        syncPresetToInput();
+        updatePreviewName();
+    };
+
+    // Live Filename Preview (Clean borderless layout)
+    var samplePreviewPanel = namePanel.add("group");
     samplePreviewPanel.orientation = "column";
     samplePreviewPanel.alignChildren = ["fill", "top"];
-    samplePreviewPanel.margins = [10, 10, 10, 10];
+    samplePreviewPanel.margins = [2, 4, 2, 2];
     samplePreviewPanel.spacing = 3;
 
+    var previewTitleRow = samplePreviewPanel.add("group");
+    previewTitleRow.orientation = "row";
+    previewTitleRow.alignChildren = ["left", "center"];
+    var previewTitle = previewTitleRow.add("statictext", undefined, OZO.tr("Preview:"));
+    try {
+        previewTitle.graphics.font = ScriptUI.newFont(
+            previewTitle.graphics.font ? previewTitle.graphics.font.name : "dialog",
+            "BOLD",
+            10
+        );
+    } catch (eBld) {}
+
     var samplePreviewText = samplePreviewPanel.add("statictext", undefined, "");
-    samplePreviewText.preferredSize.width = 300;
+    samplePreviewText.preferredSize.width = 310;
     try {
         samplePreviewText.graphics.font = ScriptUI.newFont(
             samplePreviewText.graphics.font ? samplePreviewText.graphics.font.name : "dialog",
@@ -533,24 +580,12 @@
     } catch (eBold) {}
 
     var sampleDimsText = samplePreviewPanel.add("statictext", undefined, "");
-    sampleDimsText.preferredSize.width = 300;
+    sampleDimsText.preferredSize.width = 310;
     sampleDimsText.graphics.foregroundColor = sampleDimsText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.6, 0.6, 0.6, 1], 1);
 
     var sampleSummaryText = samplePreviewPanel.add("statictext", undefined, "");
-    sampleSummaryText.preferredSize.width = 300;
+    sampleSummaryText.preferredSize.width = 310;
     sampleSummaryText.graphics.foregroundColor = sampleSummaryText.graphics.newPen(dialog.graphics.PenType.SOLID_COLOR, [0.18, 0.48, 0.98, 1], 1);
-
-    namingPresetList.onChange = function () {
-        if (namingPresetList.selection && namingPresetList.selection.text !== "Custom...") {
-            templateInput.text = namingPresetList.selection.text;
-        }
-        updatePreviewName();
-    };
-
-    templateInput.onChanging = function () {
-        selectPresetByText("Custom...");
-        updatePreviewName();
-    };
 
     unitList.onChange = function () {
         updatePreviewName();
