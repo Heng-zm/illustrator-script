@@ -1468,6 +1468,43 @@ body.theme-light {
     padding: 10px 12px;
     margin-bottom: 8px;
 }
+.btn-copy-ticket {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--font-family);
+    color: var(--text-secondary);
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 2px 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    line-height: 1.3;
+}
+.btn-copy-ticket:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+    border-color: var(--accent);
+}
+.btn-copy-ticket:active {
+    transform: scale(0.96);
+}
+.btn-copy-ticket.copied {
+    color: #22c55e !important;
+    border-color: #22c55e !important;
+    background: rgba(34, 197, 94, 0.14) !important;
+}
+.print-job-ticket-card {
+    position: relative;
+    cursor: pointer;
+}
+.print-job-ticket-card:hover {
+    border-color: var(--accent);
+}
 .live-badge {
     display: inline-flex;
     align-items: center;

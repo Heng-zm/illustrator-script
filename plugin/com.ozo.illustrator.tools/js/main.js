@@ -454,6 +454,93 @@
         return day + " " + month + " " + year;
     }
 
+    function fallbackExecCopy(text, onSuccess, onError) {
+        try {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.top = "-9999px";
+            textArea.style.left = "-9999px";
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            var ok = document.execCommand("copy");
+            document.body.removeChild(textArea);
+            if (ok) {
+                if (onSuccess) onSuccess();
+            } else {
+                if (onError) onError(new Error("execCommand failed"));
+            }
+        } catch (err) {
+            if (onError) onError(err);
+        }
+    }
+
+    function copyToClipboard(text, onSuccess, onError) {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            navigator.clipboard.writeText(text).then(function () {
+                if (onSuccess) onSuccess();
+            }).catch(function () {
+                fallbackExecCopy(text, onSuccess, onError);
+            });
+        } else {
+            fallbackExecCopy(text, onSuccess, onError);
+        }
+    }
+
+    function copyJobTicket(ticketEl, triggerBtn) {
+        if (!ticketEl) return;
+        var lines = [];
+        var lineElements = ticketEl.querySelectorAll(".ticket-line-date, .ticket-line-mat, .ticket-line-dim, .ticket-line-note, .ticket-row-main, .ticket-row-sub, .ticket-row-desc");
+        if (lineElements && lineElements.length > 0) {
+            for (var i = 0; i < lineElements.length; i++) {
+                var el = lineElements[i];
+                if (el.style && el.style.display === "none") continue;
+                var txt = (el.textContent || el.innerText || "").trim();
+                if (txt) lines.push(txt);
+            }
+        }
+        if (lines.length === 0) {
+            var raw = (ticketEl.innerText || ticketEl.textContent || "").trim();
+            var rawLines = raw.split(/\r?\n/);
+            for (var j = 0; j < rawLines.length; j++) {
+                var l = rawLines[j].trim();
+                if (l) lines.push(l);
+            }
+        }
+        if (lines.length === 0) return;
+
+        var formatted = [
+            "📋 PREPRESS JOB TICKET",
+            "------------------------------",
+            lines.join("\n"),
+            "------------------------------"
+        ].join("\n");
+
+        copyToClipboard(formatted, function () {
+            if (triggerBtn) {
+                if (!triggerBtn._origTicketHtml) {
+                    triggerBtn._origTicketHtml = triggerBtn.innerHTML;
+                }
+                if (triggerBtn._copyTimer) {
+                    clearTimeout(triggerBtn._copyTimer);
+                }
+                triggerBtn.classList.add("copied");
+                triggerBtn.innerHTML = "✅ " + (isKhmer() ? "បានចម្លង!" : "Copied!");
+                triggerBtn._copyTimer = setTimeout(function () {
+                    triggerBtn.classList.remove("copied");
+                    triggerBtn.innerHTML = triggerBtn._origTicketHtml;
+                    delete triggerBtn._origTicketHtml;
+                    delete triggerBtn._copyTimer;
+                }, 1800);
+            }
+            setStatus(isKhmer() ? "បានចម្លងព័ត៌មាន Ticket ទៅកាន់ Clipboard រួចរាល់!" : "Job Ticket copied to clipboard!", "success", 2000);
+        }, function (err) {
+            setStatus(isKhmer() ? "មិនអាចចម្លងបានទេ: " + (err ? err.message : "") : "Failed to copy ticket: " + (err ? err.message : ""), "error", 2500);
+        });
+    }
+
     function escapeHtml(str) {
         return String(str == null ? "" : str)
             .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -1309,7 +1396,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="expLiveTicket"></div>');
         html.push('</div>');
@@ -1789,7 +1879,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="qrLiveTicket"></div>');
         html.push('</div>');
@@ -2091,7 +2184,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="cutLiveTicket"></div>');
         html.push('</div>');
@@ -2400,7 +2496,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="dimLiveTicket"></div>');
         html.push('</div>');
@@ -2635,7 +2734,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="pjTicketCard">');
         html.push('    <div class="ticket-line-date" id="pjTicketDate">' + escapeHtml(state.dateStr || dStr) + '</div>');
@@ -3134,7 +3236,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="numLiveTicket"></div>');
         html.push('</div>');
@@ -3555,7 +3660,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="glLiveTicket"></div>');
         html.push('</div>');
@@ -3924,7 +4032,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="repLiveTicket"></div>');
         html.push('</div>');
@@ -4203,7 +4314,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="nestLiveTicket"></div>');
         html.push('</div>');
@@ -4906,7 +5020,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="rbLiveTicket"></div>');
         html.push('</div>');
@@ -5142,7 +5259,10 @@
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
         html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="khqrLiveTicket"></div>');
         html.push('</div>');
@@ -5444,6 +5564,26 @@
         embeddedDialogBtn.addEventListener("click", function () {
             if (activeEmbeddedTool) {
                 runScript(activeEmbeddedTool);
+            }
+        });
+    }
+
+    if (embeddedContent) {
+        embeddedContent.addEventListener("click", function (e) {
+            var copyBtn = closest(e.target, ".btn-copy-ticket", embeddedContent);
+            if (copyBtn) {
+                var parentCard = closest(copyBtn, ".embed-card", embeddedContent);
+                var ticketCard = parentCard ? parentCard.querySelector(".print-job-ticket-card") : null;
+                if (ticketCard) {
+                    copyJobTicket(ticketCard, copyBtn);
+                }
+                return;
+            }
+            var ticketCardDirect = closest(e.target, ".print-job-ticket-card", embeddedContent);
+            if (ticketCardDirect) {
+                var parentCard2 = closest(ticketCardDirect, ".embed-card", embeddedContent);
+                var copyBtn2 = parentCard2 ? parentCard2.querySelector(".btn-copy-ticket") : null;
+                copyJobTicket(ticketCardDirect, copyBtn2);
             }
         });
     }
