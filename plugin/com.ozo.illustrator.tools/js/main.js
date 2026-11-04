@@ -426,6 +426,14 @@
         remove: function (key) { try { window.localStorage.removeItem(key); } catch (e) {} }
     };
 
+    function getTicketDateStr() {
+        var d = new Date();
+        var day = ("0" + d.getDate()).slice(-2);
+        var month = ("0" + (d.getMonth() + 1)).slice(-2);
+        var year = d.getFullYear();
+        return day + " " + month + " " + year;
+    }
+
     function escapeHtml(str) {
         return String(str == null ? "" : str)
             .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -1275,11 +1283,11 @@
 
         // 0. Live Export Job Ticket Card
         html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header">');
-        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មាននាំចេញ (Live Export Ticket)" : "Live Export Ticket") + '</span>');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
         html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('  </div>');
-        html.push('  <div class="ticket-summary-box" id="expLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="expLiveTicket"></div>');
         html.push('</div>');
 
         // 1. Doc Info Bar
@@ -1538,38 +1546,39 @@
 
             var formats = [];
             if (chkPdf && chkPdf.checked) {
-                formats.push('<span class="ticket-chip chip-accent">PDF' + (chkPdfCombined && chkPdfCombined.checked ? ' (Combined)' : '') + '</span>');
+                formats.push("PDF" + (chkPdfCombined && chkPdfCombined.checked ? " [Combined]" : ""));
             }
             if (chkTiff && chkTiff.checked) {
-                formats.push('<span class="ticket-chip">TIFF ' + escapeHtml(selTiffDpi ? selTiffDpi.value : "300") + ' DPI</span>');
+                formats.push("TIFF " + (selTiffDpi ? selTiffDpi.value : "300") + "DPI");
             }
             if (chkPng && chkPng.checked) {
-                formats.push('<span class="ticket-chip">PNG ' + escapeHtml(selPngDpi ? selPngDpi.value : "300") + ' DPI</span>');
+                formats.push("PNG " + (selPngDpi ? selPngDpi.value : "300") + "DPI");
             }
             if (chkJpg && chkJpg.checked) {
-                formats.push('<span class="ticket-chip">JPG ' + escapeHtml(selJpgDpi ? selJpgDpi.value : "300") + ' DPI</span>');
+                formats.push("JPG " + (selJpgDpi ? selJpgDpi.value : "300") + "DPI");
             }
-            if (!formats.length) {
-                formats.push('<span class="ticket-chip" style="color:var(--danger);">' + (isKhmer() ? "គ្មានទម្រង់ជ្រើសរើស" : "No format selected") + '</span>');
-            }
+            var fmtText = formats.length ? formats.join(" \u2022 ") : (isKhmer() ? "គ្មានទម្រង់ជ្រើសរើស" : "No export format selected");
 
-            var scopeText = (state.scope === "all") ? (isKhmer() ? "គ្រប់ Artboard (" + meta.totalArtboards + ")" : "All Artboards (" + meta.totalArtboards + ")")
-                : (state.scope === "active" ? (isKhmer() ? "Artboard សកម្ម" : "Active Artboard") : (isKhmer() ? "ជួរ Artboard: " + (expRangeInput ? expRangeInput.value : state.customRange) : "Range: " + (expRangeInput ? expRangeInput.value : state.customRange)));
+            var scopeText = (state.scope === "all") ? (isKhmer() ? "គ្រប់ Artboards (" + meta.totalArtboards + ")" : "All Artboards (" + meta.totalArtboards + ")")
+                : (state.scope === "active" ? (isKhmer() ? "Artboard សកម្ម (#" + (meta.activeArtboardIndex + 1) + ")" : "Active Artboard (#" + (meta.activeArtboardIndex + 1) + ")") : (isKhmer() ? "ជួរ Artboards: " + (expRangeInput ? expRangeInput.value : state.customRange) : "Range: " + (expRangeInput ? expRangeInput.value : state.customRange)));
 
             var dest = expDestInput ? expDestInput.value : state.destFolder;
             var isOut = chkOutline ? chkOutline.checked : state.outline;
+            var noteParts = [];
+            if (isOut) noteParts.push(isKhmer() ? "Outline អក្សរ" : "Text Outlined");
+            if (dest) {
+                noteParts.push((isKhmer() ? "ទៅកាន់៖ " : "To: ") + (dest.length > 45 ? dest.slice(0, 44) + "\u2026" : dest));
+            } else {
+                noteParts.push(isKhmer() ? "មិនទាន់ជ្រើសថត" : "No folder chosen");
+            }
 
-            var tHtml = '';
-            tHtml += '<div class="ticket-row-main">';
-            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(meta.docName || "Untitled") + '</span>';
-            tHtml += '  <span class="ticket-chip chip-accent">' + escapeHtml(scopeText) + '</span>';
-            tHtml += '</div>';
-            tHtml += '<div class="ticket-chips-wrap">' + formats.join("") + (isOut ? '<span class="ticket-chip chip-perf">' + (isKhmer() ? "Outline អក្សរ" : "Outlines") + '</span>' : '') + '</div>';
-            tHtml += '<div class="ticket-meta-line" title="' + escapeHtml(dest) + '">' +
-                (dest ? (isKhmer() ? "ទៅកាន់៖ " : "To: ") + escapeHtml(dest.length > 50 ? dest.slice(0, 49) + "…" : dest) : (isKhmer() ? "មិនទាន់បានជ្រើសថត" : "No folder chosen")) +
-                '</div>';
+            var html = '';
+            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Batch Exporter</div>';
+            html += '<div class="ticket-line-mat">' + escapeHtml(meta.docName || "Untitled") + ' (' + escapeHtml(scopeText) + ')</div>';
+            html += '<div class="ticket-line-dim">' + escapeHtml(fmtText) + '</div>';
+            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
 
-            box.innerHTML = tHtml;
+            box.innerHTML = html;
         }
 
         // Scope handlers
@@ -1754,11 +1763,11 @@
 
         // 0. Live QR Job Ticket Card
         html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header">');
-        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មាន QR (Live QR Ticket)" : "Live QR Ticket") + '</span>');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
         html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('  </div>');
-        html.push('  <div class="ticket-summary-box" id="qrLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="qrLiveTicket"></div>');
         html.push('</div>');
 
         // 1. Style Segmented Control
@@ -1891,25 +1900,26 @@
             var hasBg = chkQrBg ? chkQrBg.checked : state.background;
             var isNewLayer = chkQrNewLayer ? chkQrNewLayer.checked : state.newLayer;
 
-            var tHtml = '';
-            tHtml += '<div class="ticket-row-main">';
-            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(state.style) + '</span>';
-            tHtml += '  <span class="ticket-chip chip-accent">' + escapeHtml(size + " " + unit) + ' • EC ' + escapeHtml(level) + '</span>';
-            tHtml += '</div>';
+            var bgText = hasBg ? (isKhmer() ? "ផ្ទៃស (White BG)" : "White BG") : (isKhmer() ? "ផ្ទៃថ្លា (Transparent)" : "Transparent");
+            var dimText = "w" + size + unit + " x h" + size + unit + " \u2022 EC Level " + level + " \u2022 " + bgText;
 
-            var chips = [];
-            chips.push('<span class="ticket-chip">' + (hasBg ? (isKhmer() ? "ផ្ទៃស (White BG)" : "White BG") : (isKhmer() ? "ថ្លា (Transparent)" : "Transparent")) + '</span>');
-            if (isNewLayer) chips.push('<span class="ticket-chip">' + (isKhmer() ? "Layer ថ្មី" : "New Layer") + '</span>');
-            if (state.style.indexOf("Telegram") !== -1) {
-                chips.push('<span class="ticket-chip chip-perf">' + escapeHtml(state.theme) + '</span>');
+            var noteParts = [];
+            if (isNewLayer) noteParts.push(isKhmer() ? "Layer ថ្មី" : "New Layer");
+            if (state.style.indexOf("Telegram") !== -1) noteParts.push(state.theme);
+            if (content) {
+                var clean = content.replace(/\s+/g, " ").trim();
+                noteParts.push((isKhmer() ? "មាតិកា៖ " : "Data: ") + (clean.length > 50 ? clean.slice(0, 49) + "\u2026" : clean));
+            } else {
+                noteParts.push(isKhmer() ? "មិនទាន់មានមាតិកា" : "No content yet");
             }
 
-            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
-            tHtml += '<div class="ticket-meta-line" title="' + escapeHtml(content) + '">' +
-                (content ? (isKhmer() ? "មាតិកា៖ " : "Data: ") + escapeHtml(content.length > 55 ? content.slice(0, 54) + "…" : content) : (isKhmer() ? "មិនទាន់មានទិន្នន័យ" : "No content yet")) +
-                '</div>';
+            var html = '';
+            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Vector QR Code</div>';
+            html += '<div class="ticket-line-mat">' + escapeHtml(state.style) + '</div>';
+            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
+            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
 
-            box.innerHTML = tHtml;
+            box.innerHTML = html;
         }
 
         // Style Segmented
@@ -2055,11 +2065,11 @@
 
         // 0. Live CutContour Job Ticket Card
         html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header">');
-        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានកាត់ (Live Cut Ticket)" : "Live CutContour Ticket") + '</span>');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
         html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('  </div>');
-        html.push('  <div class="ticket-summary-box" id="cutLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="cutLiveTicket"></div>');
         html.push('</div>');
 
         // 1. Machine RIP Preset Card
@@ -2217,36 +2227,28 @@
             var shapeName = shapeObj ? shapeObj.name : "Custom";
             if (state.shape === 0) shapeName += " (R: " + state.radius + state.unit + ")";
 
-            var chips = [];
+            var cuts = [];
             if (state.kissEnabled) {
-                chips.push('<span class="ticket-chip chip-kiss"><span class="ticket-chip-dot" style="background:#ff007f;"></span>Kiss: ' +
-                    escapeHtml(state.kissName) + ' (+' + state.kissOffset + state.unit + ')</span>');
+                cuts.push("Kiss: " + state.kissName + " (+" + state.kissOffset + state.unit + ")");
             }
             if (state.perfEnabled) {
-                chips.push('<span class="ticket-chip chip-perf"><span class="ticket-chip-dot" style="background:#00d2ff;"></span>Perf: ' +
-                    escapeHtml(state.perfName) + ' (+' + state.perfOffset + state.unit + ')</span>');
+                cuts.push("Perf: " + state.perfName + " (+" + state.perfOffset + state.unit + ")");
             }
-            if (!chips.length) {
-                chips.push('<span class="ticket-chip" style="color:var(--danger);">' + (isKhmer() ? "គ្មានបន្ទាត់កាត់" : "No cutline enabled") + '</span>');
-            }
+            var cutDimText = cuts.length ? cuts.join(" \u2022 ") : (isKhmer() ? "គ្មានបន្ទាត់កាត់" : "No cutline enabled");
 
             var opts = [];
+            opts.push((isKhmer() ? "កម្រាស់៖ " : "Stroke: ") + state.strokeWeight + " pt");
             if (state.overprint) opts.push("Overprint");
-            if (state.optimizePath) opts.push(isKhmer() ? "Opt Path" : "Optimize");
-            if (state.addRegMarks) opts.push(isKhmer() ? "Reg Marks" : "Marks");
+            if (state.optimizePath) opts.push(isKhmer() ? "សម្រួល Path" : "Optimize");
+            if (state.addRegMarks) opts.push(isKhmer() ? "សញ្ញាសម្គាល់" : "Marks");
 
-            var tHtml = '';
-            tHtml += '<div class="ticket-row-main">';
-            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(presetObj.name) + '</span>';
-            tHtml += '  <span class="ticket-chip chip-accent">' + escapeHtml(shapeName) + '</span>';
-            tHtml += '</div>';
-            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
-            tHtml += '<div class="ticket-meta-line">' +
-                (isKhmer() ? "កម្រាស់បន្ទាត់៖ " : "Stroke: ") + state.strokeWeight + " pt" +
-                (opts.length ? " • " + opts.join(" • ") : "") +
-                '</div>';
+            var html = '';
+            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 CutContour PRO</div>';
+            html += '<div class="ticket-line-mat">' + escapeHtml(presetObj.name) + ' \u2014 ' + escapeHtml(shapeName) + '</div>';
+            html += '<div class="ticket-line-dim">' + escapeHtml(cutDimText) + '</div>';
+            html += '<div class="ticket-line-note">' + escapeHtml(opts.join(" \u2022 ")) + '</div>';
 
-            box.innerHTML = tHtml;
+            box.innerHTML = html;
         }
 
         cutPresetSelect.addEventListener("change", function () {
@@ -2372,11 +2374,11 @@
 
         // 0. Live Dimension Job Ticket Card
         html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header">');
-        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានខ្នាត (Live Dimension Ticket)" : "Live Dimension Ticket") + '</span>');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
         html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('  </div>');
-        html.push('  <div class="ticket-summary-box" id="dimLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="dimLiveTicket"></div>');
         html.push('</div>');
 
         // 1. Placement Mode (Segmented)
@@ -2475,32 +2477,27 @@
             var box = $("dimLiveTicket");
             if (!box) return;
             var modeNames = [
-                isKhmer() ? "ទទឹង & កម្ពស់ (W+H)" : "Both (W+H)",
-                isKhmer() ? "ទទឹង (Width)" : "Width Only",
-                isKhmer() ? "កម្ពស់ (Height)" : "Height Only",
-                isKhmer() ? "ប្រអប់ (Box)" : "Bounding Box"
+                isKhmer() ? "ទទឹង & កម្ពស់ (W+H)" : "Both (Width + Height)",
+                isKhmer() ? "ទទឹង (Width Only)" : "Width Only",
+                isKhmer() ? "កម្ពស់ (Height Only)" : "Height Only",
+                isKhmer() ? "ប្រអប់ (Bounding Box)" : "Bounding Box All Sides"
             ];
             var mName = modeNames[state.mode] || modeNames[0];
 
-            var tHtml = '';
-            tHtml += '<div class="ticket-row-main">';
-            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(mName) + '</span>';
-            tHtml += '  <span class="ticket-chip chip-accent">' + escapeHtml(state.offset + " " + state.unit) + ' Offset</span>';
-            tHtml += '</div>';
+            var dimText = "Offset: " + state.offset + state.unit + " \u2022 Text: " + state.textSize + " pt \u2022 Arrow: " + state.arrow + " pt";
 
-            var chips = [];
-            chips.push('<span class="ticket-chip">Unit: ' + escapeHtml(state.unit) + '</span>');
-            chips.push('<span class="ticket-chip">Text: ' + escapeHtml(state.textSize) + ' pt</span>');
-            chips.push('<span class="ticket-chip">Arrow: ' + escapeHtml(state.arrow) + ' pt</span>');
-            if (state.labelBackground) chips.push('<span class="ticket-chip chip-perf">' + (isKhmer() ? "ផ្ទៃស (Pill)" : "White Pill") + '</span>');
+            var noteParts = [];
+            noteParts.push((isKhmer() ? "ក្បៀស៖ " : "Precision: ") + state.precision + " decimals");
+            if (state.showUnit) noteParts.push(isKhmer() ? "បង្ហាញខ្នាត (" + state.unit + ")" : "Show unit label (" + state.unit + ")");
+            if (state.labelBackground) noteParts.push(isKhmer() ? "ផ្ទៃសពីក្រោយ (White Pill)" : "White Pill Background");
 
-            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
-            tHtml += '<div class="ticket-meta-line">' +
-                (isKhmer() ? "ក្បៀស៖ " : "Precision: ") + state.precision + " decimals" +
-                (state.showUnit ? " • " + (isKhmer() ? "បង្ហាញខ្នាត" : "Show unit label") : "") +
-                '</div>';
+            var html = '';
+            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Smart Dimension</div>';
+            html += '<div class="ticket-line-mat">' + escapeHtml(mName) + '</div>';
+            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
+            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
 
-            box.innerHTML = tHtml;
+            box.innerHTML = html;
         }
 
         for (var m = 0; m < modeBtns.length; m++) {
@@ -3109,18 +3106,13 @@
             return s;
         }
 
-        // 1. Live Sample Preview Card
+        // 1. Live Ticket Preview Card
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានលេខរៀង (Live Number Ticket)" : "Live Numbering Ticket") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <span id="numTotalBadge" class="tool-badge badge-prepress" style="font-weight:700;">10 numbers</span>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('  </div>');
-        html.push('  <div id="numSamplePill" style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:8px 10px;font-family:monospace;font-size:12px;color:var(--accent);text-align:center;letter-spacing:0.5px;font-weight:600;">');
-        html.push('    001  ...  010');
-        html.push('  </div>');
+        html.push('  <div class="print-job-ticket-card" id="numLiveTicket"></div>');
         html.push('</div>');
 
         // 2. Sequence Values Card
@@ -3255,10 +3247,35 @@
             var sfx = numSuffixInput.value || "";
             var cnt = Math.abs(en - st) + 1;
 
-            numTotalBadge.textContent = cnt + (isKhmer() ? " លេខ" : " numbers");
+            if (numTotalBadge) numTotalBadge.textContent = cnt + (isKhmer() ? " លេខ" : " numbers");
             var sample1 = pfx + formatSample(st, pad) + sfx;
             var sample2 = pfx + formatSample(en, pad) + sfx;
-            numSamplePill.textContent = sample1 + "  ...  " + sample2;
+            if (numSamplePill) numSamplePill.textContent = sample1 + "  ...  " + sample2;
+
+            var rangeStr = sample1 + "  ...  " + sample2 + " (" + cnt + (isKhmer() ? " លេខ" : " numbers") + ")";
+
+            var layoutText = (state.layout === 0)
+                ? (isKhmer() ? "ក្រឡាចត្រង្គ: " + (numColsInput ? numColsInput.value : state.columns) + " ជួរឈរ \u2022 គម្លាត " + (numStepXInput ? numStepXInput.value : state.horizontalStep) + "\u00d7" + (numStepYInput ? numStepYInput.value : state.verticalStep) + (numUnitSelect ? numUnitSelect.value : state.unit) : "Grid Repeat: " + (numColsInput ? numColsInput.value : state.columns) + " cols \u2022 Step " + (numStepXInput ? numStepXInput.value : state.horizontalStep) + "\u00d7" + (numStepYInput ? numStepYInput.value : state.verticalStep) + (numUnitSelect ? numUnitSelect.value : state.unit))
+                : (isKhmer() ? "តាម Artboards (១ លេខក្នុង ១ ផ្ទាំង)" : "Across Artboards (1 number per artboard)");
+
+            var noteParts = [];
+            if (pad > 0) noteParts.push((isKhmer() ? "ចំនួនខ្ទង់៖ " : "Digits: ") + pad);
+            var tActions = [
+                isKhmer() ? "លាក់អក្សរគំរូដើម" : "Hide original text",
+                isKhmer() ? "ចាក់សោអក្សរគំរូដើម" : "Lock original text",
+                isKhmer() ? "រក្សាទុកអក្សរគំរូដើម" : "Keep original text"
+            ];
+            noteParts.push(tActions[state.templateAction] || tActions[0]);
+
+            var box = $("numLiveTicket");
+            if (box) {
+                var html = '';
+                html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Sequential Numbering</div>';
+                html += '<div class="ticket-line-mat">' + escapeHtml(rangeStr) + '</div>';
+                html += '<div class="ticket-line-dim">' + escapeHtml(layoutText) + '</div>';
+                html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
+                box.innerHTML = html;
+            }
         }
 
         function saveNumState() {
@@ -3510,6 +3527,15 @@
 
         var html = [];
 
+        // 0. Live Guides Job Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="print-job-ticket-card" id="glLiveTicket"></div>');
+        html.push('</div>');
+
         // 1. Presets & Target Bar
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "គោលដៅ និងទម្រង់គំរូ (Target & Presets)" : "Target & Presets") + '</span></div>');
@@ -3665,6 +3691,34 @@
         var btnGlClearOnly = $("btnGlClearOnly");
         var swatchDots = embeddedContent.querySelectorAll("#glColorSwatches .guide-swatch-dot");
 
+        function updateGlTicket() {
+            var box = $("glLiveTicket");
+            if (!box) return;
+            var targetNames = [
+                isKhmer() ? "Artboard សកម្ម (Active Artboard)" : "Target: Active Artboard",
+                isKhmer() ? "គ្រប់ Artboards (All Artboards)" : "Target: All Artboards",
+                isKhmer() ? "វត្ថុជ្រើសរើស (Selected Artwork)" : "Target: Selected Artwork"
+            ];
+            var targetText = targetNames[state.targetIndex] || targetNames[0];
+
+            var gc = guideColors[state.colorIndex] || guideColors[0];
+            var colParts = state.useColumns ? (state.colCount + " Cols (Gutter " + state.colGutter + state.unit + ")") : (isKhmer() ? "គ្មានជួរឈរ" : "No cols");
+            var rowParts = state.useRows ? (state.rowCount + " Rows (Gutter " + state.rowGutter + state.unit + ")") : (isKhmer() ? "គ្មានជួរដេក" : "No rows");
+            var dimText = colParts + " \u2022 " + rowParts + " \u2022 " + gc.name;
+
+            var noteParts = [];
+            if (state.useMargin) noteParts.push("Margins: " + state.marginTop + "/" + state.marginLeft + "/" + state.marginBottom + "/" + state.marginRight + state.unit);
+            if (state.clearGuides) noteParts.push(isKhmer() ? "លុបបន្ទាត់ចាស់ៗចេញមុន" : "Clear existing guides");
+
+            var html = '';
+            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Guide Layout</div>';
+            html += '<div class="ticket-line-mat">' + escapeHtml(targetText) + '</div>';
+            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
+            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
+
+            box.innerHTML = html;
+        }
+
         function saveGlState() {
             state.targetIndex = parseInt(glTargetSelect.value, 10) || 0;
             state.useColumns = chkGlColumns.checked;
@@ -3683,6 +3737,7 @@
             state.unit = glUnitSelect.value;
             state.clearGuides = chkGlClear.checked;
             store.setDebounced("ozo_guidelayout_settings", JSON.stringify(state), 250);
+            updateGlTicket();
         }
 
         chkGlColumns.addEventListener("change", function() {
@@ -3843,11 +3898,11 @@
 
         // 0. Live Repeat Job Ticket Card
         html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header">');
-        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានចម្លង (Live Repeat Ticket)" : "Live Repeat Ticket") + '</span>');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
         html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('  </div>');
-        html.push('  <div class="ticket-summary-box" id="repLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="repLiveTicket"></div>');
         html.push('</div>');
 
         // 1. Mode Segmented
@@ -3980,34 +4035,31 @@
             if (!box) return;
             var repUnits = ["mm", "cm", "in", "pt", "px"];
             var u = repUnits[state.unitIndex] || "mm";
-            var modeName = state.mode === 0 ? (isKhmer() ? "ពេញ Artboard (Fit)" : "Fit Artboard")
-                : (state.mode === 1 ? (isKhmer() ? "ក្រឡាចត្រង្គ (Step & Repeat)" : "Step & Repeat")
-                : (isKhmer() ? "រាងជារង្វង់ (Radial)" : "Radial"));
+            var modeName = state.mode === 0 ? (isKhmer() ? "ពេញ Artboard (Fit Artboard)" : "Fit Artboard")
+                : (state.mode === 1 ? (isKhmer() ? "ក្រឡាចត្រង្គ (Fixed Step & Repeat)" : "Fixed Step & Repeat")
+                : (isKhmer() ? "រាងជារង្វង់ (Radial Array)" : "Radial Array"));
 
-            var tHtml = '';
-            tHtml += '<div class="ticket-row-main">';
-            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(modeName) + '</span>';
+            var dimText = "";
             if (state.mode === 2) {
-                tHtml += '  <span class="ticket-chip chip-accent">' + state.radialCopies + ' ' + (isKhmer() ? "ចម្លង" : "copies") + ' • R: ' + state.radialRadius + ' ' + u + '</span>';
+                dimText = state.radialCopies + " " + (isKhmer() ? "ចម្លង" : "copies") + " \u2022 Radius: " + state.radialRadius + u + " \u2022 Angle: " + state.radialTotalAngle + "\u00b0";
             } else {
-                tHtml += '  <span class="ticket-chip chip-accent">' + (state.columns * state.rows) + ' ' + (isKhmer() ? "ចម្លង (" : "copies (") + state.columns + '×' + state.rows + ')</span>';
-            }
-            tHtml += '</div>';
-
-            var chips = [];
-            if (state.mode === 2) {
-                chips.push('<span class="ticket-chip">' + state.radialTotalAngle + '° Total Angle</span>');
-                if (state.radialRotate) chips.push('<span class="ticket-chip chip-perf">' + (isKhmer() ? "បង្វិលវត្ថុ" : "Rotate items") + '</span>');
-            } else {
-                chips.push('<span class="ticket-chip">Gap: ' + state.horizontalGap + '×' + state.verticalGap + ' ' + u + '</span>');
-                var altNames = ["None", "Flip X", "Flip Y", "Rotate 180°"];
-                if (state.alternating > 0) chips.push('<span class="ticket-chip chip-perf">' + (altNames[state.alternating] || "") + '</span>');
+                var total = (state.mode === 1) ? (state.columns * state.rows) + " " + (isKhmer() ? "ចម្លង (" : "copies (") + state.columns + "\u00d7" + state.rows + ")" : (isKhmer() ? "ពេញផ្ទាំងស្វ័យប្រវត្តិ" : "Auto fill artboard");
+                dimText = total + " \u2022 Gap: " + state.horizontalGap + "\u00d7" + state.verticalGap + " " + u;
             }
 
-            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
-            tHtml += '<div class="ticket-meta-line">' + (isKhmer() ? "ស្រទាប់គោលដៅ៖ " : "Target Layer: ") + escapeHtml(state.layerName || "Object Repeat") + '</div>';
+            var noteParts = [];
+            noteParts.push((isKhmer() ? "ស្រទាប់៖ " : "Layer: ") + (state.layerName || "Object Repeat"));
+            var altNames = ["None", "Flip X", "Flip Y", "Rotate 180\u00b0"];
+            if (state.alternating > 0) noteParts.push("Alternating: " + (altNames[state.alternating] || ""));
+            if (state.selectResult) noteParts.push(isKhmer() ? "ជ្រើសរើសលទ្ធផល" : "Select Result");
 
-            box.innerHTML = tHtml;
+            var html = '';
+            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Object Repeat</div>';
+            html += '<div class="ticket-line-mat">' + escapeHtml(modeName) + '</div>';
+            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
+            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
+
+            box.innerHTML = html;
         }
 
         for (var mi = 0; mi < modeBtns.length; mi++) {
@@ -4125,11 +4177,11 @@
 
         // 0. Live Nesting Job Ticket Card
         html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header">');
-        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានតម្រៀប (Live Nesting Ticket)" : "Live Nesting Ticket") + '</span>');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
         html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('  </div>');
-        html.push('  <div class="ticket-summary-box" id="nestLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="nestLiveTicket"></div>');
         html.push('</div>');
 
         html.push('<div class="embed-card">');
@@ -4313,27 +4365,24 @@
                 best: chkNestBest.checked,
                 allowInside: chkNestHoles.checked
             };
-            var sheet = cur.custom ? (cur.width + ' \u00d7 ' + cur.height + ' ' + cur.unit) : (isKhmer() ? "ទំហំ Artboard" : "Active Artboard");
+            var sheet = cur.custom ? ("Sheet: " + cur.width + " \u00d7 " + cur.height + " " + cur.unit) : (isKhmer() ? "សន្លឹក៖ ទំហំ Artboard សកម្ម" : "Sheet: Active Artboard Size");
 
-            var tHtml = '';
-            tHtml += '<div class="ticket-row-main">';
-            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(sheet) + '</span>';
-            tHtml += '  <span class="ticket-chip chip-accent">Gap: ' + cur.spacing + ' ' + cur.unit + '</span>';
-            tHtml += '</div>';
+            var rotNames = ["0\u00b0 (No Rotation)", "90\u00b0 Rotation", "45\u00b0 Rotation", "Free Rotation"];
+            var rotText = rotNames[cur.rotation] || "90\u00b0 Rotation";
+            var dimText = "Part Gap: " + cur.spacing + cur.unit + " \u2022 Edge: " + cur.edge + cur.unit + " \u2022 " + rotText;
 
-            var chips = [];
-            chips.push('<span class="ticket-chip">Edge: ' + cur.edge + ' ' + cur.unit + '</span>');
-            var rotText = cur.rotation === 0 ? "No Rot" : (cur.rotation === 1 ? "90\u00b0 Rot" : (cur.rotation === 2 ? "45\u00b0 Rot" : "Free Rot"));
-            chips.push('<span class="ticket-chip">' + rotText + '</span>');
-            if (cur.best) chips.push('<span class="ticket-chip chip-perf">' + (isKhmer() ? "ប្រសិទ្ធភាពខ្ពស់" : "Best Fit") + '</span>');
-            if (cur.allowInside) chips.push('<span class="ticket-chip">' + (isKhmer() ? "ក្នុងប្រហោង" : "Nest in Holes") + '</span>');
+            var noteParts = [];
+            if (cur.best) noteParts.push(isKhmer() ? "ប្រសិទ្ធភាពខ្ពស់បំផុត (Best Fit)" : "Best Packing Efficiency");
+            if (cur.allowInside) noteParts.push(isKhmer() ? "តម្រៀបក្នុងប្រហោង (Holes)" : "Nest in Holes");
+            noteParts.push(cur.resizeArtboard ? (isKhmer() ? "ពង្រីក Artboard តាមសន្លឹក" : "Resize artboard") : (isKhmer() ? "រក្សាទំហំ Artboard" : "Keep artboard"));
 
-            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
-            tHtml += '<div class="ticket-meta-line">' +
-                (cur.resizeArtboard ? (isKhmer() ? "ពង្រីក Artboard តាមសន្លឹក" : "Resize artboard to fit") : (isKhmer() ? "រក្សាទំហំ Artboard" : "Keep artboard size")) +
-                '</div>';
+            var html = '';
+            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Nesting Optimizer</div>';
+            html += '<div class="ticket-line-mat">' + escapeHtml(sheet) + '</div>';
+            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
+            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
 
-            box.innerHTML = tHtml;
+            box.innerHTML = html;
         }
 
         var inputsToSave = [nestTargetSelect, nestUnitSelect, numNestWidth, numNestHeight, chkNestResize, numNestSpacing, numNestEdge, numNestTop, numNestLeft, numNestBottom, numNestRight, nestRotSelect, nestDivSelect, chkNestHoles, chkNestFixed, chkNestBest, chkNestAutoSheets];
