@@ -113,7 +113,9 @@
         s = s.replace(/\u1785[\s\u200B\u00A0]*\u17C4[\s\u200B\u00A0]*\u17C7/g, "\u1785\u17C4\u17C7");
         // 5. Fix "ចោះកង" / "ចោះ ក ង" / "ចោះ កង" -> "ចោះកុង" (Die-cut sticker in printing industry)
         s = s.replace(/(\u1785\u17C4\u17C7|\u1780\u17b6\u178f\u17cb)[\s\u200B\u00A0]*\u1780[\s\u200B\u00A0]*\u1784(?![\u17BB\u17CB])/g, "$1\u1780\u17BB\u1784");
-        // 6. Normalize consecutive spaces
+        // 6. Fix missing Bantoc on "បិតបត" / "បិទបត" -> "បិតបត់" (Standee sticker)
+        s = s.replace(/(\u1794\u17b7[\u178f\u1792][\s\u200B\u00A0]*\u1794)\u178f(?![\u17cb])/g, "$1\u178f\u17cb");
+        // 7. Normalize consecutive spaces
         s = s.replace(/[ ]{2,}/g, " ");
         return trim(s);
     }
@@ -464,6 +466,8 @@
     var materialPresets = [
         "Silk Light Box",
         "Sticker \u1785\u17C4\u17C7\u1780\u17BB\u1784",
+        "Sticker \u1794\u17b7\u178f\u1794\u178f\u17cb",
+        "Sticker \u1794\u17b7\u178f\u1794\u17d2\u179b\u17b6\u1780\u17c2\u178f",
         "Sticker \u1792\u1798\u17d2\u1798\u178f\u17b6",
         "Sticker \u1790\u17d2\u179b\u17b6",
         "Sticker \u1786\u17d2\u179b\u17bb\u17c7",
@@ -806,26 +810,42 @@
         var artworkW = target.widthPt;
         var artworkH = target.heightPt;
 
-        // Proportional text size calculation
+        // Proportional text size calculation: scale proportionally with both width and height
+        var refDim = Math.min(artworkW, artworkH);
         var baseFontSize;
         if (settings.fontSizeIndex === 0) {
-            // Auto: ~4.5% of artwork height, clamped to reasonable sign sizes
-            baseFontSize = Math.max(16, Math.min(240, artworkH * 0.045));
-        } else if (settings.fontSizeIndex === 1) {
-            baseFontSize = Math.max(12, artworkH * 0.025);
-        } else if (settings.fontSizeIndex === 2) {
-            baseFontSize = Math.max(18, artworkH * 0.045);
-        } else if (settings.fontSizeIndex === 3) {
-            baseFontSize = Math.max(24, artworkH * 0.07);
-        } else {
-            baseFontSize = Math.max(32, artworkH * 0.10);
+            // Auto: balanced against both width and height, clamped to standard sign readability
+            baseFontSize = Math.max(14, Math.min(180, Math.min(artworkW * 0.055, artworkH * 0.038)));
+        } else if (settings.fontSizeIndex === 1) { // Small
+            baseFontSize = Math.max(11, Math.min(120, refDim * 0.025));
+        } else if (settings.fontSizeIndex === 2) { // Medium
+            baseFontSize = Math.max(14, Math.min(160, refDim * 0.040));
+        } else if (settings.fontSizeIndex === 3) { // Large
+            baseFontSize = Math.max(18, Math.min(200, refDim * 0.055));
+        } else { // Extra Large
+            baseFontSize = Math.max(22, Math.min(240, refDim * 0.075));
+        }
+
+        var dimQtyStr = "w" + settings.widthVal + settings.unit + " x h" +
+            settings.heightVal + settings.unit + " =" + settings.qty + "pcs";
+        var maxChars = Math.max(
+            String(settings.dateStr || "").length,
+            String(settings.material || "").length,
+            String(dimQtyStr || "").length,
+            String(settings.note || "").length
+        );
+        if (maxChars > 0) {
+            var maxAllowed = (artworkW * 0.80) / (maxChars * 0.65);
+            if (baseFontSize > maxAllowed) {
+                baseFontSize = Math.max(12, maxAllowed);
+            }
         }
 
         var lineHeight = baseFontSize * 1.25;
         var lineCount = settings.note ? 4 : 3;
         var totalTextHeight = lineCount * lineHeight;
-        var paddingY = baseFontSize * 0.8;
-        var paddingX = baseFontSize * 0.8;
+        var paddingY = baseFontSize * 0.75;
+        var paddingX = Math.max(baseFontSize * 0.8, artworkW * 0.035);
         var headerHeight = totalTextHeight + paddingY * 2;
 
         return {
@@ -838,18 +858,28 @@
         };
     }
 
-    var currentArtboardExpandedHeight = 0;
+    var artboardIsModified = false;
 
-    function calculateNeededExpansion(target, geom, expandArtboard) {
+    function getDesiredArtboardRect(target, geom, expandArtboard) {
         if (!expandArtboard || !originalArtboardRect || activeArtboardIndex < 0 || activeArtboardIndex >= doc.artboards.length) {
-            return 0;
+            return originalArtboardRect;
         }
-        var headerTop = target.bounds[1] + geom.headerHeight;
-        var neededTop = Math.max(
-            originalArtboardRect[1] + (target.isArtboard ? geom.headerHeight : 0),
-            headerTop
-        );
-        return Math.max(0, neededTop - originalArtboardRect[1]);
+        if (target.isArtboard) {
+            return [
+                originalArtboardRect[0],
+                originalArtboardRect[1] + geom.headerHeight,
+                originalArtboardRect[2],
+                originalArtboardRect[3]
+            ];
+        } else {
+            // When artwork is selected, fit the artboard to enclose the artwork plus the header on top
+            return [
+                target.bounds[0],
+                target.bounds[1] + geom.headerHeight,
+                target.bounds[2],
+                target.bounds[3]
+            ];
+        }
     }
 
     function cleanupPreview() {
@@ -863,8 +893,8 @@
         previewLayer = null;
         previewGroup = null;
 
-        // Restore artboard if expanded during preview
-        if (currentArtboardExpandedHeight !== 0 && originalArtboardRect &&
+        // Restore artboard if modified during preview
+        if (artboardIsModified && originalArtboardRect &&
                 activeArtboardIndex >= 0 && activeArtboardIndex < doc.artboards.length) {
             try {
                 doc.artboards[activeArtboardIndex].artboardRect = [
@@ -874,7 +904,7 @@
                     originalArtboardRect[3]
                 ];
             } catch (eAb) {}
-            currentArtboardExpandedHeight = 0;
+            artboardIsModified = false;
         }
         if (originalActiveLayer) {
             try { doc.activeLayer = originalActiveLayer; } catch (eL) {}
@@ -982,6 +1012,16 @@
             } catch (eNoHyphen) {}
         }
 
+        // 4b. Dynamic Text Width Fitting: ensure actual rendered text never crowds or overflows the right edge
+        var maxAvailableWidth = geom.headerWidth - (geom.paddingX * 2);
+        try {
+            if (txt.width > maxAvailableWidth && txt.width > 0) {
+                var fitRatio = (maxAvailableWidth * 0.95) / txt.width;
+                charAttr.size = Math.max(10, Math.round(charAttr.size * fitRatio * 10) / 10);
+                charAttr.leading = charAttr.size * 1.25;
+            }
+        } catch (eFit) {}
+
         // 5. Text Position & Justification
         var isAreaText = false;
         try { isAreaText = txt.kind === TextType.AREATEXT; } catch (eKind) {}
@@ -1030,20 +1070,25 @@
         var target = getEffectiveBounds();
         var geom = calculateHeaderGeometry(target, settings);
 
-        // Expand/restore Artboard only when expansion height changes (prevents viewport redraw jitter)
-        var neededExpandHeight = calculateNeededExpansion(target, geom, settings.expandArtboard);
-        if (neededExpandHeight !== currentArtboardExpandedHeight && originalArtboardRect &&
+        // Expand/restore Artboard
+        if (settings.expandArtboard && originalArtboardRect &&
                 activeArtboardIndex >= 0 && activeArtboardIndex < doc.artboards.length) {
             try {
                 var ab = doc.artboards[activeArtboardIndex];
-                ab.artboardRect = [
+                ab.artboardRect = getDesiredArtboardRect(target, geom, true);
+                artboardIsModified = true;
+            } catch (eAbExp) {}
+        } else if (artboardIsModified && originalArtboardRect &&
+                activeArtboardIndex >= 0 && activeArtboardIndex < doc.artboards.length) {
+            try {
+                doc.artboards[activeArtboardIndex].artboardRect = [
                     originalArtboardRect[0],
-                    originalArtboardRect[1] + neededExpandHeight,
+                    originalArtboardRect[1],
                     originalArtboardRect[2],
                     originalArtboardRect[3]
                 ];
-                currentArtboardExpandedHeight = neededExpandHeight;
-            } catch (eAbExp) {}
+                artboardIsModified = false;
+            } catch (eAbRest) {}
         }
 
         // Reuse preview layer if already created for ultra-fast in-place preview
@@ -1171,17 +1216,13 @@
         var finalGeom = calculateHeaderGeometry(finalTarget, finalSettings);
 
         // Expand artboard permanently if chosen
-        var neededHeight = calculateNeededExpansion(finalTarget, finalGeom, finalSettings.expandArtboard);
-        if (neededHeight > 0 && originalArtboardRect && activeArtboardIndex >= 0 &&
+        if (finalSettings.expandArtboard && originalArtboardRect && activeArtboardIndex >= 0 &&
                 activeArtboardIndex < doc.artboards.length) {
-            var finalAb = doc.artboards[activeArtboardIndex];
-            finalAb.artboardRect = [
-                originalArtboardRect[0],
-                originalArtboardRect[1] + neededHeight,
-                originalArtboardRect[2],
-                originalArtboardRect[3]
-            ];
-            currentArtboardExpandedHeight = neededHeight;
+            try {
+                var finalAb = doc.artboards[activeArtboardIndex];
+                finalAb.artboardRect = getDesiredArtboardRect(finalTarget, finalGeom, true);
+                artboardIsModified = false;
+            } catch (eFinalAb) {}
         }
 
         // Find or create result layer

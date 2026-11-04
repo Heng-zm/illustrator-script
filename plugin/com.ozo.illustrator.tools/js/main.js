@@ -2728,6 +2728,8 @@
         var materials = [
             { id: "Silk Light Box", name: "Silk Light Box" },
             { id: "Sticker / Decal", name: isKhmer() ? "Sticker (ស្ទីគ័រ)" : "Sticker / Decal" },
+            { id: "Sticker បិតបត់", name: isKhmer() ? "Sticker បិតបត់ (Standee)" : "Sticker Foldable (បិតបត់)" },
+            { id: "Sticker ចោះកុង", name: isKhmer() ? "Sticker ចោះកុង (Die-Cut)" : "Sticker Die-Cut (ចោះកុង)" },
             { id: "Vinyl Banner", name: isKhmer() ? "Vinyl Banner (បដា)" : "Vinyl Banner" },
             { id: "Slim LED", name: "Slim LED" },
             { id: "Backlit Film", name: "Backlit Film" },
@@ -5294,12 +5296,14 @@
 
         var state = {
             style: saved.style || "Bakong Red Standee",
+            badgeSymbol: saved.badgeSymbol || "bakong",
             merchantName: saved.merchantName || "OZO PRINT SHOP",
             bakongId: saved.bakongId || "heng_zm@abab",
             currency: saved.currency || "USD",
             amount: saved.amount || "",
             billNumber: saved.billNumber || "",
-            width: saved.width || 100
+            width: saved.width || 100,
+            fitArtboard: (typeof saved.fitArtboard !== "undefined") ? !!saved.fitArtboard : true
         };
 
         var html = [];
@@ -5323,6 +5327,15 @@
         html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "Bakong Red Standee" ? "active" : "") + '" data-style="Bakong Red Standee">Bakong Standee</button>');
         html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "ABA Navy Standee" ? "active" : "") + '" data-style="ABA Navy Standee">ABA Standee</button>');
         html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "Vector QR Only" ? "active" : "") + '" data-style="Vector QR Only">QR Only</button>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 1b. Center Badge Emblem Selection
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "និមិត្តសញ្ញាកណ្តាល (Center Badge Emblem)" : "Center Badge Icon") + '</span></div>');
+        html.push('  <div class="embed-segmented" id="khqrBadgeSegmented">');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.badgeSymbol === "bakong" ? "active" : "") + '" data-badge="bakong">' + (isKhmer() ? "ប្រាសាទបាគង (Bakong Temple)" : "Bakong Temple (Official)") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.badgeSymbol === "currency" ? "active" : "") + '" data-badge="currency">' + (isKhmer() ? "សញ្ញារូបិយប័ណ្ណ ($ / ៛)" : "Currency Symbol ($ / ៛)") + '</button>');
         html.push('  </div>');
         html.push('</div>');
 
@@ -5364,6 +5377,11 @@
         html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "លេខវិក្កយបត្រ (Bill #):" : "Bill # (Optional):") + '</label>');
         html.push('      <input type="text" id="khqrBillInput" class="embed-input" value="' + escapeHtml(state.billNumber) + '" placeholder="INV-001" style="width:100%;margin-top:2px;">');
         html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div style="margin-top:8px;">');
+        html.push('    <label style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer;">');
+        html.push('      <input type="checkbox" id="khqrFitArtboardCheck" ' + (state.fitArtboard ? "checked" : "") + '> ' + (isKhmer() ? "ពង្រីក/តម្រឹម Artboard ស្មើទំហំកាត Standee" : "Fit Active Artboard to Standee Card"));
+        html.push('    </label>');
         html.push('  </div>');
         html.push('</div>');
 
@@ -5410,6 +5428,9 @@
             box.innerHTML = tHtml;
         }
 
+        var khqrBadgeBtns = embeddedContent.querySelectorAll("#khqrBadgeSegmented .embed-seg-btn");
+        var khqrFitArtboardCheck = $("khqrFitArtboardCheck");
+
         function saveKhqrState() {
             state.merchantName = khqrNameInput.value.trim() || "OZO MERCHANT";
             state.bakongId = khqrIdInput.value.trim() || "merchant@abab";
@@ -5417,9 +5438,20 @@
             state.amount = khqrAmtInput.value.trim();
             state.width = parseFloat(khqrWidthInput.value) || 100;
             state.billNumber = khqrBillInput.value.trim();
+            if (khqrFitArtboardCheck) state.fitArtboard = !!khqrFitArtboardCheck.checked;
             store.setDebounced("ozo_khqr_settings", JSON.stringify(state), 250);
             updateKhqrTicket();
         }
+
+        for (var bIdx = 0; bIdx < khqrBadgeBtns.length; bIdx++) {
+            khqrBadgeBtns[bIdx].addEventListener("click", function () {
+                for (var bb = 0; bb < khqrBadgeBtns.length; bb++) khqrBadgeBtns[bb].classList.remove("active");
+                this.classList.add("active");
+                state.badgeSymbol = this.getAttribute("data-badge");
+                saveKhqrState();
+            });
+        }
+        if (khqrFitArtboardCheck) khqrFitArtboardCheck.addEventListener("change", saveKhqrState);
 
         for (var s = 0; s < khqrStyleBtns.length; s++) {
             khqrStyleBtns[s].addEventListener("click", function () {
@@ -5448,6 +5480,13 @@
             btnKhqrSubmit.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងបង្កើត..." : "Generating KHQR...");
             setStatus(isKhmer() ? "កំពុងបង្កើត ABA KHQR Vector..." : "Building ABA KHQR Artwork...", "running");
 
+            var chosenBadge = state.badgeSymbol;
+            if (chosenBadge === "currency") {
+                chosenBadge = (khqrCurSelect.value === "KHR") ? "KHR" : "USD";
+            } else {
+                chosenBadge = "bakong";
+            }
+
             var payload = {
                 merchantName: khqrNameInput.value.trim() || "OZO MERCHANT",
                 bakongId: khqrIdInput.value.trim() || "merchant@abab",
@@ -5455,7 +5494,9 @@
                 amount: khqrAmtInput.value.trim(),
                 billNumber: khqrBillInput.value.trim(),
                 style: state.style,
-                width: parseFloat(khqrWidthInput.value) || 100
+                width: parseFloat(khqrWidthInput.value) || 100,
+                badgeSymbol: chosenBadge,
+                fitArtboard: khqrFitArtboardCheck ? !!khqrFitArtboardCheck.checked : true
             };
 
             if (!csInterface) {
