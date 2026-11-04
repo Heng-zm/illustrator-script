@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="6.0" ExtensionBundleId="com.ozo.illustrator.tools" ExtensionBundleVersion="2.6.11"
+<ExtensionManifest Version="6.0" ExtensionBundleId="com.ozo.illustrator.tools" ExtensionBundleVersion="2.6.12"
     ExtensionBundleName="Ozo Tools" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <ExtensionList>
-        <Extension Id="com.ozo.illustrator.tools.panel" Version="2.6.11" />
+        <Extension Id="com.ozo.illustrator.tools.panel" Version="2.6.12" />
     </ExtensionList>
     <ExecutionEnvironment>
         <HostList>
