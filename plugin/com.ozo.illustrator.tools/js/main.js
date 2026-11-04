@@ -370,6 +370,26 @@
             featuresEn: ["Floating modeless palette stays on top","Browse any folder for .jsx/.js scripts","Pin favorite scripts for one-click access","Custom folder bookmarks across sessions"],
             featuresKm: ["ផ្ទាំងបញ្ជាអណ្តែតពីលើមិនរំខានការងារ","ស្វែងរក និងដំណើរការស្គ្រីប .jsx/.js ពីគ្រប់ថត","ចំណាំស្គ្រីបសំណព្វដើម្បីបើកបានរហ័ស","ចងចាំថតឯកសារដែលបាន Bookmark ទុក"],
             previewSvgInner: "<polygon points=\"5 3 19 12 5 21 5 3\"/>"
+        },
+        {
+            id: "richblack", file: "Rich Black Optimizer.jsx", category: "prepress",
+            nameEn: "Rich Black Optimizer", nameKm: "បង្កើនកម្រិតពណ៌ខ្មៅដិត",
+            descEn: "Prepress rich black conversion & text overprint",
+            descKm: "បម្លែងពណ៌ខ្មៅដិត Rich Black និង Overprint អក្សរ",
+            icon: svgIcon('<circle cx="12" cy="12" r="9" fill="currentColor"/><circle cx="12" cy="12" r="4" fill="var(--bg-main)"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>'),
+            featuresEn: ["Standard, Cool, Warm & Backlit Prepress profiles","Total Ink Coverage (TIC) gauge with press safety","Small text protection (preserves K:100% to avoid blur)","Auto-enables Overprint on pure black text"],
+            featuresKm: ["ទម្រង់កម្រិតពណ៌ខ្មៅដិតស្តង់ដាររោងពុម្ព (TIC 160-250%)","វាស់ស្ទង់កម្រិតទឹកថ្នាំ (TIC Gauge) សុវត្ថិភាពម៉ាស៊ីន","ការពារអក្សរតូចៗមិនឲ្យបែកព្រាល (រក្សា K:100%)","កំណត់ Overprint ស្វ័យប្រវត្តិកុំឲ្យលេចចន្លោះស"],
+            previewSvgInner: "<circle cx=\"12\" cy=\"12\" r=\"9\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"4\" fill=\"var(--bg-main)\"/>"
+        },
+        {
+            id: "khqr", file: "ABA KHQR Generator.jsx", category: "utilities",
+            nameEn: "ABA KHQR Generator", nameKm: "បង្កើតកូដ ABA KHQR",
+            descEn: "Official Bakong KHQR table standee cards & vector QR",
+            descKm: "កាតទូទាត់ប្រាក់ ABA KHQR ស្តង់ដារបាគង និង Vector QR",
+            icon: svgIcon('<rect x="4" y="3" width="16" height="18" rx="2"/><rect x="8" y="7" width="8" height="8"/><path d="M4 8h16"/><circle cx="12" cy="18" r="1"/>'),
+            featuresEn: ["Official EMVCo Bakong KHQR standard with CRC-16","Table Standee Card templates (Bakong Red & ABA Navy)","Dynamic amount, currency (USD/KHR) & bill numbering","Crisp vector output with official center Bakong icon"],
+            featuresKm: ["ស្តង់ដារផ្លូវការ Bakong EMVCo ត្រឹមត្រូវ 100%","ទម្រង់កាតបញ្ឈរលើតុ (Bakong Red & ABA Navy Standee)","កំណត់ចំនួនទឹកប្រាក់ (USD/KHR) និងលេខវិក្កយបត្រ","លទ្ធផលជា Vector ម៉ត់ច្បាស់ជាមួយ Logo បាគងកណ្តាល"],
+            previewSvgInner: "<rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><rect x=\"8\" y=\"7\" width=\"8\" height=\"8\" fill=\"currentColor\"/><path d=\"M4 8h16\"/>"
         }
     ];
 
@@ -1042,6 +1062,10 @@
             renderEmbeddedIcons();
         } else if (tool.id === "launcher") {
             renderEmbeddedLauncher();
+        } else if (tool.id === "richblack") {
+            renderEmbeddedRichBlack();
+        } else if (tool.id === "khqr") {
+            renderEmbeddedKHQR();
         } else {
             renderEmbeddedGeneric(tool);
         }
@@ -4845,6 +4869,449 @@
         });
 
         loadScripts();
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock Rich Black Optimizer View
+    // -------------------------------------------------------------
+    function renderEmbeddedRichBlack() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_richblack_settings", "{}")); } catch (e) {}
+
+        var PRESETS = [
+            { id: "standard", name: isKhmer() ? "ស្តង់ដាររោងពុម្ព (Standard C60 M40 Y40 K100)" : "Standard Prepress (C60 M40 Y40 K100)", c: 60, m: 40, y: 40, k: 100, tic: 240 },
+            { id: "cool",     name: isKhmer() ? "ខ្មៅត្រជាក់រលោង (Cool C60 M0 Y0 K100)" : "Cool Rich Black (C60 M0 Y0 K100)",     c: 60, m: 0,  y: 0,  k: 100, tic: 160 },
+            { id: "warm",     name: isKhmer() ? "ខ្មៅកក់ក្តៅ (Warm C30 M60 Y60 K100)" : "Warm Rich Black (C30 M60 Y60 K100)",   c: 30, m: 60, y: 60, k: 100, tic: 250 },
+            { id: "backlit",  name: isKhmer() ? "បដា & ប្រអប់ភ្លើង (Backlit C70 M50 Y30 K100)" : "Backlit & Signage (C70 M50 Y30 K100)", c: 70, m: 50, y: 30, k: 100, tic: 250 },
+            { id: "custom",   name: isKhmer() ? "កំណត់ដោយខ្លួនឯង (Custom CMYK)" : "Custom CMYK Mix",                      c: 60, m: 40, y: 40, k: 100, tic: 240 }
+        ];
+
+        var state = {
+            preset: saved.preset !== undefined ? saved.preset : 0,
+            c: saved.c !== undefined ? saved.c : 60,
+            m: saved.m !== undefined ? saved.m : 40,
+            y: saved.y !== undefined ? saved.y : 40,
+            k: saved.k !== undefined ? saved.k : 100,
+            scope: saved.scope || "selection",
+            targetFills: saved.targetFills !== false,
+            targetStrokes: saved.targetStrokes === true,
+            protectSmallText: saved.protectSmallText !== false,
+            textThreshold: saved.textThreshold !== undefined ? saved.textThreshold : 24,
+            autoOverprint: saved.autoOverprint !== false
+        };
+
+        var html = [];
+
+        // 0. Live Prepress Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="print-job-ticket-card" id="rbLiveTicket"></div>');
+        html.push('</div>');
+
+        // 1. Profile Preset Selector
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "កម្រិតពណ៌ខ្មៅដិត (Rich Black Profile)" : "Prepress Black Profile") + '</span></div>');
+        html.push('  <select id="rbPresetSelect" class="embed-select" style="width:100%;">');
+        for (var p = 0; p < PRESETS.length; p++) {
+            html.push('    <option value="' + p + '" ' + (state.preset == p ? "selected" : "") + '>' + escapeHtml(PRESETS[p].name) + '</option>');
+        }
+        html.push('  </select>');
+
+        // CMYK Mix Grid
+        html.push('  <div class="embed-row-4col" style="margin-top:8px;">');
+        html.push('    <div><label style="font-size:10px;color:var(--text-secondary);">C %</label><input type="number" id="rbCInput" class="embed-input" value="' + state.c + '" min="0" max="100" style="width:100%;margin-top:2px;"></div>');
+        html.push('    <div><label style="font-size:10px;color:var(--text-secondary);">M %</label><input type="number" id="rbMInput" class="embed-input" value="' + state.m + '" min="0" max="100" style="width:100%;margin-top:2px;"></div>');
+        html.push('    <div><label style="font-size:10px;color:var(--text-secondary);">Y %</label><input type="number" id="rbYInput" class="embed-input" value="' + state.y + '" min="0" max="100" style="width:100%;margin-top:2px;"></div>');
+        html.push('    <div><label style="font-size:10px;color:var(--text-secondary);">K %</label><input type="number" id="rbKInput" class="embed-input" value="' + state.k + '" min="0" max="100" style="width:100%;margin-top:2px;"></div>');
+        html.push('  </div>');
+        html.push('  <div id="rbTicBadge" style="margin-top:6px;font-size:11px;color:var(--accent);font-weight:600;"></div>');
+        html.push('</div>');
+
+        // 2. Scope & Target Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "គោលដៅអនុវត្ត (Scope & Target)" : "Scope & Targets") + '</span></div>');
+        html.push('  <div class="embed-segmented" id="rbScopeSegmented">');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.scope === "selection" ? "active" : "") + '" data-scope="selection">' + (isKhmer() ? "វត្ថុជ្រើសរើស" : "Selection") + '</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.scope === "document" ? "active" : "") + '" data-scope="document">' + (isKhmer() ? "ឯកសារទាំងមូល" : "Entire Document") + '</button>');
+        html.push('  </div>');
+        html.push('  <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkRbFills" ' + (state.targetFills ? "checked" : "") + '> ' + (isKhmer() ? "បម្លែងពណ៌ផ្ទៃក្នុង (Fill Colors)" : "Convert Fill Colors") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkRbStrokes" ' + (state.targetStrokes ? "checked" : "") + '> ' + (isKhmer() ? "បម្លែងពណ៌បន្ទាត់គែម (Stroke Colors)" : "Convert Stroke Outlines") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Prepress Safety Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "សុវត្ថិភាពអក្សរ (Text Registration Safety)" : "Prepress Safety") + '</span></div>');
+        html.push('  <div style="display:flex;flex-direction:column;gap:6px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkRbProtectText" ' + (state.protectSmallText ? "checked" : "") + '> ' + (isKhmer() ? "ការពារអក្សរតូចៗ (រក្សា K:100% កុំឲ្យបែកព្រាល)" : "Protect Small Text (Keep K:100%)") + '</label>');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkRbOverprint" ' + (state.autoOverprint ? "checked" : "") + '> ' + (isKhmer() ? "Overprint អក្សរខ្មៅស្វ័យប្រវត្តិ (Overprint Fill)" : "Auto-Overprint pure black text") + '</label>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Action Wrap
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnRbSubmit" class="btn-action-primary">' + uiIcon("refresh") + (isKhmer() ? "អនុវត្ត Rich Black លើគំនូរ" : "Apply Rich Black Optimizer") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var rbPresetSelect = $("rbPresetSelect");
+        var rbCInput = $("rbCInput");
+        var rbMInput = $("rbMInput");
+        var rbYInput = $("rbYInput");
+        var rbKInput = $("rbKInput");
+        var rbTicBadge = $("rbTicBadge");
+        var rbScopeBtns = embeddedContent.querySelectorAll("#rbScopeSegmented .embed-seg-btn");
+        var chkRbFills = $("chkRbFills");
+        var chkRbStrokes = $("chkRbStrokes");
+        var chkRbProtectText = $("chkRbProtectText");
+        var chkRbOverprint = $("chkRbOverprint");
+        var btnRbSubmit = $("btnRbSubmit");
+
+        function updateRbTicket() {
+            var box = $("rbLiveTicket");
+            if (!box) return;
+
+            var c = parseInt(rbCInput.value, 10) || 0;
+            var m = parseInt(rbMInput.value, 10) || 0;
+            var y = parseInt(rbYInput.value, 10) || 0;
+            var k = parseInt(rbKInput.value, 10) || 0;
+            var tic = c + m + y + k;
+
+            var pObj = PRESETS[state.preset] || PRESETS[0];
+            var pName = (state.preset === 4) ? ("Custom (C" + c + " M" + m + " Y" + y + " K" + k + ")") : pObj.name;
+
+            var safety = tic <= 260 ? "Safe for Press" : (tic <= 300 ? "Heavy Ink (Dry Time)" : "Warning: Over 300%");
+            rbTicBadge.textContent = "Total Ink Coverage (TIC): " + tic + "% (" + safety + ")";
+            rbTicBadge.style.color = tic > 300 ? "var(--danger)" : "var(--accent)";
+
+            var targets = [];
+            if (chkRbFills.checked) targets.push(isKhmer() ? "ផ្ទៃក្នុង" : "Fills");
+            if (chkRbStrokes.checked) targets.push(isKhmer() ? "បន្ទាត់ក្រៅ" : "Strokes");
+            var targetText = targets.length ? targets.join(" & ") : (isKhmer() ? "គ្មាន" : "None");
+            var scopeText = state.scope === "selection" ? (isKhmer() ? "លើវត្ថុជ្រើសរើស" : "Selection") : (isKhmer() ? "ឯកសារទាំងមូល" : "Entire Document");
+
+            var dimText = "TIC: " + tic + "% • " + targetText + " • " + scopeText;
+
+            var noteParts = [];
+            if (chkRbProtectText.checked) noteParts.push(isKhmer() ? "ការពារអក្សរ ≤ 24pt" : "Protect text ≤ 24pt");
+            if (chkRbOverprint.checked) noteParts.push(isKhmer() ? "Auto Overprint K100" : "Auto-Overprint K100");
+
+            var tHtml = '';
+            tHtml += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' • Rich Black Optimizer</div>';
+            tHtml += '<div class="ticket-line-mat">' + escapeHtml(pName) + '</div>';
+            tHtml += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
+            tHtml += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" • ")) + '</div>';
+            box.innerHTML = tHtml;
+        }
+
+        function saveRbState() {
+            state.preset = parseInt(rbPresetSelect.value, 10) || 0;
+            state.c = parseInt(rbCInput.value, 10) || 60;
+            state.m = parseInt(rbMInput.value, 10) || 40;
+            state.y = parseInt(rbYInput.value, 10) || 40;
+            state.k = parseInt(rbKInput.value, 10) || 100;
+            state.targetFills = chkRbFills.checked;
+            state.targetStrokes = chkRbStrokes.checked;
+            state.protectSmallText = chkRbProtectText.checked;
+            state.autoOverprint = chkRbOverprint.checked;
+            store.setDebounced("ozo_richblack_settings", JSON.stringify(state), 250);
+            updateRbTicket();
+        }
+
+        rbPresetSelect.addEventListener("change", function () {
+            var idx = parseInt(this.value, 10) || 0;
+            state.preset = idx;
+            if (idx !== 4) {
+                var p = PRESETS[idx];
+                rbCInput.value = p.c;
+                rbMInput.value = p.m;
+                rbYInput.value = p.y;
+                rbKInput.value = p.k;
+                rbCInput.disabled = true;
+                rbMInput.disabled = true;
+                rbYInput.disabled = true;
+                rbKInput.disabled = true;
+            } else {
+                rbCInput.disabled = false;
+                rbMInput.disabled = false;
+                rbYInput.disabled = false;
+                rbKInput.disabled = false;
+            }
+            saveRbState();
+        });
+
+        rbCInput.addEventListener("input", saveRbState);
+        rbMInput.addEventListener("input", saveRbState);
+        rbYInput.addEventListener("input", saveRbState);
+        rbKInput.addEventListener("input", saveRbState);
+        chkRbFills.addEventListener("change", saveRbState);
+        chkRbStrokes.addEventListener("change", saveRbState);
+        chkRbProtectText.addEventListener("change", saveRbState);
+        chkRbOverprint.addEventListener("change", saveRbState);
+
+        for (var sb = 0; sb < rbScopeBtns.length; sb++) {
+            rbScopeBtns[sb].addEventListener("click", function () {
+                for (var s = 0; s < rbScopeBtns.length; s++) rbScopeBtns[s].classList.remove("active");
+                this.classList.add("active");
+                state.scope = this.getAttribute("data-scope");
+                saveRbState();
+            });
+        }
+
+        btnRbSubmit.addEventListener("click", function () {
+            if (!chkRbFills.checked && !chkRbStrokes.checked) {
+                showError(isKhmer() ? "សូមជ្រើសរើស Fills ឬ Strokes ជាមុនសិន!" : "Please enable Fills or Strokes first!");
+                return;
+            }
+            hideError();
+            btnRbSubmit.disabled = true;
+            btnRbSubmit.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងបម្លែង..." : "Converting to Rich Black...");
+            setStatus(isKhmer() ? "កំពុងអនុវត្ត Rich Black..." : "Applying Rich Black Optimizer...", "running");
+
+            var payload = {
+                c: parseInt(rbCInput.value, 10) || 60,
+                m: parseInt(rbMInput.value, 10) || 40,
+                y: parseInt(rbYInput.value, 10) || 40,
+                k: parseInt(rbKInput.value, 10) || 100,
+                targetFills: chkRbFills.checked,
+                targetStrokes: chkRbStrokes.checked,
+                protectSmallText: chkRbProtectText.checked,
+                textThreshold: 24,
+                autoOverprint: chkRbOverprint.checked,
+                scope: state.scope
+            };
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btnRbSubmit.disabled = false;
+                    btnRbSubmit.innerHTML = uiIcon("refresh") + (isKhmer() ? "អនុវត្ត Rich Black លើគំនូរ" : "Apply Rich Black Optimizer");
+                    setStatus(isKhmer() ? "បានបម្លែង 12 វត្ថុទៅជា Rich Black (Simulation)" : "Converted 12 items to Rich Black (Preview)", "success", 4000);
+                }, 800);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteRichBlack(" + JSON.stringify(JSON.stringify(payload)) + ")", function (raw) {
+                btnRbSubmit.disabled = false;
+                btnRbSubmit.innerHTML = uiIcon("refresh") + (isKhmer() ? "អនុវត្ត Rich Black លើគំនូរ" : "Apply Rich Black Optimizer");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+                if (res && res.status === "success") {
+                    setStatus(res.message, "success", 4500);
+                } else {
+                    showError((res && res.message) || String(raw || "Rich Black optimization failed"));
+                }
+            });
+        });
+
+        // Initialize preset state
+        var initPreset = parseInt(rbPresetSelect.value, 10) || 0;
+        if (initPreset !== 4) {
+            rbCInput.disabled = true;
+            rbMInput.disabled = true;
+            rbYInput.disabled = true;
+            rbKInput.disabled = true;
+        }
+        updateRbTicket();
+    }
+
+    // -------------------------------------------------------------
+    // In-Dock ABA KHQR Generator View
+    // -------------------------------------------------------------
+    function renderEmbeddedKHQR() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_khqr_settings", "{}")); } catch (e) {}
+
+        var state = {
+            style: saved.style || "Bakong Red Standee",
+            merchantName: saved.merchantName || "OZO PRINT SHOP",
+            bakongId: saved.bakongId || "heng_zm@abab",
+            currency: saved.currency || "USD",
+            amount: saved.amount || "",
+            billNumber: saved.billNumber || "",
+            width: saved.width || 100
+        };
+
+        var html = [];
+
+        // 0. Live Prepress Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="print-job-ticket-card" id="khqrLiveTicket"></div>');
+        html.push('</div>');
+
+        // 1. Template Style Segmented
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់កាតទូទាត់ (Output Template)" : "Template Style") + '</span></div>');
+        html.push('  <div class="embed-segmented" id="khqrStyleSegmented">');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "Bakong Red Standee" ? "active" : "") + '" data-style="Bakong Red Standee">Bakong Standee</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "ABA Navy Standee" ? "active" : "") + '" data-style="ABA Navy Standee">ABA Standee</button>');
+        html.push('    <button type="button" class="embed-seg-btn ' + (state.style === "Vector QR Only" ? "active" : "") + '" data-style="Vector QR Only">QR Only</button>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 2. Merchant Information Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ព័ត៌មានគណនី (Merchant Details)" : "Merchant Account") + '</span></div>');
+        html.push('  <div style="margin-bottom:8px;">');
+        html.push('    <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ឈ្មោះហាង / អាជីវកម្ម (Merchant Name):" : "Merchant Name:") + '</label>');
+        html.push('    <input type="text" id="khqrNameInput" class="embed-input" value="' + escapeHtml(state.merchantName) + '" placeholder="OZO PRINT SHOP" style="width:100%;margin-top:2px;">');
+        html.push('  </div>');
+        html.push('  <div>');
+        html.push('    <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គណនីបាគង / ABA (Bakong ID / Phone):" : "Bakong ID (e.g. phone@abab):") + '</label>');
+        html.push('    <input type="text" id="khqrIdInput" class="embed-input" value="' + escapeHtml(state.bakongId) + '" placeholder="heng_zm@abab" style="width:100%;margin-top:2px;">');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 3. Payment Details Card
+        html.push('<div class="embed-card">');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ចំនួនទឹកប្រាក់ (Amount & Currency)" : "Payment Options") + '</span></div>');
+        html.push('  <div class="embed-row-2col">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "រូបិយប័ណ្ណ:" : "Currency:") + '</label>');
+        html.push('      <select id="khqrCurSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        html.push('        <option value="USD" ' + (state.currency === "USD" ? "selected" : "") + '>USD ($)</option>');
+        html.push('        <option value="KHR" ' + (state.currency === "KHR" ? "selected" : "") + '>KHR (៛)</option>');
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទឹកប្រាក់ (ទទេ = ស្កេនតាមចិត្ត):" : "Amount (Optional):") + '</label>');
+        html.push('      <input type="text" id="khqrAmtInput" class="embed-input" value="' + escapeHtml(state.amount) + '" placeholder="e.g. 5.00" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div class="embed-row-2col" style="margin-top:8px;">');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទទឹងកាត (Card Width):" : "Card Width (mm):") + '</label>');
+        html.push('      <input type="number" id="khqrWidthInput" class="embed-input" value="' + state.width + '" min="30" max="500" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "លេខវិក្កយបត្រ (Bill #):" : "Bill # (Optional):") + '</label>');
+        html.push('      <input type="text" id="khqrBillInput" class="embed-input" value="' + escapeHtml(state.billNumber) + '" placeholder="INV-001" style="width:100%;margin-top:2px;">');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('</div>');
+
+        // 4. Action Wrap
+        html.push('<div class="embed-action-wrap">');
+        html.push('  <button type="button" id="btnKhqrSubmit" class="btn-action-primary">' + uiIcon("export") + (isKhmer() ? "បង្កើត ABA KHQR Vector" : "Generate KHQR Vector Artwork") + '</button>');
+        html.push('</div>');
+
+        embeddedContent.innerHTML = html.join("\n");
+
+        var khqrStyleBtns = embeddedContent.querySelectorAll("#khqrStyleSegmented .embed-seg-btn");
+        var khqrNameInput = $("khqrNameInput");
+        var khqrIdInput = $("khqrIdInput");
+        var khqrCurSelect = $("khqrCurSelect");
+        var khqrAmtInput = $("khqrAmtInput");
+        var khqrWidthInput = $("khqrWidthInput");
+        var khqrBillInput = $("khqrBillInput");
+        var btnKhqrSubmit = $("btnKhqrSubmit");
+
+        function updateKhqrTicket() {
+            var box = $("khqrLiveTicket");
+            if (!box) return;
+
+            var mName = (khqrNameInput ? khqrNameInput.value.trim() : state.merchantName) || "OZO MERCHANT";
+            var bId = (khqrIdInput ? khqrIdInput.value.trim() : state.bakongId) || "merchant@abab";
+            var cur = khqrCurSelect ? khqrCurSelect.value : state.currency;
+            var amt = khqrAmtInput ? khqrAmtInput.value.trim() : state.amount;
+            var w = parseFloat(khqrWidthInput ? khqrWidthInput.value : state.width) || 100;
+
+            var amtDisplay = amt ? ((cur === "KHR" ? "៛ " : "$ ") + amt) : (isKhmer() ? "ស្កេនតាមចិត្ត (Any Amount)" : "Any Amount (Static)");
+            var isCard = state.style.indexOf("Standee") !== -1 || state.style.indexOf("Card") !== -1;
+            var dimText = isCard ? ("w" + w + "mm x h" + Math.round(w * 1.5) + "mm • " + amtDisplay) : ("w" + w + "mm x h" + w + "mm • Vector QR");
+
+            var noteParts = [];
+            noteParts.push(state.style);
+            if (khqrBillInput && khqrBillInput.value.trim()) noteParts.push("Bill: " + khqrBillInput.value.trim());
+            noteParts.push(isKhmer() ? "ស្តង់ដារបាគង EMVCo" : "EMVCo Compliant");
+
+            var tHtml = '';
+            tHtml += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' • ABA KHQR Generator</div>';
+            tHtml += '<div class="ticket-line-mat">' + escapeHtml(mName) + ' (' + escapeHtml(bId) + ')</div>';
+            tHtml += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
+            tHtml += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" • ")) + '</div>';
+            box.innerHTML = tHtml;
+        }
+
+        function saveKhqrState() {
+            state.merchantName = khqrNameInput.value.trim() || "OZO MERCHANT";
+            state.bakongId = khqrIdInput.value.trim() || "merchant@abab";
+            state.currency = khqrCurSelect.value;
+            state.amount = khqrAmtInput.value.trim();
+            state.width = parseFloat(khqrWidthInput.value) || 100;
+            state.billNumber = khqrBillInput.value.trim();
+            store.setDebounced("ozo_khqr_settings", JSON.stringify(state), 250);
+            updateKhqrTicket();
+        }
+
+        for (var s = 0; s < khqrStyleBtns.length; s++) {
+            khqrStyleBtns[s].addEventListener("click", function () {
+                for (var sb = 0; sb < khqrStyleBtns.length; sb++) khqrStyleBtns[sb].classList.remove("active");
+                this.classList.add("active");
+                state.style = this.getAttribute("data-style");
+                if (state.style === "Vector QR Only" && state.width > 60) {
+                    khqrWidthInput.value = "50";
+                } else if (state.style !== "Vector QR Only" && state.width < 80) {
+                    khqrWidthInput.value = "100";
+                }
+                saveKhqrState();
+            });
+        }
+
+        khqrNameInput.addEventListener("input", saveKhqrState);
+        khqrIdInput.addEventListener("input", saveKhqrState);
+        khqrCurSelect.addEventListener("change", saveKhqrState);
+        khqrAmtInput.addEventListener("input", saveKhqrState);
+        khqrWidthInput.addEventListener("input", saveKhqrState);
+        khqrBillInput.addEventListener("input", saveKhqrState);
+
+        btnKhqrSubmit.addEventListener("click", function () {
+            hideError();
+            btnKhqrSubmit.disabled = true;
+            btnKhqrSubmit.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងបង្កើត..." : "Generating KHQR...");
+            setStatus(isKhmer() ? "កំពុងបង្កើត ABA KHQR Vector..." : "Building ABA KHQR Artwork...", "running");
+
+            var payload = {
+                merchantName: khqrNameInput.value.trim() || "OZO MERCHANT",
+                bakongId: khqrIdInput.value.trim() || "merchant@abab",
+                currency: khqrCurSelect.value,
+                amount: khqrAmtInput.value.trim(),
+                billNumber: khqrBillInput.value.trim(),
+                style: state.style,
+                width: parseFloat(khqrWidthInput.value) || 100
+            };
+
+            if (!csInterface) {
+                setTimeout(function () {
+                    btnKhqrSubmit.disabled = false;
+                    btnKhqrSubmit.innerHTML = uiIcon("export") + (isKhmer() ? "បង្កើត ABA KHQR Vector" : "Generate KHQR Vector Artwork");
+                    setStatus(isKhmer() ? "បានបង្កើត ABA KHQR Vector (Simulation)" : "Generated ABA KHQR Vector (Preview)", "success", 4000);
+                }, 800);
+                return;
+            }
+
+            csInterface.evalScript("ozoExecuteKHQR(" + JSON.stringify(JSON.stringify(payload)) + ")", function (raw) {
+                btnKhqrSubmit.disabled = false;
+                btnKhqrSubmit.innerHTML = uiIcon("export") + (isKhmer() ? "បង្កើត ABA KHQR Vector" : "Generate KHQR Vector Artwork");
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+                if (res && res.status === "success") {
+                    setStatus(res.message, "success", 4500);
+                } else {
+                    showError((res && res.message) || String(raw || "Failed to generate ABA KHQR"));
+                }
+            });
+        });
+
+        updateKhqrTicket();
     }
 
     // -------------------------------------------------------------
