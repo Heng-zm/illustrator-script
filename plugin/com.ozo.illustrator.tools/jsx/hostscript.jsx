@@ -1014,11 +1014,56 @@ function ozoGetPrintJobDefaults() {
             return ozoJsonStringify({ status: "error", message: "No Illustrator document is open." });
         }
         var doc = app.activeDocument;
+        var widthPt = 0;
+        var heightPt = 0;
+        var isArtboard = true;
+        var sourceName = "";
+
+        // Check selection first (normalized to handle single-item selection)
+        try {
+            var sel = doc.selection;
+            var selItems = [];
+            if (sel && sel.typename !== "TextRange") {
+                if (sel instanceof Array || sel.typename === "Array" || Object.prototype.toString.call(sel) === "[object Array]" || typeof sel.length === "number") {
+                    for (var si = 0; si < sel.length; si++) selItems.push(sel[si]);
+                } else {
+                    selItems.push(sel);
+                }
+            }
+            if (selItems.length > 0) {
+                var combined = null;
+                for (var i = 0; i < selItems.length; i++) {
+                    var b = null;
+                    try { b = selItems[i].geometricBounds; } catch (eGeo) {
+                        try { b = selItems[i].visibleBounds; } catch (eVis) {}
+                    }
+                    if (!b || b.length !== 4) continue;
+                    if (!combined) {
+                        combined = [b[0], b[1], b[2], b[3]];
+                    } else {
+                        combined[0] = Math.min(combined[0], b[0]);
+                        combined[1] = Math.max(combined[1], b[1]);
+                        combined[2] = Math.max(combined[2], b[2]);
+                        combined[3] = Math.min(combined[3], b[3]);
+                    }
+                }
+                if (combined) {
+                    widthPt = combined[2] - combined[0];
+                    heightPt = combined[1] - combined[3];
+                    isArtboard = false;
+                    sourceName = "Selection (" + selItems.length + " item" + (selItems.length > 1 ? "s" : "") + ")";
+                }
+            }
+        } catch (eSel) {}
+
         var abIdx = doc.artboards.getActiveArtboardIndex();
         if (abIdx < 0 || abIdx >= doc.artboards.length) abIdx = 0;
-        var rect = doc.artboards[abIdx].artboardRect;
-        var widthPt = Math.abs(rect[2] - rect[0]);
-        var heightPt = Math.abs(rect[1] - rect[3]);
+        if (isArtboard) {
+            var rect = doc.artboards[abIdx].artboardRect;
+            widthPt = Math.abs(rect[2] - rect[0]);
+            heightPt = Math.abs(rect[1] - rect[3]);
+            sourceName = doc.artboards[abIdx].name || ("Artboard " + (abIdx + 1));
+        }
 
         var ru = "cm";
         try {
@@ -1050,7 +1095,8 @@ function ozoGetPrintJobDefaults() {
             unit: ru,
             width: w,
             height: h,
-            artboardName: doc.artboards[abIdx].name || ("Artboard " + (abIdx + 1)),
+            isArtboard: isArtboard,
+            artboardName: sourceName,
             docName: doc.name
         });
     } catch (e) {

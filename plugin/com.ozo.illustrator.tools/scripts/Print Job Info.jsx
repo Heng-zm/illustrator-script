@@ -37,15 +37,28 @@
         originalArtboardRect = [ab[0], ab[1], ab[2], ab[3]];
     }
 
+    function getNormalizedSelection() {
+        try {
+            var sel = doc.selection;
+            if (!sel || sel.typename === "TextRange") return [];
+            if (sel instanceof Array || sel.typename === "Array" || Object.prototype.toString.call(sel) === "[object Array]" || typeof sel.length === "number") {
+                var arr = [];
+                for (var si = 0; si < sel.length; si++) arr.push(sel[si]);
+                return arr;
+            }
+            return [sel];
+        } catch (eNormSel) {
+            return [];
+        }
+    }
+
     var initialSelectedTextFrame = null;
     try {
-        var initSel = doc.selection;
-        if (initSel && initSel.length) {
-            for (var is = 0; is < initSel.length; is++) {
-                if (initSel[is].typename === "TextFrame") {
-                    initialSelectedTextFrame = initSel[is];
-                    break;
-                }
+        var initSel = getNormalizedSelection();
+        for (var is = 0; is < initSel.length; is++) {
+            if (initSel[is].typename === "TextFrame") {
+                initialSelectedTextFrame = initSel[is];
+                break;
             }
         }
     } catch (eInitSel) {}
@@ -149,9 +162,18 @@
         return bestMatch;
     }
 
-    function resolveBestFont(fontChoiceIndex, containsKhmer) {
+    function resolveBestFont(fontChoiceIndex, containsKhmer, donor) {
         // Choice 0: "Use Active Illustrator Font" (DO NOT override, retain user's working active font & composer)
         if (fontChoiceIndex === 0) {
+            if (containsKhmer && !donor) {
+                // If Khmer is present and no working donor text frame exists to clone from,
+                // auto-resolve to best available Khmer font to avoid broken tofu / subscript plus (+)
+                var khmerFallback = getFontByExactNames([
+                    "KantumruyPro-Bold", "Kantumruy-Bold", "KantumruyProBold",
+                    "LeelawadeeUI-Bold", "KhmerOSBattambang-Bold", "Hanuman-Bold"
+                ]) || findFontByKeywords(["kantumruy", "leelawadee", "battambang", "hanuman"], ["bold", "regular"]);
+                if (khmerFallback) return khmerFallback;
+            }
             return null;
         }
         if (fontCache[fontChoiceIndex]) {
@@ -216,12 +238,10 @@
 
         // 2. Active selection
         try {
-            var sel = doc.selection;
-            if (sel && sel.length) {
-                for (var s = 0; s < sel.length; s++) {
-                    if (sel[s].typename === "TextFrame" && isUsableDonor(sel[s])) {
-                        return sel[s];
-                    }
+            var sel = getNormalizedSelection();
+            for (var s = 0; s < sel.length; s++) {
+                if (sel[s].typename === "TextFrame" && isUsableDonor(sel[s])) {
+                    return sel[s];
                 }
             }
         } catch (eSel) {}
@@ -243,20 +263,20 @@
                 try { isKhmer = hasKhmerText(tf.contents); } catch (eKh) {}
 
                 if (isKhmer && isPoint) return tf; // Best match: PointText with Khmer
-                if (isKhmer && !khmerAnyDonor) khmerAnyDonor = tf;
                 if (isPoint && !anyPointDonor) anyPointDonor = tf;
+                if (isKhmer && !khmerAnyDonor) khmerAnyDonor = tf;
                 if (!anyDonor) anyDonor = tf;
             }
 
-            return khmerAnyDonor || anyPointDonor || anyDonor;
+            return khmerPointDonor || anyPointDonor || khmerAnyDonor || anyDonor;
         } catch (eDocTf) {}
 
         return null;
     }
 
     function getEffectiveBounds() {
-        var sel = doc.selection;
-        if (sel && sel.typename !== "TextRange" && sel.length > 0) {
+        var sel = getNormalizedSelection();
+        if (sel.length > 0) {
             var combined = null;
             for (var i = 0; i < sel.length; i++) {
                 var b = null;
@@ -396,6 +416,22 @@
         rgb.red = 0;
         rgb.green = 210;
         rgb.blue = 255;
+        return rgb;
+    }
+
+    function getMagentaColor() {
+        if (doc.documentColorSpace === DocumentColorSpace.CMYK) {
+            var cmyk = new CMYKColor();
+            cmyk.cyan = 0;
+            cmyk.magenta = 100;
+            cmyk.yellow = 0;
+            cmyk.black = 0;
+            return cmyk;
+        }
+        var rgb = new RGBColor();
+        rgb.red = 255;
+        rgb.green = 42;
+        rgb.blue = 133;
         return rgb;
     }
 
@@ -659,7 +695,7 @@
     fontSizeList.preferredSize.width = 150;
 
     formatRow.add("statictext", undefined, OZO.tr("Text color:"));
-    var textColorList = formatRow.add("dropdownlist", undefined, ["White", "Yellow", "Cyan", "Black"]);
+    var textColorList = formatRow.add("dropdownlist", undefined, ["White", "Yellow", "Cyan", "Black", "Magenta"]);
     textColorList.selection = 0; // Default White
     textColorList.preferredSize.width = 75;
 
@@ -694,6 +730,7 @@
         if (textColorIndex === 1) col = [1, 0.9, 0.1]; // Yellow
         else if (textColorIndex === 2) col = [0, 0.85, 1]; // Cyan
         else if (textColorIndex === 3) col = [0.2, 0.2, 0.2]; // Black
+        else if (textColorIndex === 4) col = [1, 0.16, 0.52]; // Magenta
 
         try {
             var pen = previewCard.graphics.newPen(previewCard.graphics.PenType.SOLID_COLOR, col, 1);
@@ -803,6 +840,18 @@
 
     var currentArtboardExpandedHeight = 0;
 
+    function calculateNeededExpansion(target, geom, expandArtboard) {
+        if (!expandArtboard || !originalArtboardRect || activeArtboardIndex < 0 || activeArtboardIndex >= doc.artboards.length) {
+            return 0;
+        }
+        var headerTop = target.bounds[1] + geom.headerHeight;
+        var neededTop = Math.max(
+            originalArtboardRect[1] + (target.isArtboard ? geom.headerHeight : 0),
+            headerTop
+        );
+        return Math.max(0, neededTop - originalArtboardRect[1]);
+    }
+
     function cleanupPreview() {
         if (previewLayer) {
             try {
@@ -876,10 +925,10 @@
         if (donor) {
             try {
                 txt = donor.duplicate(grp, ElementPlacement.PLACEATEND);
-                if (txt.kind === TextType.AREATEXT) {
+                if (txt.kind === TextType.AREATEXT && txt.textPath) {
                     try {
-                        txt.width = Math.max(geom.headerWidth - (geom.paddingX * 2), 200);
-                        txt.height = geom.headerHeight;
+                        txt.textPath.width = Math.max(geom.headerWidth - (geom.paddingX * 2), 200);
+                        txt.textPath.height = Math.max(geom.headerHeight * 2, 120);
                     } catch (eDim) {}
                 }
                 txt.contents = textContent;
@@ -909,13 +958,17 @@
             charAttr.fillColor = getYellowColor();
         } else if (settings.textColorIndex === 2) {
             charAttr.fillColor = getCyanColor();
-        } else {
+        } else if (settings.textColorIndex === 3) {
             charAttr.fillColor = getBlackColor();
+        } else if (settings.textColorIndex === 4) {
+            charAttr.fillColor = getMagentaColor();
+        } else {
+            charAttr.fillColor = getWhiteColor();
         }
 
         // Resolve and apply font if specified by user (Option 0 retains active Illustrator / donor font)
         var containsKhmer = hasKhmerText(textContent);
-        var chosenFont = resolveBestFont(settings.fontChoiceIndex, containsKhmer);
+        var chosenFont = resolveBestFont(settings.fontChoiceIndex, containsKhmer, donor);
         if (chosenFont) {
             try {
                 charAttr.textFont = chosenFont;
@@ -930,33 +983,41 @@
         }
 
         // 5. Text Position & Justification
-        // Area text anchors at its frame's top-left, so justification must do
-        // the aligning there; only point text is positioned at the anchor.
         var isAreaText = false;
         try { isAreaText = txt.kind === TextType.AREATEXT; } catch (eKind) {}
-        var textLeft = left + geom.paddingX;
-        if (settings.alignmentIndex === 1) {
-            // Center
-            for (var p1 = 0; p1 < txt.paragraphs.length; p1++) {
-                try { txt.paragraphs[p1].paragraphAttributes.justification = Justification.CENTER; } catch (eJ1) {}
-            }
-            if (!isAreaText) textLeft = left + geom.headerWidth / 2;
-        } else if (settings.alignmentIndex === 2) {
-            // Right
-            for (var p2 = 0; p2 < txt.paragraphs.length; p2++) {
-                try { txt.paragraphs[p2].paragraphAttributes.justification = Justification.RIGHT; } catch (eJ2) {}
-            }
-            if (!isAreaText) textLeft = right - geom.paddingX;
-        } else {
-            // Left
-            for (var p0 = 0; p0 < txt.paragraphs.length; p0++) {
-                try { txt.paragraphs[p0].paragraphAttributes.justification = Justification.LEFT; } catch (eJ0) {}
-            }
-            textLeft = left + geom.paddingX;
+
+        var targetJust = Justification.LEFT;
+        if (settings.alignmentIndex === 1) targetJust = Justification.CENTER;
+        else if (settings.alignmentIndex === 2) targetJust = Justification.RIGHT;
+
+        for (var p = 0; p < txt.paragraphs.length; p++) {
+            try { txt.paragraphs[p].paragraphAttributes.justification = targetJust; } catch (eJ) {}
         }
 
         var textTop = headerTop - geom.paddingY;
-        txt.position = [textLeft, textTop];
+        txt.top = textTop;
+
+        if (isAreaText && txt.textPath) {
+            try {
+                txt.textPath.top = textTop;
+                txt.textPath.left = left + geom.paddingX;
+                txt.textPath.width = Math.max(geom.headerWidth - (geom.paddingX * 2), 200);
+                txt.textPath.height = Math.max(geom.headerHeight * 2, 120);
+            } catch (eTp) {}
+            txt.left = left + geom.paddingX;
+        } else {
+            if (settings.alignmentIndex === 1) {
+                // Center: center the text block bounding box inside the header
+                txt.left = left + (geom.headerWidth - txt.width) / 2;
+            } else if (settings.alignmentIndex === 2) {
+                // Right: align the text block flush to the right padding
+                txt.left = (right - geom.paddingX) - txt.width;
+            } else {
+                // Left: align to the left padding
+                txt.left = left + geom.paddingX;
+            }
+        }
+
         txt.zOrder(ZOrderMethod.BRINGTOFRONT);
 
         return {
@@ -970,7 +1031,7 @@
         var geom = calculateHeaderGeometry(target, settings);
 
         // Expand/restore Artboard only when expansion height changes (prevents viewport redraw jitter)
-        var neededExpandHeight = settings.expandArtboard ? geom.headerHeight : 0;
+        var neededExpandHeight = calculateNeededExpansion(target, geom, settings.expandArtboard);
         if (neededExpandHeight !== currentArtboardExpandedHeight && originalArtboardRect &&
                 activeArtboardIndex >= 0 && activeArtboardIndex < doc.artboards.length) {
             try {
@@ -1110,16 +1171,17 @@
         var finalGeom = calculateHeaderGeometry(finalTarget, finalSettings);
 
         // Expand artboard permanently if chosen
-        if (finalSettings.expandArtboard && activeArtboardIndex >= 0 &&
+        var neededHeight = calculateNeededExpansion(finalTarget, finalGeom, finalSettings.expandArtboard);
+        if (neededHeight > 0 && originalArtboardRect && activeArtboardIndex >= 0 &&
                 activeArtboardIndex < doc.artboards.length) {
             var finalAb = doc.artboards[activeArtboardIndex];
             finalAb.artboardRect = [
                 originalArtboardRect[0],
-                originalArtboardRect[1] + finalGeom.headerHeight,
+                originalArtboardRect[1] + neededHeight,
                 originalArtboardRect[2],
                 originalArtboardRect[3]
             ];
-            currentArtboardExpandedHeight = finalGeom.headerHeight;
+            currentArtboardExpandedHeight = neededHeight;
         }
 
         // Find or create result layer
@@ -1170,10 +1232,12 @@
     if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
         try {
             var hp = __ozoHeadlessParams;
-            var w = parseFloat(String(hp.widthVal !== undefined ? hp.widthVal : initWidth).replace(/,/g, "."));
-            var h = parseFloat(String(hp.heightVal !== undefined ? hp.heightVal : initHeight).replace(/,/g, "."));
-            if (!isFinite(w) || w <= 0) w = parseFloat(initWidth) || 10;
-            if (!isFinite(h) || h <= 0) h = parseFloat(initHeight) || 10;
+            var rawW = hp.widthVal !== undefined ? hp.widthVal : (hp.width !== undefined ? hp.width : (hp.w !== undefined ? hp.w : initWidth));
+            var rawH = hp.heightVal !== undefined ? hp.heightVal : (hp.height !== undefined ? hp.height : (hp.h !== undefined ? hp.h : initHeight));
+            var w = parseFloat(String(rawW).replace(/,/g, "."));
+            var h = parseFloat(String(rawH).replace(/,/g, "."));
+            if (!isFinite(w) || w <= 0) w = parseFloat(String(initWidth).replace(/,/g, ".")) || 10;
+            if (!isFinite(h) || h <= 0) h = parseFloat(String(initHeight).replace(/,/g, ".")) || 10;
             var headlessSettings = {
                 material: sanitizeKhmerText(hp.material) || "Silk Light Box",
                 dateStr: trim(hp.dateStr) || getTodayFormatted(),

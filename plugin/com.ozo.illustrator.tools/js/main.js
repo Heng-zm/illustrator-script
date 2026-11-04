@@ -2824,7 +2824,7 @@
         // 4. Header Style & Placement
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ការកំណត់ និងម៉ូតបដា" : "Header Style & Placement") + '</span></div>');
-        html.push('  <div class="embed-row-2col">');
+        html.push('  <div class="embed-row-3col">');
         html.push('    <div>');
         html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ទំហំអក្សរ:" : "Font Size:") + '</label>');
         html.push('      <select id="pjFontSizeSelect" class="embed-select" style="width:100%;margin-top:2px;">');
@@ -2844,14 +2844,31 @@
         html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ពណ៌អក្សរ:" : "Text Color:") + '</label>');
         html.push('      <select id="pjColorSelect" class="embed-select" style="width:100%;margin-top:2px;">');
         var tColors = [
-            isKhmer() ? "ខ្មៅ (Black)" : "Black",
             isKhmer() ? "ស (White)" : "White",
+            isKhmer() ? "លឿង (Yellow)" : "Yellow",
             isKhmer() ? "ខៀវ (Cyan)" : "Cyan",
-            isKhmer() ? "ក្រហមផ្កាឈូក (Magenta)" : "Magenta",
-            isKhmer() ? "លឿង (Yellow)" : "Yellow"
+            isKhmer() ? "ខ្មៅ (Black)" : "Black",
+            isKhmer() ? "ក្រហមផ្កាឈូក (Magenta)" : "Magenta"
         ];
         for (var tci = 0; tci < tColors.length; tci++) {
             html.push('        <option value="' + tci + '" ' + (state.textColorIndex === tci ? "selected" : "") + '>' + tColors[tci] + '</option>');
+        }
+        html.push('      </select>');
+        html.push('    </div>');
+        html.push('    <div>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ពុម្ពអក្សរ:" : "Font:") + '</label>');
+        html.push('      <select id="pjFontSelect" class="embed-select" style="width:100%;margin-top:2px;">');
+        var fChoices = [
+            isKhmer() ? "សកម្ម (Active)" : "Active Font",
+            "Kantumruy Pro Bold",
+            "Leelawadee UI Bold",
+            "Khmer OS Battambang",
+            "Hanuman Bold",
+            "Arial Bold",
+            "Impact"
+        ];
+        for (var fci = 0; fci < fChoices.length; fci++) {
+            html.push('        <option value="' + fci + '" ' + (state.fontChoiceIndex === fci ? "selected" : "") + '>' + fChoices[fci] + '</option>');
         }
         html.push('      </select>');
         html.push('    </div>');
@@ -2889,6 +2906,7 @@
         var pjUnitSelect = $("pjUnitSelect");
         var pjFontSizeSelect = $("pjFontSizeSelect");
         var pjColorSelect = $("pjColorSelect");
+        var pjFontSelect = $("pjFontSelect");
         var chkPjExpand = $("chkPjExpand");
         var chkPjDark = $("chkPjDark");
         var btnPjSyncAb = $("btnPjSyncAb");
@@ -2908,6 +2926,10 @@
             return pjMatSelect.value;
         }
 
+        function hasPjKhmer(s) {
+            return /[\u1780-\u17FF]/.test(String(s || ""));
+        }
+
         function updateTicketPreview() {
             var mat = getEffectiveMaterial();
             var dt = pjDateInput.value.trim() || dStr;
@@ -2916,6 +2938,11 @@
             var u = pjUnitSelect.value;
             var q = pjQtyInput.value || "1";
             var n = pjNoteInput.value.trim();
+
+            if ((hasPjKhmer(mat) || hasPjKhmer(n)) && pjFontSelect && pjFontSelect.value === "0") {
+                pjFontSelect.value = "1";
+                state.fontChoiceIndex = 1;
+            }
 
             pjTicketDate.textContent = dt;
             pjTicketMat.textContent = mat;
@@ -2927,14 +2954,26 @@
                 pjTicketNote.style.display = "none";
             }
 
-            // Text color preview
+            // Text color preview: 0=White, 1=Yellow, 2=Cyan, 3=Black, 4=Magenta
             var colorIdx = parseInt(pjColorSelect.value, 10) || 0;
-            var colors = ["#ffffff", "#ffffff", "#00d2ff", "#ff2a85", "#ffd200"];
-            pjTicketMat.style.color = colors[colorIdx] || "#ffffff";
+            var colors = ["#ffffff", "#ffd200", "#00d2ff", "#222222", "#ff2a85"];
+            var textColor = colors[colorIdx] || "#ffffff";
+            if (!chkPjDark.checked && colorIdx === 0) textColor = "#111111";
+            pjTicketMat.style.color = textColor;
 
             // Dark box preview
-            pjTicketCard.style.background = chkPjDark.checked ? "#080808" : "#111418";
+            pjTicketCard.style.background = chkPjDark.checked ? "#080808" : "#f5f6f8";
             pjTicketCard.style.border = chkPjDark.checked ? "1px solid #333" : "1px solid var(--border-color)";
+            pjTicketDim.style.color = chkPjDark.checked ? "#cfcfcf" : "#333333";
+            pjTicketDate.style.color = chkPjDark.checked ? "#888888" : "#666666";
+
+            var just = "left";
+            if (state.alignmentIndex === 1) just = "center";
+            else if (state.alignmentIndex === 2) just = "right";
+            pjTicketDate.style.textAlign = just;
+            pjTicketMat.style.textAlign = just;
+            pjTicketDim.style.textAlign = just;
+            pjTicketNote.style.textAlign = just;
         }
 
         function saveState() {
@@ -2947,6 +2986,7 @@
             state.unit = pjUnitSelect.value;
             state.fontSizeIndex = parseInt(pjFontSizeSelect.value, 10) || 0;
             state.textColorIndex = parseInt(pjColorSelect.value, 10) || 0;
+            state.fontChoiceIndex = parseInt(pjFontSelect.value, 10) || 0;
             state.expandArtboard = chkPjExpand.checked;
             state.darkBox = chkPjDark.checked;
             store.setDebounced("ozo_printjob_settings", JSON.stringify(state), 250);
@@ -2973,6 +3013,7 @@
         pjUnitSelect.addEventListener("change", saveState);
         pjFontSizeSelect.addEventListener("change", saveState);
         pjColorSelect.addEventListener("change", saveState);
+        pjFontSelect.addEventListener("change", saveState);
         chkPjExpand.addEventListener("change", saveState);
         chkPjDark.addEventListener("change", saveState);
 
@@ -3020,8 +3061,8 @@
 
         btnPjSubmit.addEventListener("click", function() {
             hideError();
-            var w = parseFloat(pjWidthInput.value);
-            var h = parseFloat(pjHeightInput.value);
+            var w = parseFloat(String(pjWidthInput.value).replace(/,/g, "."));
+            var h = parseFloat(String(pjHeightInput.value).replace(/,/g, "."));
             if (!w || w <= 0 || !h || h <= 0) {
                 showError(isKhmer() ? "ទំហំមិនត្រឹមត្រូវ" : "Invalid Dimensions", isKhmer() ? "សូមបញ្ចូលទទឹង និងកម្ពស់ធំជាង 0" : "Width and Height must be greater than zero.");
                 return;
@@ -3044,7 +3085,7 @@
                 textColorIndex: parseInt(pjColorSelect.value, 10) || 0,
                 alignmentIndex: state.alignmentIndex,
                 fontSizeIndex: parseInt(pjFontSizeSelect.value, 10) || 0,
-                fontChoiceIndex: 0
+                fontChoiceIndex: parseInt(pjFontSelect.value, 10) || 0
             };
 
             if (!csInterface) {

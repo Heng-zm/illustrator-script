@@ -276,6 +276,27 @@ test("print defaults report an error without a document", function () {
     assert.strictEqual(defaults.status, "error");
 });
 
+test("print defaults measure selection when artwork is selected", function () {
+    var context = makeContext();
+    context.__app.documents = [{}];
+    context.__app.activeDocument = makeArtboardDoc({
+        widthPt: 1000,
+        heightPt: 500,
+        rulerUnits: RulerUnits.Centimeters,
+        selection: {
+            typename: "PathItem",
+            geometricBounds: [0, 141.7322835, 283.4645669, 0]
+        },
+        pageItems: 1
+    });
+    var defaults = JSON.parse(context.ozoGetPrintJobDefaults());
+    assert.strictEqual(defaults.status, "success");
+    assert.strictEqual(defaults.isArtboard, false);
+    near(defaults.width, 10, "selection cm width");
+    near(defaults.height, 5, "selection cm height");
+    assert.ok(defaults.artboardName.indexOf("Selection") !== -1, "artboardName mentions Selection");
+});
+
 // ------------------------------------------------------------------
 // Naming Template Preview vs Host Output Parity
 // ------------------------------------------------------------------
