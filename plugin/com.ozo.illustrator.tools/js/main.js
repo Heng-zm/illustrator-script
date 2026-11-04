@@ -96,9 +96,6 @@
             "preview.btn": "Preview",
             "splash.subtitle": "Illustrator Automation Suite",
             "splash.status": "Ready \u2022 {n} tools available",
-            "ticket.label": "Live Job Ticket",
-            "ticket.edit": "Edit",
-            "ticket.editTitle": "Edit job ticket details"
         },
         km: {
             "cat.all": "ទាំងអស់", "cat.favorites": "សំណព្វ", "cat.prepress": "មុនបោះពុម្ព",
@@ -169,9 +166,6 @@
             "preview.btn": "មើលព័តឹម័ន",
             "splash.subtitle": "កញ្ចប់ឧបករណ៍ជំនួយការងារ Illustrator",
             "splash.status": "រួចរាល់ \u2022 មាន {n} ឧបករណ៍",
-            "ticket.label": "បដាព័ត៌មានការងារ",
-            "ticket.edit": "កែប្រែ",
-            "ticket.editTitle": "កែព័ត៌មានលម្អិតនៃបដាការងារ"
         }
     };
 
@@ -571,7 +565,6 @@
         moveTabIndicator();
         setUpdateBtn(updateBtnState);
         updateUpdateUI(); // banner/badge text depends on the language
-        renderEmbeddedJobTicket(); // localized "Edit" label / title
     }
 
     function updateCounts() {
@@ -1045,7 +1038,6 @@
             renderEmbeddedGeneric(tool);
         }
 
-        renderEmbeddedJobTicket();
     }
 
 
@@ -1138,9 +1130,8 @@
         renderTools();
     }
 
-function closeEmbeddedView() {
+    function closeEmbeddedView() {
         activeEmbeddedTool = null;
-        renderEmbeddedJobTicket(); // hide the shared ticket strip
         viewEmbedded.style.display = "none";
         viewCatalog.style.display = "flex";
         goBackToCatalog();
@@ -1281,6 +1272,15 @@ function closeEmbeddedView() {
         ];
 
         var html = [];
+
+        // 0. Live Export Job Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មាននាំចេញ (Live Export Ticket)" : "Live Export Ticket") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="ticket-summary-box" id="expLiveTicket"></div>');
+        html.push('</div>');
 
         // 1. Doc Info Bar
         html.push('<div class="embed-doc-bar">');
@@ -1529,6 +1529,47 @@ function closeEmbeddedView() {
             state.openFolder = chkOpenFolder.checked;
 
             store.setDebounced("ozo_exporter_settings", JSON.stringify(state), 250);
+            updateExpTicket();
+        }
+
+        function updateExpTicket() {
+            var box = $("expLiveTicket");
+            if (!box) return;
+
+            var formats = [];
+            if (chkPdf && chkPdf.checked) {
+                formats.push('<span class="ticket-chip chip-accent">PDF' + (chkPdfCombined && chkPdfCombined.checked ? ' (Combined)' : '') + '</span>');
+            }
+            if (chkTiff && chkTiff.checked) {
+                formats.push('<span class="ticket-chip">TIFF ' + escapeHtml(selTiffDpi ? selTiffDpi.value : "300") + ' DPI</span>');
+            }
+            if (chkPng && chkPng.checked) {
+                formats.push('<span class="ticket-chip">PNG ' + escapeHtml(selPngDpi ? selPngDpi.value : "300") + ' DPI</span>');
+            }
+            if (chkJpg && chkJpg.checked) {
+                formats.push('<span class="ticket-chip">JPG ' + escapeHtml(selJpgDpi ? selJpgDpi.value : "300") + ' DPI</span>');
+            }
+            if (!formats.length) {
+                formats.push('<span class="ticket-chip" style="color:var(--danger);">' + (isKhmer() ? "គ្មានទម្រង់ជ្រើសរើស" : "No format selected") + '</span>');
+            }
+
+            var scopeText = (state.scope === "all") ? (isKhmer() ? "គ្រប់ Artboard (" + meta.totalArtboards + ")" : "All Artboards (" + meta.totalArtboards + ")")
+                : (state.scope === "active" ? (isKhmer() ? "Artboard សកម្ម" : "Active Artboard") : (isKhmer() ? "ជួរ Artboard: " + (expRangeInput ? expRangeInput.value : state.customRange) : "Range: " + (expRangeInput ? expRangeInput.value : state.customRange)));
+
+            var dest = expDestInput ? expDestInput.value : state.destFolder;
+            var isOut = chkOutline ? chkOutline.checked : state.outline;
+
+            var tHtml = '';
+            tHtml += '<div class="ticket-row-main">';
+            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(meta.docName || "Untitled") + '</span>';
+            tHtml += '  <span class="ticket-chip chip-accent">' + escapeHtml(scopeText) + '</span>';
+            tHtml += '</div>';
+            tHtml += '<div class="ticket-chips-wrap">' + formats.join("") + (isOut ? '<span class="ticket-chip chip-perf">' + (isKhmer() ? "Outline អក្សរ" : "Outlines") + '</span>' : '') + '</div>';
+            tHtml += '<div class="ticket-meta-line" title="' + escapeHtml(dest) + '">' +
+                (dest ? (isKhmer() ? "ទៅកាន់៖ " : "To: ") + escapeHtml(dest.length > 50 ? dest.slice(0, 49) + "…" : dest) : (isKhmer() ? "មិនទាន់បានជ្រើសថត" : "No folder chosen")) +
+                '</div>';
+
+            box.innerHTML = tHtml;
         }
 
         // Scope handlers
@@ -1711,6 +1752,15 @@ function closeEmbeddedView() {
 
         var html = [];
 
+        // 0. Live QR Job Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មាន QR (Live QR Ticket)" : "Live QR Ticket") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="ticket-summary-box" id="qrLiveTicket"></div>');
+        html.push('</div>');
+
         // 1. Style Segmented Control
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "រចនាប័ទ្ម QR" : "QR Style") + '</span></div>');
@@ -1828,6 +1878,38 @@ function closeEmbeddedView() {
             state.handle = qrTgHandleInput.value;
 
             store.setDebounced("ozo_qr_settings", JSON.stringify(state), 250);
+            updateQrTicket();
+        }
+
+        function updateQrTicket() {
+            var box = $("qrLiveTicket");
+            if (!box) return;
+            var content = (qrContentInput ? qrContentInput.value : state.content) || "";
+            var size = (qrSizeInput ? qrSizeInput.value : state.size) || "30";
+            var unit = (qrUnitSelect ? qrUnitSelect.value : state.unit) || "mm";
+            var level = (qrCorrectionSelect ? qrCorrectionSelect.value : state.level) || "M";
+            var hasBg = chkQrBg ? chkQrBg.checked : state.background;
+            var isNewLayer = chkQrNewLayer ? chkQrNewLayer.checked : state.newLayer;
+
+            var tHtml = '';
+            tHtml += '<div class="ticket-row-main">';
+            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(state.style) + '</span>';
+            tHtml += '  <span class="ticket-chip chip-accent">' + escapeHtml(size + " " + unit) + ' • EC ' + escapeHtml(level) + '</span>';
+            tHtml += '</div>';
+
+            var chips = [];
+            chips.push('<span class="ticket-chip">' + (hasBg ? (isKhmer() ? "ផ្ទៃស (White BG)" : "White BG") : (isKhmer() ? "ថ្លា (Transparent)" : "Transparent")) + '</span>');
+            if (isNewLayer) chips.push('<span class="ticket-chip">' + (isKhmer() ? "Layer ថ្មី" : "New Layer") + '</span>');
+            if (state.style.indexOf("Telegram") !== -1) {
+                chips.push('<span class="ticket-chip chip-perf">' + escapeHtml(state.theme) + '</span>');
+            }
+
+            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
+            tHtml += '<div class="ticket-meta-line" title="' + escapeHtml(content) + '">' +
+                (content ? (isKhmer() ? "មាតិកា៖ " : "Data: ") + escapeHtml(content.length > 55 ? content.slice(0, 54) + "…" : content) : (isKhmer() ? "មិនទាន់មានទិន្នន័យ" : "No content yet")) +
+                '</div>';
+
+            box.innerHTML = tHtml;
         }
 
         // Style Segmented
@@ -1971,6 +2053,15 @@ function closeEmbeddedView() {
 
         var html = [];
 
+        // 0. Live CutContour Job Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានកាត់ (Live Cut Ticket)" : "Live CutContour Ticket") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="ticket-summary-box" id="cutLiveTicket"></div>');
+        html.push('</div>');
+
         // 1. Machine RIP Preset Card
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ម៉ាស៊ីន / RIP Preset" : "Machine / RIP Preset") + '</span></div>');
@@ -2112,6 +2203,50 @@ function closeEmbeddedView() {
             for (var ul = 0; ul < uLabels.length; ul++) uLabels[ul].textContent = state.unit;
 
             store.setDebounced("ozo_cutcontour_settings", JSON.stringify(state), 250);
+            updateCutTicket();
+        }
+
+        function updateCutTicket() {
+            var box = $("cutLiveTicket");
+            if (!box) return;
+            var presetObj = PRESETS_LIST[state.preset] || PRESETS_LIST[0];
+            var shapeObj = null;
+            for (var i = 0; i < SHAPES_LIST.length; i++) {
+                if (SHAPES_LIST[i].id === state.shape) { shapeObj = SHAPES_LIST[i]; break; }
+            }
+            var shapeName = shapeObj ? shapeObj.name : "Custom";
+            if (state.shape === 0) shapeName += " (R: " + state.radius + state.unit + ")";
+
+            var chips = [];
+            if (state.kissEnabled) {
+                chips.push('<span class="ticket-chip chip-kiss"><span class="ticket-chip-dot" style="background:#ff007f;"></span>Kiss: ' +
+                    escapeHtml(state.kissName) + ' (+' + state.kissOffset + state.unit + ')</span>');
+            }
+            if (state.perfEnabled) {
+                chips.push('<span class="ticket-chip chip-perf"><span class="ticket-chip-dot" style="background:#00d2ff;"></span>Perf: ' +
+                    escapeHtml(state.perfName) + ' (+' + state.perfOffset + state.unit + ')</span>');
+            }
+            if (!chips.length) {
+                chips.push('<span class="ticket-chip" style="color:var(--danger);">' + (isKhmer() ? "គ្មានបន្ទាត់កាត់" : "No cutline enabled") + '</span>');
+            }
+
+            var opts = [];
+            if (state.overprint) opts.push("Overprint");
+            if (state.optimizePath) opts.push(isKhmer() ? "Opt Path" : "Optimize");
+            if (state.addRegMarks) opts.push(isKhmer() ? "Reg Marks" : "Marks");
+
+            var tHtml = '';
+            tHtml += '<div class="ticket-row-main">';
+            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(presetObj.name) + '</span>';
+            tHtml += '  <span class="ticket-chip chip-accent">' + escapeHtml(shapeName) + '</span>';
+            tHtml += '</div>';
+            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
+            tHtml += '<div class="ticket-meta-line">' +
+                (isKhmer() ? "កម្រាស់បន្ទាត់៖ " : "Stroke: ") + state.strokeWeight + " pt" +
+                (opts.length ? " • " + opts.join(" • ") : "") +
+                '</div>';
+
+            box.innerHTML = tHtml;
         }
 
         cutPresetSelect.addEventListener("change", function () {
@@ -2235,6 +2370,15 @@ function closeEmbeddedView() {
 
         var html = [];
 
+        // 0. Live Dimension Job Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានខ្នាត (Live Dimension Ticket)" : "Live Dimension Ticket") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="ticket-summary-box" id="dimLiveTicket"></div>');
+        html.push('</div>');
+
         // 1. Placement Mode (Segmented)
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទិសដៅវាស់ (Direction)" : "Dimension Direction") + '</span></div>');
@@ -2324,6 +2468,39 @@ function closeEmbeddedView() {
             state.labelBackground = chkDimBg.checked;
 
             store.setDebounced("ozo_dimension_settings", JSON.stringify(state), 250);
+            updateDimTicket();
+        }
+
+        function updateDimTicket() {
+            var box = $("dimLiveTicket");
+            if (!box) return;
+            var modeNames = [
+                isKhmer() ? "ទទឹង & កម្ពស់ (W+H)" : "Both (W+H)",
+                isKhmer() ? "ទទឹង (Width)" : "Width Only",
+                isKhmer() ? "កម្ពស់ (Height)" : "Height Only",
+                isKhmer() ? "ប្រអប់ (Box)" : "Bounding Box"
+            ];
+            var mName = modeNames[state.mode] || modeNames[0];
+
+            var tHtml = '';
+            tHtml += '<div class="ticket-row-main">';
+            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(mName) + '</span>';
+            tHtml += '  <span class="ticket-chip chip-accent">' + escapeHtml(state.offset + " " + state.unit) + ' Offset</span>';
+            tHtml += '</div>';
+
+            var chips = [];
+            chips.push('<span class="ticket-chip">Unit: ' + escapeHtml(state.unit) + '</span>');
+            chips.push('<span class="ticket-chip">Text: ' + escapeHtml(state.textSize) + ' pt</span>');
+            chips.push('<span class="ticket-chip">Arrow: ' + escapeHtml(state.arrow) + ' pt</span>');
+            if (state.labelBackground) chips.push('<span class="ticket-chip chip-perf">' + (isKhmer() ? "ផ្ទៃស (Pill)" : "White Pill") + '</span>');
+
+            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
+            tHtml += '<div class="ticket-meta-line">' +
+                (isKhmer() ? "ក្បៀស៖ " : "Precision: ") + state.precision + " decimals" +
+                (state.showUnit ? " • " + (isKhmer() ? "បង្ហាញខ្នាត" : "Show unit label") : "") +
+                '</div>';
+
+            box.innerHTML = tHtml;
         }
 
         for (var m = 0; m < modeBtns.length; m++) {
@@ -2392,99 +2569,7 @@ function closeEmbeddedView() {
         updateDimState();
     }
 
-    // -------------------------------------------------------------
-    // Shared job ticket (edited in Print Job Info, shown in every tool)
-    // -------------------------------------------------------------
-    function getJobTicketData() {
-        var saved = {};
-        try { saved = JSON.parse(store.get("ozo_printjob_settings", "{}")); } catch (e) {}
-
-        var today = new Date();
-        var todayStr = ("0" + today.getDate()).slice(-2) + " " +
-            ("0" + (today.getMonth() + 1)).slice(-2) + " " + today.getFullYear();
-
-        return {
-            material: saved.material || "Silk Light Box",
-            dateStr: saved.dateStr || todayStr,
-            widthVal: saved.widthVal || "",
-            heightVal: saved.heightVal || "",
-            unit: saved.unit || "cm",
-            qty: saved.qty !== undefined ? saved.qty : 1,
-            note: saved.note || "",
-            darkBox: saved.darkBox === true,
-            textColorIndex: saved.textColorIndex !== undefined ? saved.textColorIndex : 0
-        };
-    }
-
-    // First run with no saved dimensions: borrow the active artboard size so
-    // the ticket is useful before Print Job Info has ever been opened.
-    var jobTicketDefaultsRequested = false;
-    function hydrateJobTicketDefaults() {
-        if (jobTicketDefaultsRequested || !csInterface) return;
-        var saved = {};
-        try { saved = JSON.parse(store.get("ozo_printjob_settings", "{}")); } catch (e) {}
-        if (saved.widthVal && saved.heightVal) return;
-
-        jobTicketDefaultsRequested = true;
-        try {
-            csInterface.evalScript("ozoGetPrintJobDefaults()", function (raw) {
-                var res = null;
-                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
-                if (!res || res.status !== "success") return;
-
-                var cur = {};
-                try { cur = JSON.parse(store.get("ozo_printjob_settings", "{}")); } catch (e) {}
-                if (!cur.widthVal) cur.widthVal = res.width;
-                if (!cur.heightVal) cur.heightVal = res.height;
-                if (!cur.dateStr) cur.dateStr = res.dateStr;
-                if (!cur.unit) cur.unit = res.unit;
-                store.set("ozo_printjob_settings", JSON.stringify(cur));
-                if (activeEmbeddedTool) renderEmbeddedJobTicket();
-            });
-        } catch (e) {}
-    }
-
-    function jobTicketDimText(ticket) {
-        return "w" + (ticket.widthVal || "--") + ticket.unit +
-            " x h" + (ticket.heightVal || "--") + ticket.unit +
-            " =" + ticket.qty + "pcs";
-    }
-
-    function renderEmbeddedJobTicket() {
-        var host = $("embeddedJobTicket");
-        if (!host) return;
-
-        // Print Job Info already shows the full editable ticket card.
-        if (!activeEmbeddedTool || activeEmbeddedTool.id === "printjob") {
-            host.hidden = true;
-            host.innerHTML = "";
-            return;
-        }
-
-        hydrateJobTicketDefaults(); // fill missing dimensions from the artboard
-        var ticket = getJobTicketData();
-        var colors = ["#ffffff", "#ffffff", "#00d2ff", "#ff2a85", "#ffd200"];
-        var matColor = colors[parseInt(ticket.textColorIndex, 10)] || "#ffffff";
-
-        var html = '<span class="print-job-ticket-card" style="' +
-            (ticket.darkBox ? "background:#080808;border-color:#333;" : "") + '">';
-        html += '<span class="ticket-line-date">' + escapeHtml(ticket.dateStr) + '</span>';
-        html += '<span class="ticket-line-mat" style="color:' + matColor + '">' + escapeHtml(ticket.material) + '</span>';
-        html += '<span class="ticket-line-dim">' + escapeHtml(jobTicketDimText(ticket)) + '</span>';
-        if (ticket.note) {
-            html += '<span class="ticket-line-note">' + escapeHtml(ticket.note) + '</span>';
-        }
-        html += '</span>';
-        html += '<span class="job-ticket-edit">' +
-            '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" ' +
-            'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
-            '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
-            '<span>' + escapeHtml(t("ticket.edit")) + '</span></span>';
-
-        host.innerHTML = html;
-        host.title = t("ticket.editTitle");
-        host.hidden = false;
-    }
+    
 
     // -------------------------------------------------------------
     // In-Dock Print Job Info View
@@ -2526,8 +2611,11 @@ function closeEmbeddedView() {
         var html = [];
 
         // 1. Live Ticket Preview Card
-        html.push('<div class="embed-card" style="padding:10px 12px;background:var(--bg-surface);">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;"><span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span></div>');
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
+        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
         html.push('  <div class="print-job-ticket-card" id="pjTicketCard">');
         html.push('    <div class="ticket-line-date" id="pjTicketDate">' + escapeHtml(state.dateStr || dStr) + '</div>');
         html.push('    <div class="ticket-line-mat" id="pjTicketMat">' + escapeHtml(state.material) + '</div>');
@@ -3022,12 +3110,15 @@ function closeEmbeddedView() {
         }
 
         // 1. Live Sample Preview Card
-        html.push('<div class="embed-card" style="padding:10px 12px;background:var(--bg-surface);">');
+        html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់លេខរៀង (Live Number Preview)" : "Live Number Preview") + '</span>');
-        html.push('    <span id="numTotalBadge" class="tool-badge badge-prepress" style="font-weight:700;">10 numbers</span>');
+        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានលេខរៀង (Live Number Ticket)" : "Live Numbering Ticket") + '</span>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <span id="numTotalBadge" class="tool-badge badge-prepress" style="font-weight:700;">10 numbers</span>');
+        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div id="numSamplePill" style="background:#111418;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:8px 10px;font-family:monospace;font-size:12px;color:var(--accent);text-align:center;letter-spacing:0.5px;">');
+        html.push('  <div id="numSamplePill" style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:8px 10px;font-family:monospace;font-size:12px;color:var(--accent);text-align:center;letter-spacing:0.5px;font-weight:600;">');
         html.push('    001  ...  010');
         html.push('  </div>');
         html.push('</div>');
@@ -3659,6 +3750,7 @@ function closeEmbeddedView() {
         glMarginRightInput.addEventListener("input", saveGlState);
         glUnitSelect.addEventListener("change", saveGlState);
         chkGlClear.addEventListener("change", saveGlState);
+        updateGlTicket();
 
         function dispatchGuides(clearOnly) {
             hideError();
@@ -3748,6 +3840,15 @@ function closeEmbeddedView() {
         };
 
         var html = [];
+
+        // 0. Live Repeat Job Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានចម្លង (Live Repeat Ticket)" : "Live Repeat Ticket") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="ticket-summary-box" id="repLiveTicket"></div>');
+        html.push('</div>');
 
         // 1. Mode Segmented
         html.push('<div class="embed-card">');
@@ -3871,6 +3972,42 @@ function closeEmbeddedView() {
             state.layerName = repLayerInput.value.trim() || "Object Repeat";
             state.selectResult = chkRepSelect.checked;
             store.setDebounced("ozo_repeat_settings", JSON.stringify(state), 250);
+            updateRepTicket();
+        }
+
+        function updateRepTicket() {
+            var box = $("repLiveTicket");
+            if (!box) return;
+            var repUnits = ["mm", "cm", "in", "pt", "px"];
+            var u = repUnits[state.unitIndex] || "mm";
+            var modeName = state.mode === 0 ? (isKhmer() ? "ពេញ Artboard (Fit)" : "Fit Artboard")
+                : (state.mode === 1 ? (isKhmer() ? "ក្រឡាចត្រង្គ (Step & Repeat)" : "Step & Repeat")
+                : (isKhmer() ? "រាងជារង្វង់ (Radial)" : "Radial"));
+
+            var tHtml = '';
+            tHtml += '<div class="ticket-row-main">';
+            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(modeName) + '</span>';
+            if (state.mode === 2) {
+                tHtml += '  <span class="ticket-chip chip-accent">' + state.radialCopies + ' ' + (isKhmer() ? "ចម្លង" : "copies") + ' • R: ' + state.radialRadius + ' ' + u + '</span>';
+            } else {
+                tHtml += '  <span class="ticket-chip chip-accent">' + (state.columns * state.rows) + ' ' + (isKhmer() ? "ចម្លង (" : "copies (") + state.columns + '×' + state.rows + ')</span>';
+            }
+            tHtml += '</div>';
+
+            var chips = [];
+            if (state.mode === 2) {
+                chips.push('<span class="ticket-chip">' + state.radialTotalAngle + '° Total Angle</span>');
+                if (state.radialRotate) chips.push('<span class="ticket-chip chip-perf">' + (isKhmer() ? "បង្វិលវត្ថុ" : "Rotate items") + '</span>');
+            } else {
+                chips.push('<span class="ticket-chip">Gap: ' + state.horizontalGap + '×' + state.verticalGap + ' ' + u + '</span>');
+                var altNames = ["None", "Flip X", "Flip Y", "Rotate 180°"];
+                if (state.alternating > 0) chips.push('<span class="ticket-chip chip-perf">' + (altNames[state.alternating] || "") + '</span>');
+            }
+
+            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
+            tHtml += '<div class="ticket-meta-line">' + (isKhmer() ? "ស្រទាប់គោលដៅ៖ " : "Target Layer: ") + escapeHtml(state.layerName || "Object Repeat") + '</div>';
+
+            box.innerHTML = tHtml;
         }
 
         for (var mi = 0; mi < modeBtns.length; mi++) {
@@ -3905,6 +4042,7 @@ function closeEmbeddedView() {
         chkRepRadialRotate.addEventListener("change", saveRepState);
         repLayerInput.addEventListener("input", saveRepState);
         chkRepSelect.addEventListener("change", saveRepState);
+        updateRepTicket();
 
         btnRepSubmit.addEventListener("click", function() {
             hideError();
@@ -3984,6 +4122,15 @@ function closeEmbeddedView() {
         };
 
         var html = [];
+
+        // 0. Live Nesting Job Ticket Card
+        html.push('<div class="embed-card feature-ticket-card">');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <span>' + (isKhmer() ? "បដាព័ត៌មានតម្រៀប (Live Nesting Ticket)" : "Live Nesting Ticket") + '</span>');
+        html.push('    <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
+        html.push('  </div>');
+        html.push('  <div class="ticket-summary-box" id="nestLiveTicket"></div>');
+        html.push('</div>');
 
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "សន្លឹក / ផ្ទៃរៀបចំ (Sheet & Target)" : "Sheets & Containers") + '</span></div>');
@@ -4148,9 +4295,49 @@ function closeEmbeddedView() {
                 autoMultiSheet: chkNestAutoSheets.checked
             };
             store.setDebounced("ozo_nesting_settings", JSON.stringify(s), 250);
+            updateNestTicket(s);
+        }
+
+        function updateNestTicket(curr) {
+            var box = $("nestLiveTicket");
+            if (!box) return;
+            var cur = curr || {
+                custom: chkNestCustom.checked,
+                width: parseFloat(numNestWidth.value) || 600,
+                height: parseFloat(numNestHeight.value) || 400,
+                unit: nestUnitSelect.value,
+                spacing: parseFloat(numNestSpacing.value) || 2,
+                edge: parseFloat(numNestEdge.value) || 2,
+                rotation: parseInt(nestRotSelect.value, 10) || 1,
+                resizeArtboard: chkNestResize.checked,
+                best: chkNestBest.checked,
+                allowInside: chkNestHoles.checked
+            };
+            var sheet = cur.custom ? (cur.width + ' \u00d7 ' + cur.height + ' ' + cur.unit) : (isKhmer() ? "ទំហំ Artboard" : "Active Artboard");
+
+            var tHtml = '';
+            tHtml += '<div class="ticket-row-main">';
+            tHtml += '  <span style="color:var(--text-primary);">' + escapeHtml(sheet) + '</span>';
+            tHtml += '  <span class="ticket-chip chip-accent">Gap: ' + cur.spacing + ' ' + cur.unit + '</span>';
+            tHtml += '</div>';
+
+            var chips = [];
+            chips.push('<span class="ticket-chip">Edge: ' + cur.edge + ' ' + cur.unit + '</span>');
+            var rotText = cur.rotation === 0 ? "No Rot" : (cur.rotation === 1 ? "90\u00b0 Rot" : (cur.rotation === 2 ? "45\u00b0 Rot" : "Free Rot"));
+            chips.push('<span class="ticket-chip">' + rotText + '</span>');
+            if (cur.best) chips.push('<span class="ticket-chip chip-perf">' + (isKhmer() ? "ប្រសិទ្ធភាពខ្ពស់" : "Best Fit") + '</span>');
+            if (cur.allowInside) chips.push('<span class="ticket-chip">' + (isKhmer() ? "ក្នុងប្រហោង" : "Nest in Holes") + '</span>');
+
+            tHtml += '<div class="ticket-chips-wrap">' + chips.join("") + '</div>';
+            tHtml += '<div class="ticket-meta-line">' +
+                (cur.resizeArtboard ? (isKhmer() ? "ពង្រីក Artboard តាមសន្លឹក" : "Resize artboard to fit") : (isKhmer() ? "រក្សាទំហំ Artboard" : "Keep artboard size")) +
+                '</div>';
+
+            box.innerHTML = tHtml;
         }
 
         var inputsToSave = [nestTargetSelect, nestUnitSelect, numNestWidth, numNestHeight, chkNestResize, numNestSpacing, numNestEdge, numNestTop, numNestLeft, numNestBottom, numNestRight, nestRotSelect, nestDivSelect, chkNestHoles, chkNestFixed, chkNestBest, chkNestAutoSheets];
+        updateNestTicket();
         inputsToSave.forEach(function (inp) {
             inp.addEventListener("change", saveNestingState);
             inp.addEventListener("input", saveNestingState);
@@ -4735,13 +4922,6 @@ function closeEmbeddedView() {
 
     if (embeddedBackBtn) {
         embeddedBackBtn.addEventListener("click", closeEmbeddedView);
-    }
-
-    var embeddedJobTicket = $("embeddedJobTicket");
-    if (embeddedJobTicket) {
-        embeddedJobTicket.addEventListener("click", function () {
-            openEmbeddedView("printjob"); // the ticket is edited in Print Job Info
-        });
     }
 
     if (embeddedDialogBtn) {

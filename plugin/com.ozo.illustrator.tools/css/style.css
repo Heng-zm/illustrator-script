@@ -1448,64 +1448,98 @@ body.theme-light {
     margin-top: 2px;
 }
 
-/* Live job ticket strip: the Print Job Info ticket kept in view while
-   working in any other tool. The whole strip opens the editor. */
-.job-ticket-strip {
+/* Per-feature Live Ticket Cards */
+.feature-ticket-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+.live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(46, 122, 251, 0.12);
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+}
+.live-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px rgba(46, 122, 251, 0.25);
+    animation: livePulse 2s infinite ease-in-out;
+}
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.85); }
+}
+
+.ticket-summary-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 5px;
+}
+.ticket-row-main {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
-    width: 100%;
-    margin: 0;
-    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.ticket-chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+.ticket-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: var(--radius-sm);
     background: var(--bg-main);
-    border: none;
-    border-bottom: 1px solid var(--border-color);
-    border-left: 3px solid var(--accent);
-    color: inherit;
-    font-family: var(--font-family);
-    text-align: left;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background-color 0.15s;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
 }
-.job-ticket-strip[hidden] { display: none; }
-.job-ticket-strip:hover { background: var(--bg-surface-hover); }
-.job-ticket-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-
-.job-ticket-strip .print-job-ticket-card {
-    flex: 1;
-    min-width: 0;
-    margin-top: 0;
-    padding: 5px 9px;
-    gap: 0;
+.ticket-chip.chip-accent {
+    border-color: rgba(46, 122, 251, 0.35);
+    color: var(--accent);
+    background: rgba(46, 122, 251, 0.08);
 }
-.job-ticket-strip .ticket-line-date { font-size: 10px; }
-.job-ticket-strip .ticket-line-mat { font-size: 12.5px; }
-.job-ticket-strip .ticket-line-dim { font-size: 11.5px; }
-.job-ticket-strip .ticket-line-note { font-size: 10.5px; margin-top: 0; }
-.job-ticket-strip .ticket-line-mat,
-.job-ticket-strip .ticket-line-dim,
-.job-ticket-strip .ticket-line-note {
+.ticket-chip.chip-kiss {
+    border-color: rgba(255, 0, 127, 0.35);
+    color: #ff007f;
+    background: rgba(255, 0, 127, 0.08);
+}
+.ticket-chip.chip-perf {
+    border-color: rgba(0, 210, 255, 0.35);
+    color: #00b4d8;
+    background: rgba(0, 210, 255, 0.08);
+}
+.ticket-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+.ticket-meta-line {
+    font-size: 10.5px;
+    color: var(--text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.job-ticket-edit {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    flex-shrink: 0;
-    color: var(--text-muted);
-    font-size: 10px;
-    font-weight: 600;
-    transition: color 0.15s;
-}
-.job-ticket-strip:hover .job-ticket-edit,
-.job-ticket-strip:focus-visible .job-ticket-edit { color: var(--accent); }
-
-@media (max-width: 280px) {
-    .job-ticket-edit span { display: none; } /* keep the icon, save the width */
 }
 
 /* Object Count Dashboard Stats */
