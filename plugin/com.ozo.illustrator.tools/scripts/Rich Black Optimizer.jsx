@@ -92,15 +92,36 @@
 
         var items = [];
         if (scope === "selection") {
-            if (!doc.selection || doc.selection.length === 0) {
+            var rawSel = doc.selection;
+            if (!rawSel || rawSel.typename === "TextRange") {
                 return {
                     status: "error",
                     message: "No artwork selected. Please select objects or choose 'Entire Document'."
                 };
             }
-            items = doc.selection;
+            if (rawSel instanceof Array || rawSel.typename === "Array" || Object.prototype.toString.call(rawSel) === "[object Array]") {
+                if (rawSel.length === 0) {
+                    return {
+                        status: "error",
+                        message: "No artwork selected. Please select objects or choose 'Entire Document'."
+                    };
+                }
+                items = rawSel;
+            } else {
+                items = [rawSel];
+            }
         } else {
-            items = doc.pageItems;
+            // Collect top-level items across visible, unlocked layers to avoid duplicate multi-pass traversal
+            items = [];
+            for (var li = 0; li < doc.layers.length; li++) {
+                var layer = doc.layers[li];
+                try {
+                    if (layer.locked || !layer.visible) continue;
+                    for (var lpi = 0; lpi < layer.pageItems.length; lpi++) {
+                        items.push(layer.pageItems[lpi]);
+                    }
+                } catch (eLayer) {}
+            }
         }
 
         var stats = {
@@ -226,6 +247,7 @@
         for (var i = 0; i < items.length; i++) {
             processItem(items[i]);
         }
+        try { app.redraw(); } catch (eRedraw) {}
 
         var totalConverted = stats.convertedFills + stats.convertedStrokes;
         var modeNote = isDocCmyk ? "" : " (Note: Document is in RGB mode; CMYK is recommended for press)";

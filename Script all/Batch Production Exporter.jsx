@@ -232,10 +232,13 @@
         var failed = 0;
         try {
             unlockAllForOutline(targetDoc);
-            var tfCount = targetDoc.textFrames.length;
-            for (var t = tfCount - 1; t >= 0; t--) {
+            var tfList = [];
+            for (var i = 0; i < targetDoc.textFrames.length; i++) {
+                tfList.push(targetDoc.textFrames[i]);
+            }
+            for (var t = tfList.length - 1; t >= 0; t--) {
                 try {
-                    targetDoc.textFrames[t].createOutline();
+                    tfList[t].createOutline();
                 } catch (eTf) {
                     failed++;
                 }

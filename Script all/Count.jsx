@@ -30,10 +30,19 @@
             b[2] >= b[0] && b[1] >= b[3];
     }
 
-    if (selection && selection.typename !== "TextRange" && selection.length) {
-        selectedCount = selection.length;
-        for (var s = 0; s < selection.length; s++) {
-            var item = selection[s];
+    var selItems = [];
+    if (selection && selection.typename !== "TextRange") {
+        if (selection instanceof Array || selection.typename === "Array" || Object.prototype.toString.call(selection) === "[object Array]") {
+            selItems = selection;
+        } else {
+            selItems = [selection];
+        }
+    }
+
+    if (selItems.length > 0) {
+        selectedCount = selItems.length;
+        for (var s = 0; s < selItems.length; s++) {
+            var item = selItems[s];
             var b = null;
             try { b = item.geometricBounds; } catch (eGeo) {
                 try { b = item.visibleBounds; } catch (eVis) {}

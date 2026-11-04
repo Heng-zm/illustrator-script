@@ -519,6 +519,14 @@
         ].join("\n");
 
         copyToClipboard(formatted, function () {
+            if (ticketEl) {
+                ticketEl.classList.remove("copied-pulse");
+                void ticketEl.offsetWidth;
+                ticketEl.classList.add("copied-pulse");
+                setTimeout(function () {
+                    ticketEl.classList.remove("copied-pulse");
+                }, 500);
+            }
             if (triggerBtn) {
                 if (!triggerBtn._origTicketHtml) {
                     triggerBtn._origTicketHtml = triggerBtn.innerHTML;
@@ -1401,7 +1409,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="expLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="expLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 1. Doc Info Bar
@@ -1884,7 +1892,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="qrLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="qrLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 1. Style Segmented Control
@@ -2189,7 +2197,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="cutLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="cutLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 1. Machine RIP Preset Card
@@ -2501,7 +2509,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="dimLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="dimLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 1. Placement Mode (Segmented)
@@ -2739,7 +2747,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="pjTicketCard">');
+        html.push('  <div class="print-job-ticket-card" id="pjTicketCard" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '">');
         html.push('    <div class="ticket-line-date" id="pjTicketDate">' + escapeHtml(state.dateStr || dStr) + '</div>');
         html.push('    <div class="ticket-line-mat" id="pjTicketMat">' + escapeHtml(state.material) + '</div>');
         html.push('    <div class="ticket-line-dim" id="pjTicketDim">w' + (state.widthVal || "--") + state.unit + ' x h' + (state.heightVal || "--") + state.unit + ' =' + state.qty + 'pcs</div>');
@@ -3241,7 +3249,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="numLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="numLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 2. Sequence Values Card
@@ -3665,7 +3673,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="glLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="glLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 1. Presets & Target Bar
@@ -4037,7 +4045,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="repLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="repLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 1. Mode Segmented
@@ -4319,7 +4327,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="nestLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="nestLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         html.push('<div class="embed-card">');
@@ -5025,7 +5033,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="rbLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="rbLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 1. Profile Preset Selector
@@ -5264,7 +5272,7 @@
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
         html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="khqrLiveTicket"></div>');
+        html.push('  <div class="print-job-ticket-card" id="khqrLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
         html.push('</div>');
 
         // 1. Template Style Segmented
