@@ -46,7 +46,7 @@
                         <Icon Type="Normal">./assets/icon-normal.png</Icon>
                         <Icon Type="RollOver">./assets/icon-rollover.png</Icon>
                         <Icon Type="DarkNormal">./assets/icon-dark.png</Icon>
-                        <Icon Type="DarkRollOver">./assets/icon-dark.png</Icon>
+                        <Icon Type="DarkRollOver">./assets/icon-dark-rollover.png</Icon>
                     </Icons>
                 </UI>
             </DispatchInfo>
