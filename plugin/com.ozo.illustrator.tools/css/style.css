@@ -1035,6 +1035,9 @@ body.theme-light {
 }
 .embed-seg-btn {
     flex: 1;
+    min-width: 0; /* let long labels shrink instead of overflowing the card */
+    overflow: hidden;
+    text-overflow: ellipsis;
     background: transparent;
     border: none;
     color: var(--text-secondary);
@@ -1340,6 +1343,10 @@ body.theme-light {
     gap: 8px;
 }
 
+/* Grid tracks are 1fr, so children must be allowed to shrink below their
+   intrinsic width or the right-hand column overflows the card. */
+.embed-row-2col > * { min-width: 0; }
+
 /* Generic Tool View */
 .embed-generic-card {
     background: var(--bg-surface);
@@ -1441,6 +1448,66 @@ body.theme-light {
     margin-top: 2px;
 }
 
+/* Live job ticket strip: the Print Job Info ticket kept in view while
+   working in any other tool. The whole strip opens the editor. */
+.job-ticket-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0;
+    padding: 7px 10px;
+    background: var(--bg-main);
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    border-left: 3px solid var(--accent);
+    color: inherit;
+    font-family: var(--font-family);
+    text-align: left;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s;
+}
+.job-ticket-strip[hidden] { display: none; }
+.job-ticket-strip:hover { background: var(--bg-surface-hover); }
+.job-ticket-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.job-ticket-strip .print-job-ticket-card {
+    flex: 1;
+    min-width: 0;
+    margin-top: 0;
+    padding: 5px 9px;
+    gap: 0;
+}
+.job-ticket-strip .ticket-line-date { font-size: 10px; }
+.job-ticket-strip .ticket-line-mat { font-size: 12.5px; }
+.job-ticket-strip .ticket-line-dim { font-size: 11.5px; }
+.job-ticket-strip .ticket-line-note { font-size: 10.5px; margin-top: 0; }
+.job-ticket-strip .ticket-line-mat,
+.job-ticket-strip .ticket-line-dim,
+.job-ticket-strip .ticket-line-note {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.job-ticket-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    transition: color 0.15s;
+}
+.job-ticket-strip:hover .job-ticket-edit,
+.job-ticket-strip:focus-visible .job-ticket-edit { color: var(--accent); }
+
+@media (max-width: 280px) {
+    .job-ticket-edit span { display: none; } /* keep the icon, save the width */
+}
+
 /* Object Count Dashboard Stats */
 .stat-summary-grid {
     display: grid;
@@ -1492,10 +1559,13 @@ body.theme-light {
 /* Pathfinder Grid */
 .embed-pf-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    /* Wrap down to fewer columns as the dock narrows, keeping every
+       operation tappable instead of pushing the last one off the card. */
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
     gap: 6px;
     margin-top: 6px;
 }
+.embed-pf-grid > * { min-width: 0; }
 .embed-pf-btn {
     background: var(--bg-surface);
     border: 1px solid var(--border-color);
@@ -1532,6 +1602,13 @@ body.theme-light {
 }
 
 /* Guide Swatch Dots */
+.guide-color-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
 .guide-swatch-list {
     display: flex;
     gap: 8px;
@@ -2244,19 +2321,24 @@ mark.search-match { animation: markIn 0.18s ease-out; }
     padding: 20px;
     cursor: pointer;
     overflow: hidden;
-    animation: splashFadeIn 0.28s var(--ease-out);
+    /* Second animation is a fail-safe: hide the overlay even if main.js never runs. */
+    animation: splashFadeIn 0.28s var(--ease-out), splashFailSafe 0.01s 5s forwards;
     transition: opacity 0.38s ease-out, transform 0.38s ease-out;
 }
 
 .welcome-splash.is-leaving {
     opacity: 0;
     transform: scale(1.05);
-    pointer-events: none;
+    pointer-events: none; /* let clicks reach the panel while the overlay fades */
 }
 
 @keyframes splashFadeIn {
     from { opacity: 0; }
     to   { opacity: 1; }
+}
+
+@keyframes splashFailSafe {
+    to { opacity: 0; visibility: hidden; pointer-events: none; }
 }
 
 .splash-card {
@@ -2370,28 +2452,48 @@ mark.search-match { animation: markIn 0.18s ease-out; }
     position: absolute;
     top: 0;
     bottom: 0;
+    left: 0;
     width: 45%;
     border-radius: 99px;
     background: linear-gradient(90deg, transparent, var(--accent), var(--accent-hover));
     animation: splashBarMove 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+/* Transform-only so the sweep stays on the compositor (no layout per frame). */
 @keyframes splashBarMove {
-    0% {
-        left: -45%;
-        width: 30%;
-    }
-    50% {
-        width: 60%;
-    }
-    100% {
-        left: 100%;
-        width: 30%;
-    }
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(320%); }
 }
 
 .splash-status {
     font-size: 10.5px;
     color: var(--text-muted);
     letter-spacing: 0.03em;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Compact tabs: keep every category visible on narrow docks and
+   for longer Khmer labels, instead of clipping the last tab
+   behind the edge fade.
+   ────────────────────────────────────────────────────────────── */
+
+/* Khmer labels are wider than English; tighten only for them so the
+   English layout keeps its normal spacing. */
+@media (min-width: 341px) {
+    html[lang="km"] .tabs-container { gap: 9px; padding: 0 9px; }
+    html[lang="km"] .tab-btn { font-size: 11.5px; gap: 4px; }
+    html[lang="km"] .tab-count { font-size: 10px; }
+}
+
+@media (max-width: 340px) {
+    .tabs-container { gap: 6px; padding: 0 8px; }
+    .tab-btn { font-size: 10.5px; gap: 3px; }
+    .tab-count { font-size: 9px; }
+}
+
+@media (max-width: 280px) {
+    .tabs-container { gap: 5px; padding: 0 5px; }
+    .tab-btn { font-size: 10.5px; gap: 2px; }
+    .tab-star svg { width: 9px; height: 9px; }
+    .tab-count { display: none !important; } /* counts would force the last tab off-screen */
 }

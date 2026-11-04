@@ -11,6 +11,8 @@
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
     var UPDATE_POLL_INTERVAL = 30 * 60 * 1000; // re-apply the cached result; network still capped by UPDATE_CHECK_INTERVAL
+    var SPLASH_MIN_MS = 650;   // keep the intro visible long enough to register
+    var SPLASH_MAX_MS = 2200;  // hard cap: never delay the panel longer than this, even if init stalls
     var SYNC_HOST_COLORS = true; // derive panel colours from Illustrator's actual UI brightness
     var TRUSTED_UPDATE_URL = /^https:\/\/(github\.com|api\.github\.com|codeload\.github\.com|objects\.githubusercontent\.com|release-assets\.githubusercontent\.com)\//i;
 
@@ -93,7 +95,10 @@
             "preview.close": "Back",
             "preview.btn": "Preview",
             "splash.subtitle": "Illustrator Automation Suite",
-            "splash.status": "Ready \u2022 13 tools available"
+            "splash.status": "Ready \u2022 {n} tools available",
+            "ticket.label": "Live Job Ticket",
+            "ticket.edit": "Edit",
+            "ticket.editTitle": "Edit job ticket details"
         },
         km: {
             "cat.all": "ទាំងអស់", "cat.favorites": "សំណព្វ", "cat.prepress": "មុនបោះពុម្ព",
@@ -163,7 +168,10 @@
             "preview.close": "ត្រជល័ប",
             "preview.btn": "មើលព័តឹម័ន",
             "splash.subtitle": "កញ្ចប់ឧបករណ៍ជំនួយការងារ Illustrator",
-            "splash.status": "រួចរាល់ \u2022 មាន ១៣ ឧបករណ៍"
+            "splash.status": "រួចរាល់ \u2022 មាន {n} ឧបករណ៍",
+            "ticket.label": "បដាព័ត៌មានការងារ",
+            "ticket.edit": "កែប្រែ",
+            "ticket.editTitle": "កែព័ត៌មានលម្អិតនៃបដាការងារ"
         }
     };
 
@@ -563,6 +571,7 @@
         moveTabIndicator();
         setUpdateBtn(updateBtnState);
         updateUpdateUI(); // banner/badge text depends on the language
+        renderEmbeddedJobTicket(); // localized "Edit" label / title
     }
 
     function updateCounts() {
@@ -1035,6 +1044,8 @@
         } else {
             renderEmbeddedGeneric(tool);
         }
+
+        renderEmbeddedJobTicket();
     }
 
 
@@ -1129,6 +1140,7 @@
 
 function closeEmbeddedView() {
         activeEmbeddedTool = null;
+        renderEmbeddedJobTicket(); // hide the shared ticket strip
         viewEmbedded.style.display = "none";
         viewCatalog.style.display = "flex";
         goBackToCatalog();
@@ -2381,6 +2393,100 @@ function closeEmbeddedView() {
     }
 
     // -------------------------------------------------------------
+    // Shared job ticket (edited in Print Job Info, shown in every tool)
+    // -------------------------------------------------------------
+    function getJobTicketData() {
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_printjob_settings", "{}")); } catch (e) {}
+
+        var today = new Date();
+        var todayStr = ("0" + today.getDate()).slice(-2) + " " +
+            ("0" + (today.getMonth() + 1)).slice(-2) + " " + today.getFullYear();
+
+        return {
+            material: saved.material || "Silk Light Box",
+            dateStr: saved.dateStr || todayStr,
+            widthVal: saved.widthVal || "",
+            heightVal: saved.heightVal || "",
+            unit: saved.unit || "cm",
+            qty: saved.qty !== undefined ? saved.qty : 1,
+            note: saved.note || "",
+            darkBox: saved.darkBox === true,
+            textColorIndex: saved.textColorIndex !== undefined ? saved.textColorIndex : 0
+        };
+    }
+
+    // First run with no saved dimensions: borrow the active artboard size so
+    // the ticket is useful before Print Job Info has ever been opened.
+    var jobTicketDefaultsRequested = false;
+    function hydrateJobTicketDefaults() {
+        if (jobTicketDefaultsRequested || !csInterface) return;
+        var saved = {};
+        try { saved = JSON.parse(store.get("ozo_printjob_settings", "{}")); } catch (e) {}
+        if (saved.widthVal && saved.heightVal) return;
+
+        jobTicketDefaultsRequested = true;
+        try {
+            csInterface.evalScript("ozoGetPrintJobDefaults()", function (raw) {
+                var res = null;
+                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+                if (!res || res.status !== "success") return;
+
+                var cur = {};
+                try { cur = JSON.parse(store.get("ozo_printjob_settings", "{}")); } catch (e) {}
+                if (!cur.widthVal) cur.widthVal = res.width;
+                if (!cur.heightVal) cur.heightVal = res.height;
+                if (!cur.dateStr) cur.dateStr = res.dateStr;
+                if (!cur.unit) cur.unit = res.unit;
+                store.set("ozo_printjob_settings", JSON.stringify(cur));
+                if (activeEmbeddedTool) renderEmbeddedJobTicket();
+            });
+        } catch (e) {}
+    }
+
+    function jobTicketDimText(ticket) {
+        return "w" + (ticket.widthVal || "--") + ticket.unit +
+            " x h" + (ticket.heightVal || "--") + ticket.unit +
+            " =" + ticket.qty + "pcs";
+    }
+
+    function renderEmbeddedJobTicket() {
+        var host = $("embeddedJobTicket");
+        if (!host) return;
+
+        // Print Job Info already shows the full editable ticket card.
+        if (!activeEmbeddedTool || activeEmbeddedTool.id === "printjob") {
+            host.hidden = true;
+            host.innerHTML = "";
+            return;
+        }
+
+        hydrateJobTicketDefaults(); // fill missing dimensions from the artboard
+        var ticket = getJobTicketData();
+        var colors = ["#ffffff", "#ffffff", "#00d2ff", "#ff2a85", "#ffd200"];
+        var matColor = colors[parseInt(ticket.textColorIndex, 10)] || "#ffffff";
+
+        var html = '<span class="print-job-ticket-card" style="' +
+            (ticket.darkBox ? "background:#080808;border-color:#333;" : "") + '">';
+        html += '<span class="ticket-line-date">' + escapeHtml(ticket.dateStr) + '</span>';
+        html += '<span class="ticket-line-mat" style="color:' + matColor + '">' + escapeHtml(ticket.material) + '</span>';
+        html += '<span class="ticket-line-dim">' + escapeHtml(jobTicketDimText(ticket)) + '</span>';
+        if (ticket.note) {
+            html += '<span class="ticket-line-note">' + escapeHtml(ticket.note) + '</span>';
+        }
+        html += '</span>';
+        html += '<span class="job-ticket-edit">' +
+            '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" ' +
+            'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+            '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+            '<span>' + escapeHtml(t("ticket.edit")) + '</span></span>';
+
+        host.innerHTML = html;
+        host.title = t("ticket.editTitle");
+        host.hidden = false;
+    }
+
+    // -------------------------------------------------------------
     // In-Dock Print Job Info View
     // -------------------------------------------------------------
     function renderEmbeddedPrintJob() {
@@ -3414,7 +3520,7 @@ function closeEmbeddedView() {
         // 5. Guide Options & Color
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ពណ៌បន្ទាត់ និងជម្រើស" : "Guide Color & Options") + '</span></div>');
-        html.push('  <div style="display:flex;justify-content:space-between;align-items:center;">');
+        html.push('  <div class="guide-color-row">');
         html.push('    <div class="guide-swatch-list" id="glColorSwatches">');
         for (var ci = 0; ci < guideColors.length; ci++) {
             var gc = guideColors[ci];
@@ -4631,6 +4737,13 @@ function closeEmbeddedView() {
         embeddedBackBtn.addEventListener("click", closeEmbeddedView);
     }
 
+    var embeddedJobTicket = $("embeddedJobTicket");
+    if (embeddedJobTicket) {
+        embeddedJobTicket.addEventListener("click", function () {
+            openEmbeddedView("printjob"); // the ticket is edited in Print Job Info
+        });
+    }
+
     if (embeddedDialogBtn) {
         embeddedDialogBtn.addEventListener("click", function () {
             if (activeEmbeddedTool) {
@@ -5021,56 +5134,88 @@ function closeEmbeddedView() {
     });
 
     // ------------------------------------------------------------------
-    // Init
-    // ------------------------------------------------------------------
-
-    // ------------------------------------------------------------------
     // Welcome Splash Screen Animation
+    // Returns a callback the init sequence fires once the UI is rendered,
+    // so the splash gets out of the way as soon as the panel is usable.
     // ------------------------------------------------------------------
     function initWelcomeSplash() {
         var splash = $("welcomeSplash");
-        if (!splash) return;
+        if (!splash) {
+            return function () { playEnter(); };
+        }
 
         var splashVer = $("splashVersion");
         if (splashVer) splashVer.textContent = "v" + CURRENT_VERSION;
 
+        var reduceMotion = window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (reduceMotion) { // no animation to show, so don't make the user wait
+            splash.style.display = "none";
+            return function () { playEnter(); };
+        }
+
+        var shownAt = Date.now();
         var dismissed = false;
-        function dismissSplash() {
-            if (dismissed) return;
-            dismissed = true;
+        var hidden = false;
+        var hideTimer = null;
+
+        function hideSplash() {
+            if (hidden) return;
+            hidden = true;
             splash.classList.add("is-leaving");
+            playEnter(); // start the catalogue entrance while the splash fades
             setTimeout(function () {
                 splash.style.display = "none";
             }, 400);
         }
 
-        splash.addEventListener("click", dismissSplash);
-        window.addEventListener("keydown", function () {
-            if (!dismissed && splash.style.display !== "none") dismissSplash();
-        });
+        function dismissSplash(immediate) {
+            if (hidden) return;
+            // Readiness may have queued a dismissal already; an explicit user
+            // click still cuts the remaining minimum wait short.
+            if (dismissed && !immediate) return;
+            dismissed = true;
+            window.removeEventListener("keydown", onSplashDismiss);
+            // User-initiated dismissal is instant; readiness waits for the
+            // minimum display time so the animation never flashes past.
+            var wait = immediate ? 0 : Math.max(0, SPLASH_MIN_MS - (Date.now() - shownAt));
+            if (hideTimer) clearTimeout(hideTimer);
+            hideTimer = setTimeout(hideSplash, wait);
+        }
 
-        setTimeout(dismissSplash, 1200);
+        function onSplashDismiss() { dismissSplash(true); }
+
+        splash.addEventListener("click", onSplashDismiss);
+        window.addEventListener("keydown", onSplashDismiss);
+
+        // Safety net for a stalled init: the overlay still clears itself.
+        setTimeout(function () { dismissSplash(false); }, SPLASH_MAX_MS);
+
+        return function () { dismissSplash(false); };
     }
 
-        brandBadge.textContent = "v" + CURRENT_VERSION;
+    // ------------------------------------------------------------------
+    // Init
+    // ------------------------------------------------------------------
+    brandBadge.textContent = "v" + CURRENT_VERSION;
 
     if (csInterface) {
         csInterface.addEventListener(CSInterface.THEME_COLOR_CHANGED_EVENT, updateTheme);
         updateTheme();
-        initHost();
     }
 
     applyI18n();
+    var splashReady = initWelcomeSplash(); // early, so a later init error can never trap the user behind the overlay
+    if (csInterface) initHost();
     updateCounts();
     updateViewMode();
-    playEnter();
     renderTools();
+    if (splashReady) splashReady();
     moveTabIndicator();
     window.addEventListener("resize", moveTabIndicator);
     window.addEventListener("load", moveTabIndicator);
     refreshDocumentStatus();
     startDocumentMonitor();
     checkForUpdates(false);
-    initWelcomeSplash();
     startUpdateMonitor();
 })();

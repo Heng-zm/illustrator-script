@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Welcome Splash Screen (initial launch animation) -->
-    <div id="welcomeSplash" class="welcome-splash" role="dialog" aria-modal="true" aria-label="Welcome to Ozo Tools">
+    <!-- Welcome Splash Screen (decorative; auto-dismisses, not a real modal) -->
+    <div id="welcomeSplash" class="welcome-splash" role="status" aria-live="polite">
         <div class="splash-card">
             <div class="splash-logo-wrap">
                 <div class="splash-logo-glow"></div>
@@ -151,6 +151,8 @@
                 <span data-i18n="open.dialog">Dialog</span>
             </button>
         </div>
+        <!-- Live job ticket context, rendered for every in-dock tool -->
+        <button type="button" id="embeddedJobTicket" class="job-ticket-strip" hidden></button>
         <div id="embeddedContent" class="embedded-content"></div>
     </div>
 
