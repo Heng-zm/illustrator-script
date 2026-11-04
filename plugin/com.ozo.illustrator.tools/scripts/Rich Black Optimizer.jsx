@@ -9,8 +9,7 @@
  */
 (function () {
     var SCRIPT_NAME = "Rich Black Optimizer";
-    var SCRIPT_VERSION = "1.0";
-    var STATE_NAMESPACE = "ozo_richblack_settings";
+    var SCRIPT_VERSION = "1.1";
 
     if (app.documents.length === 0) {
         if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
@@ -22,6 +21,7 @@
     }
 
     var doc = app.activeDocument;
+    var isDocCmyk = (doc.documentColorSpace === DocumentColorSpace.CMYK);
 
     // Standard Prepress Profiles
     var PRESETS = [
@@ -32,26 +32,40 @@
         { id: "custom",   name: "Custom CMYK Mix",                      c: 60, m: 40, y: 40, k: 100, tic: 240, desc: "Custom cyan, magenta, yellow, and black percentages." }
     ];
 
-    function makeCmyk(c, m, y, k) {
-        var col = new CMYKColor();
-        col.cyan = Math.max(0, Math.min(100, c));
-        col.magenta = Math.max(0, Math.min(100, m));
-        col.yellow = Math.max(0, Math.min(100, y));
-        col.black = Math.max(0, Math.min(100, k));
-        return col;
+    function makeRichBlackColor(c, m, y, k) {
+        if (isDocCmyk) {
+            var col = new CMYKColor();
+            col.cyan = Math.max(0, Math.min(100, c));
+            col.magenta = Math.max(0, Math.min(100, m));
+            col.yellow = Math.max(0, Math.min(100, y));
+            col.black = Math.max(0, Math.min(100, k));
+            return col;
+        }
+        // RGB Fallback if document is in RGB mode
+        var rgbCol = new RGBColor();
+        rgbCol.red = 0;
+        rgbCol.green = 0;
+        rgbCol.blue = 0;
+        return rgbCol;
     }
 
     function isPureOrFlatBlack(color) {
         if (!color) return false;
         try {
-            if (color.typename === "CMYKColor") {
+            var t = color.typename;
+            if (t === "CMYKColor") {
                 return (color.cyan <= 8 && color.magenta <= 8 && color.yellow <= 8 && color.black >= 88);
             }
-            if (color.typename === "RGBColor") {
+            if (t === "RGBColor") {
                 return (color.red <= 20 && color.green <= 20 && color.blue <= 20);
             }
-            if (color.typename === "GrayColor") {
+            if (t === "GrayColor") {
                 return (color.gray >= 88);
+            }
+            if (t === "SpotColor") {
+                if (color.spot && (/black/i.test(color.spot.name)) && color.tint >= 88) {
+                    return true;
+                }
             }
         } catch (e) {}
         return false;
@@ -67,7 +81,7 @@
         if (isNaN(targetY)) targetY = 40;
         if (isNaN(targetK)) targetK = 100;
 
-        var richBlackColor = makeCmyk(targetC, targetM, targetY, targetK);
+        var richBlackColor = makeRichBlackColor(targetC, targetM, targetY, targetK);
 
         var targetFills = opts.targetFills !== false;
         var targetStrokes = opts.targetStrokes === true;
@@ -99,19 +113,30 @@
         function processItem(item) {
             if (!item) return;
 
+            // Safe guard: skip locked or hidden items to prevent runtime exceptions
+            try {
+                if (item.locked || item.hidden) return;
+            } catch (eLock) {
+                return;
+            }
+
             // 1. Group recursion
             if (item.typename === "GroupItem") {
-                for (var gi = 0; gi < item.pageItems.length; gi++) {
-                    processItem(item.pageItems[gi]);
-                }
+                try {
+                    for (var gi = 0; gi < item.pageItems.length; gi++) {
+                        processItem(item.pageItems[gi]);
+                    }
+                } catch (eGrp) {}
                 return;
             }
 
             // 2. Compound path
             if (item.typename === "CompoundPathItem") {
-                for (var ci = 0; ci < item.pathItems.length; ci++) {
-                    processItem(item.pathItems[ci]);
-                }
+                try {
+                    for (var ci = 0; ci < item.pathItems.length; ci++) {
+                        processItem(item.pathItems[ci]);
+                    }
+                } catch (eComp) {}
                 return;
             }
 
@@ -119,11 +144,22 @@
             if (item.typename === "TextFrame") {
                 try {
                     var tr = item.textRange;
+                    if (!tr || tr.length === 0) return;
+
                     var maxFontSize = 12;
                     try {
+                        // Fast path: uniform font size
                         maxFontSize = tr.characterAttributes.size;
-                    } catch (eFont) {
-                        maxFontSize = 12;
+                    } catch (eMultiSize) {
+                        // Fallback: mixed font sizes, check paragraphs
+                        try {
+                            for (var pi = 0; pi < item.paragraphs.length; pi++) {
+                                var ps = item.paragraphs[pi].characterAttributes.size;
+                                if (ps > maxFontSize) maxFontSize = ps;
+                            }
+                        } catch (eP) {
+                            maxFontSize = 12;
+                        }
                     }
 
                     if (protectSmallText && maxFontSize <= textThreshold) {
@@ -138,14 +174,26 @@
                         return;
                     }
 
-                    // For large headlines, convert to rich black if fills are targeted
+                    // For large display headlines, convert black to rich black
                     if (targetFills) {
                         try {
+                            // Uniform color fast-path
                             if (isPureOrFlatBlack(tr.characterAttributes.fillColor)) {
                                 tr.characterAttributes.fillColor = richBlackColor;
                                 stats.convertedFills++;
                             }
-                        } catch (eTf) {}
+                        } catch (eMultiColor) {
+                            // Mixed colors: only convert words that are actually black
+                            try {
+                                for (var wi = 0; wi < item.words.length; wi++) {
+                                    var wRange = item.words[wi];
+                                    if (isPureOrFlatBlack(wRange.characterAttributes.fillColor)) {
+                                        wRange.characterAttributes.fillColor = richBlackColor;
+                                        stats.convertedFills++;
+                                    }
+                                }
+                            } catch (eW) {}
+                        }
                     }
                 } catch (eText) {}
                 return;
@@ -180,6 +228,7 @@
         }
 
         var totalConverted = stats.convertedFills + stats.convertedStrokes;
+        var modeNote = isDocCmyk ? "" : " (Note: Document is in RGB mode; CMYK is recommended for press)";
         return {
             status: "success",
             totalConverted: totalConverted,
@@ -193,7 +242,7 @@
             k: targetK,
             tic: (targetC + targetM + targetY + targetK),
             message: "Converted " + totalConverted + " objects to Rich Black (C:" + targetC + " M:" + targetM + " Y:" + targetY + " K:" + targetK + ")." +
-                (stats.protectedTextFrames > 0 ? " (" + stats.protectedTextFrames + " small text frames protected as 100% K)" : "")
+                (stats.protectedTextFrames > 0 ? " (" + stats.protectedTextFrames + " small text frames protected as 100% K)" : "") + modeNote
         };
     }
 

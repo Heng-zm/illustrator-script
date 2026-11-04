@@ -359,6 +359,47 @@ test("naming-template preview generates identical filenames to host exporter", f
 // ------------------------------------------------------------------
 // Version Consistency Check
 // ------------------------------------------------------------------
+// -------------------------------------------------------------
+// Rich Black & ABA KHQR Host Bridges & Payload Tests
+// -------------------------------------------------------------
+test("host bridges exist for Rich Black Optimizer and ABA KHQR", function () {
+    var ctx = makeContext();
+    assert.strictEqual(typeof ctx.ozoExecuteRichBlack, "function");
+    assert.strictEqual(typeof ctx.ozoExecuteKHQR, "function");
+
+    // Both should gracefully return error if scriptFile not found in dummy context
+    var resRb = JSON.parse(ctx.ozoExecuteRichBlack("{}"));
+    assert.strictEqual(resRb.status, "error");
+
+    var resKh = JSON.parse(ctx.ozoExecuteKHQR("{}"));
+    assert.strictEqual(resKh.status, "error");
+});
+
+test("ABA KHQR EMVCo string payload and CRC16 checksum", function () {
+    var khqrScript = fs.readFileSync(path.join(ROOT, "Script all", "ABA KHQR Generator.jsx"), "utf8");
+    var vmCtx = vm.createContext({});
+    var startIdx = khqrScript.indexOf("function formatTag");
+    var endIdx = khqrScript.indexOf("// Compact Offline QR Code Matrix Generator");
+    if (endIdx === -1) endIdx = khqrScript.indexOf("Compact Offline QR");
+    var extractCode = khqrScript.substring(startIdx, endIdx);
+    new vm.Script(extractCode + "\nthis.buildKHQRPayload = buildKHQRPayload; this.calculateCRC16 = calculateCRC16;").runInContext(vmCtx);
+
+    var payload = vmCtx.buildKHQRPayload({
+        bakongId: "heng_zm@abab",
+        merchantName: "OZO PRINT SHOP",
+        currency: "USD",
+        amount: "5.00"
+    });
+
+    assert.ok(payload.indexOf("000201") === 0, "Starts with EMVCo format tag 00");
+    assert.ok(payload.indexOf("bakong@cbrd") !== -1, "Contains Bakong CBRD identifier");
+    assert.ok(payload.indexOf("heng_zm@abab") !== -1, "Contains account ID");
+    assert.ok(payload.indexOf("5303840") !== -1, "Contains USD currency tag 53");
+    assert.ok(payload.indexOf("54045.00") !== -1, "Contains amount tag 54");
+    assert.ok(payload.indexOf("6304") !== -1, "Contains CRC tag 63");
+    assert.strictEqual(payload.length, payload.indexOf("6304") + 8, "Has 4-character hex CRC checksum at end");
+});
+
 test("version.json matches all target files across the repository", function () {
     var versionJson = JSON.parse(fs.readFileSync(path.join(ROOT, "version.json"), "utf8"));
     var version = versionJson.version.trim().replace(/^v/i, "");
