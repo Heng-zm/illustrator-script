@@ -179,7 +179,7 @@
     dlg.preferredSize.width = 480;
 
     if (hasOzo && OZO.addDialogHeader) {
-        OZO.addDialogHeader(dlg, _tr("Install Ozo Tools Plugin"), "v2.6.27 \u2022 Suite Setup & Integration");
+        OZO.addDialogHeader(dlg, _tr("Install Ozo Tools Plugin"), "v2.6.28 \u2022 Suite Setup & Integration");
     } else {
         var header = dlg.add("group");
         header.orientation = "column";
