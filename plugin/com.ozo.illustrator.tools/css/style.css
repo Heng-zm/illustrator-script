@@ -3311,3 +3311,176 @@ input[type="checkbox"].switch:checked:hover { background: var(--accent-hover); }
 .preview-arrow-btn:active {
     transform: scale(0.94);
 }
+
+/* Recent tools quick-access strip */
+.recent-tools-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.recent-tools-wrap::-webkit-scrollbar { display: none; }
+.recent-tools-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.recent-tools-list {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: nowrap;
+}
+.recent-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px 2px 6px;
+    height: 22px;
+    border-radius: 99px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+.recent-chip:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+.recent-chip:active {
+    transform: scale(0.96);
+}
+.recent-chip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+}
+.recent-chip-icon svg {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+}
+
+/* Shortcuts Cheat Sheet Modal */
+.shortcuts-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.shortcuts-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+.shortcuts-dialog {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 320px;
+    max-height: 85vh;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: dialogIn 0.2s var(--ease-spring);
+}
+@keyframes dialogIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+.shortcuts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+}
+.shortcuts-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.shortcuts-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.shortcuts-close:hover {
+    color: var(--text-primary);
+    background: var(--bg-surface-active);
+}
+.shortcuts-body {
+    padding: 12px 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.shortcuts-group-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 11px;
+}
+.shortcut-desc {
+    color: var(--text-secondary);
+}
+.shortcut-keys {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.shortcut-keys kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 9.5px;
+    font-weight: 600;
+    font-family: inherit;
+    line-height: 14px;
+    color: var(--text-primary);
+    background: var(--bg-main);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}

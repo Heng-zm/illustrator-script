@@ -49,6 +49,13 @@
                     <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
                 </svg>
             </button>
+            <button type="button" id="shortcutsBtn" class="icon-btn" data-i18n-title="shortcuts.title" title="Keyboard Shortcuts (?)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </button>
         </div>
     </header>
 
@@ -115,6 +122,12 @@
             <button type="button" class="tab-btn" role="tab" aria-selected="false" data-category="utilities"><span data-i18n="cat.utilities">Utilities</span> <span class="tab-count" data-count="utilities"></span></button>
         </div>
 
+        <!-- Recent Tools Quick Strip -->
+        <div id="recentToolsWrap" class="recent-tools-wrap" hidden>
+            <span class="recent-tools-label" data-i18n="recent.label">Recent:</span>
+            <div id="recentToolsList" class="recent-tools-list"></div>
+        </div>
+
         <!-- Tool Card List (rendered by js/main.js) -->
         <main id="toolList" class="tool-list" role="tabpanel"></main>
 
@@ -143,6 +156,13 @@
                 <span id="embeddedToolIcon" class="embedded-tool-icon" aria-hidden="true"></span>
                 <span id="embeddedToolTitle" class="embedded-tool-title"></span>
             </div>
+            <button type="button" id="embeddedResetBtn" class="embedded-dialog-btn" data-i18n-title="reset.title" title="Reset tool defaults">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+                <span data-i18n="reset.label">Reset</span>
+            </button>
             <button type="button" id="embeddedDialogBtn" class="embedded-dialog-btn" data-i18n-title="open.dialogTitle" title="Open as Floating Window Dialog">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -170,6 +190,18 @@
             </button>
         </div>
     </footer>
+
+    <!-- Shortcuts Cheat Sheet Modal -->
+    <div id="shortcutsModal" class="shortcuts-modal" hidden>
+        <div class="shortcuts-backdrop" id="shortcutsBackdrop"></div>
+        <div class="shortcuts-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+            <div class="shortcuts-header">
+                <span id="shortcutsTitle" class="shortcuts-title" data-i18n="shortcuts.heading">Keyboard Shortcuts</span>
+                <button type="button" id="shortcutsCloseBtn" class="shortcuts-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="shortcuts-body" id="shortcutsBody"></div>
+        </div>
+    </div>
 
     <script src="js/CSInterface.js"></script>
     <script src="js/main.js"></script>

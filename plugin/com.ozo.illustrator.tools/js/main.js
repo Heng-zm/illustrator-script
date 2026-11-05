@@ -96,6 +96,12 @@
             "preview.btn": "Preview",
             "splash.subtitle": "Illustrator Automation Suite",
             "splash.status": "Ready \u2022 {n} tools available",
+            "shortcuts.title": "Keyboard Shortcuts (?)",
+            "shortcuts.heading": "Keyboard Shortcuts",
+            "reset.title": "Reset tool to default settings",
+            "reset.label": "Reset",
+            "reset.done": "Reset {name} to defaults",
+            "recent.label": "Recent:",
         },
         km: {
             "cat.all": "ទាំងអស់", "cat.favorites": "សំណព្វ", "cat.prepress": "មុនបោះពុម្ព",
@@ -158,6 +164,12 @@
             "update.err.http": "មិនអាចស្វែងរកកំណែថ្មីបានទេ",
             "update.err.network": "មិនអាចភ្ជាប់ទៅ GitHub បានទេ",
             "update.err.timeout": "ការតភ្ជាប់ទៅ GitHub យឺតពេក",
+            "shortcuts.title": "ផ្លូវកាត់ក្តារចុច (?)",
+            "shortcuts.heading": "ផ្លូវកាត់ក្តារចុច",
+            "reset.title": "កំណត់មកដូចដើមវិញ",
+            "reset.label": "កំណត់ឡើងវិញ",
+            "reset.done": "បានកំណត់ {name} មកដូចដើមវិញ",
+            "recent.label": "ទើបប្រើ៖",
             "preview.title": "ព័តឹម័នឡបករណ៍",
             "preview.features": "លក្ខណែសំខាញ។",
             "preview.open": "បើកឡបករណ៍",
@@ -657,6 +669,14 @@
     var errorTitle = $("errorTitle");
     var errorMessage = $("errorMessage");
     var errorDismissBtn = $("errorDismissBtn");
+    var recentToolsWrap = $("recentToolsWrap");
+    var recentToolsList = $("recentToolsList");
+    var embeddedResetBtn = $("embeddedResetBtn");
+    var shortcutsBtn = $("shortcutsBtn");
+    var shortcutsModal = $("shortcutsModal");
+    var shortcutsBackdrop = $("shortcutsBackdrop");
+    var shortcutsCloseBtn = $("shortcutsCloseBtn");
+    var shortcutsBody = $("shortcutsBody");
 
     var viewCatalog = $("viewCatalog");
     var viewEmbedded = $("viewEmbedded");
@@ -1062,6 +1082,124 @@
         }
     }
 
+    // ------------------------------------------------------------------
+    // Recent Tools Quick Strip
+    // ------------------------------------------------------------------
+    var recentTools = [];
+    try {
+        recentTools = JSON.parse(store.get("ozo_recent_tools", "[]"));
+        if (!Array.isArray(recentTools)) recentTools = [];
+    } catch (e) { recentTools = []; }
+
+    function recordRecentTool(id) {
+        if (!id || !toolById[id]) return;
+        var idx = recentTools.indexOf(id);
+        if (idx !== -1) recentTools.splice(idx, 1);
+        recentTools.unshift(id);
+        if (recentTools.length > 4) recentTools = recentTools.slice(0, 4);
+        store.set("ozo_recent_tools", JSON.stringify(recentTools));
+        renderRecentTools();
+    }
+
+    function renderRecentTools() {
+        if (!recentToolsWrap || !recentToolsList) return;
+        if (searchQuery || currentCategory !== "all" || recentTools.length === 0) {
+            recentToolsWrap.hidden = true;
+            return;
+        }
+        var html = [];
+        for (var i = 0; i < recentTools.length; i++) {
+            var tool = toolById[recentTools[i]];
+            if (!tool) continue;
+            var name = toolName(tool);
+            html.push('<button type="button" class="recent-chip" data-id="' + tool.id + '" title="' + escapeHtml(name) + '">');
+            html.push('  <span class="recent-chip-icon">' + tool.icon + '</span>');
+            html.push('  <span class="recent-chip-name">' + escapeHtml(name) + '</span>');
+            html.push('</button>');
+        }
+        if (html.length === 0) {
+            recentToolsWrap.hidden = true;
+            return;
+        }
+        recentToolsList.innerHTML = html.join("");
+        recentToolsWrap.hidden = false;
+    }
+
+    // ------------------------------------------------------------------
+    // Keyboard Shortcuts Cheat Sheet Modal
+    // ------------------------------------------------------------------
+    function openShortcutsModal() {
+        if (!shortcutsModal) return;
+        var km = isKhmer();
+        var groups = [
+            {
+                title: km ? "ការរុករកទូទៅ (Navigation)" : "Navigation & Tabs",
+                items: [
+                    { desc: km ? "ស្វែងរកឧបករណ៍" : "Search Tools", keys: ["/", km ? "ឬ" : "or", "Ctrl", "K"] },
+                    { desc: km ? "ប្តូរប្រភេទ Tab" : "Switch Category Tab", keys: ["Alt", "1–5"] },
+                    { desc: km ? "រំកិលរវាងឧបករណ៍" : "Navigate Tools", keys: ["↑", "↓", "←", "→"] },
+                    { desc: km ? "បង្ហាញផ្ទាំងផ្លូវកាត់" : "Keyboard Help", keys: ["?"] }
+                ]
+            },
+            {
+                title: km ? "បញ្ជីឧបករណ៍ (Catalog Cards)" : "Catalog & Tools",
+                items: [
+                    { desc: km ? "បើកឧបករណ៍ក្នុងផ្ទាំង" : "Open Selected Tool", keys: ["Enter"] },
+                    { desc: km ? "មើលទម្រង់គំរូ (Preview)" : "Preview Tool Details", keys: ["P"] },
+                    { desc: km ? "ដាក់ / ដកសំណព្វ" : "Toggle Favorite", keys: ["F"] }
+                ]
+            },
+            {
+                title: km ? "ទម្រង់ឧបករណ៍ (Embedded Forms)" : "Embedded Forms & Run",
+                items: [
+                    { desc: km ? "ដំណើរការស្គ្រីប" : "Run / Submit Form", keys: ["Ctrl", "Enter"] },
+                    { desc: km ? "កើន/ថយលេខម្តង ១០" : "Step Number (±10)", keys: ["Shift", "↑/↓"] },
+                    { desc: km ? "កើន/ថយលេខម្តង ០.១" : "Fine Step (±0.1)", keys: ["Alt", "↑/↓"] },
+                    { desc: km ? "ត្រឡប់ទៅបញ្ជីវិញ" : "Back to Tools", keys: ["Esc"] }
+                ]
+            },
+            {
+                title: km ? "ផ្ទាំងមើលគំរូ (Preview Modal)" : "Preview Screen",
+                items: [
+                    { desc: km ? "ឧបករណ៍មុន / បន្ទាប់" : "Next / Previous Tool", keys: ["←", "→"] },
+                    { desc: km ? "បើកឧបករណ៍" : "Open Tool in Panel", keys: ["Enter"] },
+                    { desc: km ? "ដំណើរការស្គ្រីបភ្លាម" : "Quick Run Script", keys: ["R"] }
+                ]
+            }
+        ];
+
+        var bodyHtml = [];
+        for (var g = 0; g < groups.length; g++) {
+            var grp = groups[g];
+            bodyHtml.push('<div class="shortcuts-group">');
+            bodyHtml.push('  <div class="shortcuts-group-title">' + escapeHtml(grp.title) + '</div>');
+            for (var it = 0; it < grp.items.length; it++) {
+                var item = grp.items[it];
+                bodyHtml.push('  <div class="shortcut-row">');
+                bodyHtml.push('    <span class="shortcut-desc">' + escapeHtml(item.desc) + '</span>');
+                bodyHtml.push('    <span class="shortcut-keys">');
+                for (var k = 0; k < item.keys.length; k++) {
+                    var keyText = item.keys[k];
+                    if (keyText === "or" || keyText === "ឬ") {
+                        bodyHtml.push('<span style="color:var(--text-muted);font-size:10px;">' + keyText + '</span>');
+                    } else {
+                        bodyHtml.push('<kbd>' + escapeHtml(keyText) + '</kbd>');
+                    }
+                }
+                bodyHtml.push('    </span>');
+                bodyHtml.push('  </div>');
+            }
+            bodyHtml.push('</div>');
+        }
+
+        shortcutsBody.innerHTML = bodyHtml.join("");
+        shortcutsModal.hidden = false;
+    }
+
+    function closeShortcutsModal() {
+        if (shortcutsModal) shortcutsModal.hidden = true;
+    }
+
     function renderTools() {
         // Remember keyboard focus + scroll so a re-render doesn't throw the user back to the top
         var focusedId = null;
@@ -1095,6 +1233,7 @@
         toolList.hidden = empty;
         emptyState.hidden = !empty;
         if (empty) updateEmptyState();
+        renderRecentTools();
 
         syncRunningUI();
 
@@ -1159,6 +1298,7 @@
         if (runningId) return;
         hideError();
         var name = toolName(tool);
+        recordRecentTool(tool.id);
         setRunning(tool.id);
         setStatus(t("run.starting", { name: name }), "running");
 
@@ -1207,6 +1347,7 @@
         var tool = toolById[toolId];
         if (!tool) return;
         lastOpenedToolId = tool.id;
+        recordRecentTool(tool.id);
         activeEmbeddedTool = tool;
         hideError();
         viewCatalog.style.display = "none";
@@ -5922,6 +6063,14 @@
             }
         }
 
+        // Shortcuts cheat sheet: ? (when not editing)
+        if (key === "?" && !editing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            if (shortcutsModal && !shortcutsModal.hidden) closeShortcutsModal();
+            else openShortcutsModal();
+            return;
+        }
+
         // Quick focus search: / (when not editing) or Ctrl+K / Ctrl+F (anywhere)
         var isSearchShortcut = (!editing && key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) ||
                                ((e.ctrlKey || e.metaKey) && (key === "k" || key === "K" || key === "f" || key === "F"));
@@ -5961,6 +6110,10 @@
                 return;
             }
         } else if (key === "Escape") {
+            if (shortcutsModal && !shortcutsModal.hidden) {
+                closeShortcutsModal();
+                return;
+            }
             if (errorBanner && !errorBanner.hidden) {
                 hideError();
                 return;
@@ -5993,6 +6146,45 @@
             }
         });
     }
+
+    if (embeddedResetBtn) {
+        embeddedResetBtn.addEventListener("click", function () {
+            if (!activeEmbeddedTool) return;
+            var keyMap = {
+                exporter: "ozo_exporter_settings",
+                qr: "ozo_qr_settings",
+                cutcontour: "ozo_cutcontour_settings",
+                dimension: "ozo_dim_settings",
+                printjob: "ozo_printjob_settings",
+                numbering: "ozo_numbering_settings",
+                pathfinder: "ozo_pathfinder_settings",
+                guide: "ozo_guide_settings",
+                repeat: "ozo_repeat_settings",
+                nesting: "ozo_nesting_settings",
+                richblack: "ozo_richblack_settings",
+                khqr: "ozo_khqr_settings"
+            };
+            var sKey = keyMap[activeEmbeddedTool.id];
+            if (sKey) store.remove(sKey);
+            var tId = activeEmbeddedTool.id;
+            openEmbeddedView(tId);
+            setStatus(t("reset.done", { name: toolName(activeEmbeddedTool) }), "success", 2500);
+            playEnter();
+        });
+    }
+
+    if (recentToolsList) {
+        recentToolsList.addEventListener("click", function (e) {
+            var chip = closest(e.target, ".recent-chip", recentToolsList);
+            if (!chip) return;
+            var id = chip.getAttribute("data-id");
+            if (id && toolById[id]) openEmbeddedView(id);
+        });
+    }
+
+    if (shortcutsBtn) shortcutsBtn.addEventListener("click", openShortcutsModal);
+    if (shortcutsBackdrop) shortcutsBackdrop.addEventListener("click", closeShortcutsModal);
+    if (shortcutsCloseBtn) shortcutsCloseBtn.addEventListener("click", closeShortcutsModal);
 
     if (embeddedContent) {
         // Fast numeric stepping with Shift (10x) and Alt (0.1x)
