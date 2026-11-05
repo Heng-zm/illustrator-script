@@ -94,6 +94,15 @@
                 <kbd id="searchKbdHint" aria-hidden="true" class="search-kbd" data-i18n-title="search.hint" title="Press / to search">/</kbd>
                 <button type="button" id="searchClearBtn" class="search-clear" data-i18n-title="search.clear" title="Clear search">&times;</button>
             </div>
+            <!-- Quick Filter Chips -->
+            <div id="searchTagsWrap" class="search-tags-wrap" hidden>
+                <span class="search-tag" data-query="die cut">✂ DieCut</span>
+                <span class="search-tag" data-query="qr">▦ QR</span>
+                <span class="search-tag" data-query="export">↗ Export</span>
+                <span class="search-tag" data-query="guide">📐 Guides</span>
+                <span class="search-tag" data-query="black">⬛ Rich Black</span>
+                <span class="search-tag" data-query="khqr">💳 KHQR</span>
+            </div>
             <button type="button" id="viewToggleBtn" class="icon-btn view-toggle" aria-pressed="false" data-i18n-title="view.toggle" title="Toggle Grid / List View">
                 <svg id="viewIconGrid" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <rect x="3" y="3" width="7" height="7"></rect>
@@ -177,6 +186,35 @@
 
     <!-- Tool Preview Panel (rendered by js/main.js openPreviewPanel) -->
     <div id="viewPreview" class="view-preview" role="region" aria-label="Tool Preview"></div>
+
+    <!-- Document Quick Actions Popover -->
+    <div id="docPopover" class="doc-popover" hidden>
+        <div class="doc-popover-header">
+            <span class="doc-popover-title" id="docPopoverTitle">Document Inspector</span>
+            <button type="button" id="docPopoverClose" class="doc-popover-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="doc-popover-body">
+            <div class="doc-popover-stats" id="docPopoverStats"></div>
+            <div class="doc-popover-actions">
+                <button type="button" class="doc-action-btn" data-canvas-cmd="fitin" title="Fit Active Artboard in Window (Ctrl+0)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Fit Artboard</span>
+                </button>
+                <button type="button" class="doc-action-btn" data-canvas-cmd="fitall" title="Fit All Artboards in Window (Ctrl+Alt+0)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
+                    <span>Fit All</span>
+                </button>
+                <button type="button" class="doc-action-btn" data-canvas-cmd="selectall" title="Select All Artwork (Ctrl+A)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+                    <span>Select All</span>
+                </button>
+                <button type="button" class="doc-action-btn" data-canvas-cmd="deselectall" title="Deselect All Artwork (Ctrl+Shift+A)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <span>Deselect</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Bottom Footer -->
     <footer class="panel-footer">

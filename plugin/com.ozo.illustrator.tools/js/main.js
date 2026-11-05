@@ -677,6 +677,11 @@
     var shortcutsBackdrop = $("shortcutsBackdrop");
     var shortcutsCloseBtn = $("shortcutsCloseBtn");
     var shortcutsBody = $("shortcutsBody");
+    var searchTagsWrap = $("searchTagsWrap");
+    var docPopover = $("docPopover");
+    var docPopoverClose = $("docPopoverClose");
+    var docPopoverStats = $("docPopoverStats");
+    var latestDocInfo = null;
 
     var viewCatalog = $("viewCatalog");
     var viewEmbedded = $("viewEmbedded");
@@ -808,6 +813,7 @@
 
     function applyDocumentStatus(info) {
         if (!info) return;
+        latestDocInfo = info;
 
         if (info.hasDoc) {
             var name = info.name || "Untitled";
@@ -2272,7 +2278,17 @@
 
         function updateQRState() {
             var len = qrContentInput.value.length;
-            qrCharCount.textContent = len + " " + (isKhmer() ? "តួអក្សរ" : "characters") + (len > 0 ? " • " + (isKhmer() ? "រួចរាល់សម្រាប់បង្កើត" : "Ready to generate") : "");
+            var scanMeter = "";
+            if (len === 0) {
+                scanMeter = '<span class="qr-meter meter-empty">Empty</span>';
+            } else if (len < 50) {
+                scanMeter = '<span class="qr-meter meter-easy" title="High scan speed and camera distance">⚡ Easy Scan</span>';
+            } else if (len <= 150) {
+                scanMeter = '<span class="qr-meter meter-medium" title="Optimal density for URLs and Telegram">✓ Standard</span>';
+            } else {
+                scanMeter = '<span class="qr-meter meter-dense" title="Dense grid: recommend 40mm+ print size">⚠ Dense Grid</span>';
+            }
+            qrCharCount.innerHTML = len + " " + (isKhmer() ? "តួអក្សរ" : "chars") + " " + scanMeter;
 
             state.content = qrContentInput.value;
             state.size = parseFloat(qrSizeInput.value) || 30;
@@ -5554,7 +5570,70 @@
             tHtml += '<div class="ticket-line-mat">' + escapeHtml(pName) + '</div>';
             tHtml += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
             tHtml += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" • ")) + '</div>';
+            tHtml += '<button type="button" id="btnCopyKhqrPayload" class="btn-copy-ticket" style="margin-top:6px;width:100%;">';
+            tHtml += uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
+            tHtml += '</button>';
             box.innerHTML = tHtml;
+
+            var btnCopyPayload = box.querySelector("#btnCopyKhqrPayload");
+            if (btnCopyPayload) {
+                btnCopyPayload.onclick = function (e) {
+                    e.stopPropagation();
+                    function formatKhqrTag(tag, val) {
+                        var str = String(val);
+                        var l = str.length;
+                        return tag + (l < 10 ? "0" + l : l) + str;
+                    }
+                    function calculateKhqrCRC16(str) {
+                        var crc = 0xFFFF;
+                        for (var i = 0; i < str.length; i++) {
+                            var c = str.charCodeAt(i) & 0xFF;
+                            crc ^= (c << 8);
+                            for (var j = 0; j < 8; j++) {
+                                if ((crc & 0x8000) !== 0) {
+                                    crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+                                } else {
+                                    crc = (crc << 1) & 0xFFFF;
+                                }
+                            }
+                        }
+                        var hex = crc.toString(16).toUpperCase();
+                        while (hex.length < 4) hex = "0" + hex;
+                        return hex;
+                    }
+                    var amtNum = parseFloat(amt);
+                    var isDyn = !isNaN(amtNum) && amtNum > 0;
+                    var curCode = cur === "KHR" ? "116" : "840";
+                    var bClean = (bId || "merchant@abab").replace(/\s+/g, "");
+                    var mInfo = formatKhqrTag("00", "bakong@cbrd") + formatKhqrTag("01", bClean);
+                    var p = "";
+                    p += formatKhqrTag("00", "01");
+                    p += formatKhqrTag("01", isDyn ? "12" : "11");
+                    p += formatKhqrTag("29", mInfo);
+                    p += formatKhqrTag("52", "5999");
+                    p += formatKhqrTag("53", curCode);
+                    if (isDyn) {
+                        p += formatKhqrTag("54", curCode === "KHR" ? String(Math.round(amtNum)) : amtNum.toFixed(2));
+                    }
+                    p += formatKhqrTag("58", "KH");
+                    p += formatKhqrTag("59", (mName || "OZO MERCHANT").substring(0, 25));
+                    p += formatKhqrTag("60", "Phnom Penh");
+                    var billNum = khqrBillInput ? khqrBillInput.value.trim() : state.billNumber;
+                    if (billNum) {
+                        p += formatKhqrTag("62", formatKhqrTag("01", String(billNum).substring(0, 25)));
+                    }
+                    var toChecksum = p + "6304";
+                    var rawPayload = toChecksum + calculateKhqrCRC16(toChecksum);
+
+                    copyToClipboard(rawPayload, function () {
+                        btnCopyPayload.innerHTML = uiIcon("check", 11) + " <span>" + (isKhmer() ? "បានចម្លងរួចរាល់!" : "Copied Payload!") + "</span>";
+                        setStatus(isKhmer() ? "បានចម្លង KHQR String ទៅ Clipboard!" : "KHQR payload copied to clipboard!", "success", 2000);
+                        setTimeout(function () {
+                            btnCopyPayload.innerHTML = uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
+                        }, 1600);
+                    });
+                };
+            }
         }
 
         function saveRbState() {
@@ -6017,7 +6096,76 @@
         }
     });
 
-    searchInput.addEventListener("input", onSearchChanged);
+    // Quick Search Suggestion Tags
+    if (searchTagsWrap) {
+        searchInput.addEventListener("focus", function () {
+            if (!searchInput.value.trim() && !activeEmbeddedTool) {
+                searchTagsWrap.hidden = false;
+            }
+        });
+        searchTagsWrap.addEventListener("click", function (e) {
+            var tag = closest(e.target, ".search-tag", searchTagsWrap);
+            if (!tag) return;
+            var q = tag.getAttribute("data-query");
+            if (q) {
+                searchInput.value = q;
+                setSearch(q);
+                renderTools();
+                searchTagsWrap.hidden = true;
+                searchInput.focus();
+            }
+        });
+    }
+
+    // Document Inspector Popover
+    function openDocPopover() {
+        if (!docPopover) return;
+        var info = latestDocInfo;
+        if (!info || !info.hasDoc) {
+            docPopoverStats.innerHTML = isKhmer() ?
+                '<div style="color:var(--text-muted);font-size:11px;">គ្មានឯកសារបើកក្នុង Illustrator ទេ។ បើកឯកសារដើម្បីប្រើប្រាស់ឧបករណ៍ស្វ័យប្រវត្តិ។</div>' :
+                '<div style="color:var(--text-muted);font-size:11px;">No active document in Illustrator. Open or create a document to inspect.</div>';
+        } else {
+            var csClass = (info.colorSpace || "").toUpperCase().indexOf("CMYK") !== -1 ? "doc-stat-cmyk" : "doc-stat-rgb";
+            var html = [];
+            html.push('<div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;word-break:break-all;">' + escapeHtml(info.name) + '</div>');
+            html.push('<div>');
+            if (info.colorSpace) html.push('<span class="doc-stat-badge ' + csClass + '">' + escapeHtml(info.colorSpace) + '</span>');
+            html.push((info.artboardsCount || 1) + ' ' + (isKhmer() ? "ផ្ទាំង Artboard" : "Artboard(s)") + ' • ');
+            html.push((info.selectedCount || 0) + ' ' + (isKhmer() ? "វត្ថុបានជ្រើស" : "selected") + ' / ' + (info.itemCount || 0) + ' total');
+            html.push('</div>');
+            docPopoverStats.innerHTML = html.join("");
+        }
+        docPopover.hidden = false;
+    }
+
+    function closeDocPopover() {
+        if (docPopover) docPopover.hidden = true;
+    }
+
+    if (docPopoverClose) docPopoverClose.addEventListener("click", closeDocPopover);
+
+    if (docPopover) {
+        docPopover.addEventListener("click", function (e) {
+            var btn = closest(e.target, ".doc-action-btn", docPopover);
+            if (!btn) return;
+            var cmd = btn.getAttribute("data-canvas-cmd");
+            if (!cmd) return;
+            if (csInterface) {
+                csInterface.evalScript("ozoExecuteCanvasCommand('" + cmd + "')", function () {
+                    refreshDocumentStatus();
+                    setTimeout(openDocPopover, 120);
+                });
+            } else {
+                setStatus("Simulated canvas command: " + cmd, "success", 1500);
+            }
+        });
+    }
+
+    searchInput.addEventListener("input", function (e) {
+        if (searchTagsWrap && searchInput.value.trim()) searchTagsWrap.hidden = true;
+        onSearchChanged(e);
+    });
 
     searchInput.addEventListener("keydown", function (e) {
         if (e.isComposing) return; // Khmer/CJK IME: Enter confirms the composition, it must not launch a tool
@@ -6110,6 +6258,10 @@
                 return;
             }
         } else if (key === "Escape") {
+            if (docPopover && !docPopover.hidden) {
+                closeDocPopover();
+                return;
+            }
             if (shortcutsModal && !shortcutsModal.hidden) {
                 closeShortcutsModal();
                 return;
@@ -6240,12 +6392,14 @@
 
     var statusIndicator = statusDot ? statusDot.parentNode : null;
     if (statusIndicator) {
-        statusIndicator.setAttribute("title", isKhmer() ? "ចុចដើម្បីពិនិត្យឯកសារឡើងវិញ (Refresh)" : "Click to refresh document status");
+        statusIndicator.setAttribute("title", isKhmer() ? "ចុចដើម្បីមើលព័ត៌មានឯកសារ និងបញ្ជា Canvas" : "Click to inspect document & quick actions");
         statusIndicator.addEventListener("click", function () {
             playEnter();
             refreshDocumentStatus();
             statusDot.style.transform = "scale(1.4)";
             setTimeout(function () { statusDot.style.transform = ""; }, 250);
+            if (docPopover && !docPopover.hidden) closeDocPopover();
+            else openDocPopover();
         });
     }
 

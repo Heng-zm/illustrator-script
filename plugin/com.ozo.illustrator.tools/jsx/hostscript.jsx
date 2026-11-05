@@ -360,6 +360,28 @@ function ozoOpenScriptsFolder() {
     return ozoJsonStringify({ status: "error", message: "Folder not found" });
 }
 
+function ozoExecuteCanvasCommand(cmd) {
+    try {
+        if (app.documents.length === 0) {
+            return ozoJsonStringify({ status: "error", message: "No document open" });
+        }
+        var valid = {
+            selectall: true,
+            deselectall: true,
+            fitin: true,
+            fitall: true,
+            actualsize: true
+        };
+        if (!valid[cmd]) {
+            return ozoJsonStringify({ status: "error", message: "Unsupported command: " + cmd });
+        }
+        app.executeMenuCommand(cmd);
+        return ozoJsonStringify({ status: "success", command: cmd });
+    } catch (eCmd) {
+        return ozoJsonStringify({ status: "error", message: eCmd.message || String(eCmd) });
+    }
+}
+
 function ozoGetDocumentStatus() {
     try {
         if (app.documents.length === 0) {
