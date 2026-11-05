@@ -3915,3 +3915,98 @@ select:focus-visible,
     outline: 2px solid var(--accent);
     outline-offset: 1px;
 }
+
+/* ==================================================================
+   Modern UI Polish Layer
+   Elevated card aesthetics, scroll edge masks, active pulsing indicators,
+   and button micro-interactions.
+   ================================================================== */
+
+/* Tool Card Elevation & Left Category Border */
+.tool-card {
+    transition: transform 0.16s var(--ease-spring), box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease !important;
+}
+.tool-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.28);
+    border-color: var(--border-strong);
+}
+.tool-card:active {
+    transform: scale(0.985);
+}
+.cat-prepress {
+    border-left: 3px solid rgba(var(--prepress-rgb), 0.85) !important;
+}
+.cat-layout {
+    border-left: 3px solid rgba(var(--layout-rgb), 0.85) !important;
+}
+.cat-utilities {
+    border-left: 3px solid rgba(var(--util-rgb), 0.85) !important;
+}
+
+/* Smooth Horizontal Edge Fades for Tags & Recent Strip */
+.search-tags-wrap {
+    scroll-behavior: smooth;
+    -webkit-mask-image: linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 12px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 12px), transparent 100%);
+}
+.recent-tools-list {
+    scroll-behavior: smooth;
+    -webkit-mask-image: linear-gradient(to right, transparent 0px, black 10px, black calc(100% - 10px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0px, black 10px, black calc(100% - 10px), transparent 100%);
+}
+
+/* Search Clear Button Rotate on Hover */
+.search-clear {
+    transition: transform 0.2s ease, color 0.15s ease !important;
+}
+.search-clear:hover {
+    transform: rotate(90deg);
+}
+
+/* Footer Status Indicator Interactive Glow */
+.status-indicator {
+    cursor: pointer;
+    transition: all 0.18s ease;
+    border-radius: var(--radius-sm);
+    padding: 2px 7px;
+    margin: -2px -7px;
+}
+.status-indicator:hover {
+    background: var(--bg-surface-hover);
+}
+.status-indicator:hover .status-message {
+    color: var(--accent);
+}
+.status-dot.has-doc {
+    background: var(--success) !important;
+    box-shadow: 0 0 7px rgba(52, 201, 139, 0.6);
+    animation: statusPulse 2.4s ease-in-out infinite;
+}
+@keyframes statusPulse {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.22); opacity: 1; }
+}
+
+/* Popover Canvas Quick Actions Flexible Grid */
+.doc-popover-actions {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)) !important;
+    gap: 6px !important;
+}
+.doc-action-btn {
+    font-size: 10px !important;
+    padding: 0 6px !important;
+}
+
+/* Primary Button Modern Accent Gradient & Press Effect */
+.btn-action-primary {
+    transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease !important;
+}
+.btn-action-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35);
+}
+.btn-action-primary:active {
+    transform: scale(0.98);
+}

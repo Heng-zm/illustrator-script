@@ -878,6 +878,7 @@
         latestDocInfo = info;
 
         if (info.hasDoc) {
+            if (statusDot) statusDot.classList.add("has-doc");
             var name = info.name || "Untitled";
             var detail = [];
             if (info.colorSpace) detail.push(info.colorSpace);
@@ -891,6 +892,7 @@
             }
             setIdleStatus(name + " (" + detail.join(" \u2022 ") + ")", name);
         } else {
+            if (statusDot) statusDot.classList.remove("has-doc");
             setIdleStatus(t("status.noDoc"));
         }
 
@@ -6158,6 +6160,19 @@
             setCategory(btns[nextIdx]);
         }
     });
+
+    // Mousewheel horizontal scroll translation for chips
+    function makeHorizontalScrollable(el) {
+        if (!el) return;
+        el.addEventListener("wheel", function (e) {
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                e.preventDefault();
+                el.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+    }
+    makeHorizontalScrollable(searchTagsWrap);
+    makeHorizontalScrollable(recentToolsList);
 
     // Quick Search Suggestion Tags
     if (searchTagsWrap) {
