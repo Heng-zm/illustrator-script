@@ -4201,3 +4201,46 @@ select:focus-visible,
     color: #fff;
     transform: translateY(-1px);
 }
+
+/* Toast Action Button (e.g. Undo) */
+.toast-action-btn {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    margin-left: auto;
+    transition: all 0.15s ease;
+}
+.toast-action-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.toast-action-btn:active {
+    transform: scale(0.96);
+}
+
+/* Document Popover Subtitle & Art Actions */
+.doc-popover-subtitle {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 4px 0 2px;
+}
+.doc-art-actions {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 4px !important;
+}
+.doc-art-actions .doc-action-btn {
+    font-size: 9.5px !important;
+    height: 26px !important;
+    padding: 0 4px !important;
+}

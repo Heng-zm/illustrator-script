@@ -700,6 +700,7 @@
     var toastNotification = $("toastNotification");
     var toastIcon = $("toastIcon");
     var toastText = $("toastText");
+    var toastActionBtn = $("toastActionBtn");
     var toastBar = $("toastBar");
     var toastDismissBtn = $("toastDismissBtn");
     var toastTimer = null;
@@ -791,7 +792,7 @@
         }, 1500);
     }
 
-    function showToast(msg, type, duration) {
+    function showToast(msg, type, duration, actionLabel, onAction) {
         if (!toastNotification || !toastText) return;
         if (toastTimer) {
             clearTimeout(toastTimer);
@@ -809,8 +810,22 @@
                 toastIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
             }
         }
+        if (toastActionBtn) {
+            if (actionLabel && typeof onAction === "function") {
+                toastActionBtn.textContent = actionLabel;
+                toastActionBtn.hidden = false;
+                toastActionBtn.onclick = function (e) {
+                    e.stopPropagation();
+                    hideToast();
+                    onAction();
+                };
+            } else {
+                toastActionBtn.hidden = true;
+                toastActionBtn.onclick = null;
+            }
+        }
         toastNotification.hidden = false;
-        var d = duration || 2600;
+        var d = duration || (actionLabel ? 4500 : 2600);
         if (toastBar) {
             toastBar.style.transition = "none";
             toastBar.style.width = "100%";
@@ -853,8 +868,17 @@
             if (primaryBtn) flashButtonSuccess(primaryBtn);
         }
 
-        if (type === "success" || type === "error") {
-            showToast(msg, type, duration || 2400);
+        if (type === "success") {
+            showToast(msg, type, 4500, isKhmer() ? "មិនធ្វើវិញ (Undo)" : "Undo", function () {
+                if (csInterface) {
+                    csInterface.evalScript("ozoExecuteCanvasCommand('undo')", function () {
+                        refreshDocumentStatus();
+                        showToast(isKhmer() ? "បានមិនធ្វើវិញ" : "Action undone", "info", 1800);
+                    });
+                }
+            });
+        } else if (type === "error") {
+            showToast(msg, type, duration || 3200);
         }
 
         if (duration > 0) {
@@ -1006,8 +1030,13 @@
         if (inf.selectedCount > 0) {
             embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-active";
             if (embeddedSelIcon) embeddedSelIcon.textContent = "✓";
-            var dimStr = (inf.selWidthMm && inf.selHeightMm) ? (' (' + inf.selWidthMm + ' × ' + inf.selHeightMm + ' mm)') : '';
-            embeddedSelText.textContent = inf.selectedCount + ' ' + (isKhmer() ? "វត្ថុបានជ្រើសរើស" : "object(s) selected") + dimStr;
+            var typeParts = [];
+            if (inf.selPaths) typeParts.push(inf.selPaths + " " + (isKhmer() ? "Path" : "Paths"));
+            if (inf.selText) typeParts.push(inf.selText + " " + (isKhmer() ? "Text" : "Text"));
+            if (inf.selImages) typeParts.push(inf.selImages + " " + (isKhmer() ? "រូបភាព" : "Img"));
+            var typeStr = typeParts.length > 0 ? (' (' + typeParts.join(", ") + ')') : '';
+            var dimStr = (inf.selWidthMm && inf.selHeightMm) ? (' • ' + inf.selWidthMm + ' × ' + inf.selHeightMm + ' mm') : '';
+            embeddedSelText.textContent = inf.selectedCount + ' ' + (isKhmer() ? "វត្ថុបានជ្រើសរើស" : "selected") + typeStr + dimStr;
         } else {
             embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-idle";
             if (embeddedSelIcon) embeddedSelIcon.textContent = "📄";

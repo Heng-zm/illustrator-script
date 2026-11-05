@@ -371,7 +371,13 @@ function ozoExecuteCanvasCommand(cmd) {
             inverse: true,
             fitin: true,
             fitall: true,
-            actualsize: true
+            actualsize: true,
+            undo: true,
+            redo: true,
+            unlockAll: true,
+            showAll: true,
+            group: true,
+            ungroup: true
         };
         if (!valid[cmd]) {
             return ozoJsonStringify({ status: "error", message: "Unsupported command: " + cmd });
@@ -478,6 +484,9 @@ function ozoGetDocumentStatus() {
 
         var selWidthMm = 0;
         var selHeightMm = 0;
+        var selPaths = 0;
+        var selText = 0;
+        var selImages = 0;
         try {
             if (selCount > 0 && doc.selection) {
                 var sList = (doc.selection instanceof Array || doc.selection.typename === "Array") ? doc.selection : [doc.selection];
@@ -492,6 +501,10 @@ function ozoGetDocumentStatus() {
                         if (vb[2] > maxX) maxX = vb[2];
                         if (vb[3] < minY) minY = vb[3];
                     }
+                    var tn = itm.typename || "";
+                    if (tn === "PathItem" || tn === "CompoundPathItem") selPaths++;
+                    else if (tn === "TextFrame") selText++;
+                    else if (tn === "PlacedItem" || tn === "RasterItem") selImages++;
                 }
                 if (minX !== Infinity && maxX > minX) {
                     selWidthMm = Math.round(((maxX - minX) * 25.4 / 72) * 10) / 10;
@@ -512,6 +525,9 @@ function ozoGetDocumentStatus() {
             selectedCount: selCount,
             selWidthMm: selWidthMm,
             selHeightMm: selHeightMm,
+            selPaths: selPaths,
+            selText: selText,
+            selImages: selImages,
             itemCount: itemCount
         });
     } catch (e) {

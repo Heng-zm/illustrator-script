@@ -15,6 +15,7 @@
         <div class="toast-inner">
             <span id="toastIcon" class="toast-icon"></span>
             <span id="toastText" class="toast-text"></span>
+            <button type="button" id="toastActionBtn" class="toast-action-btn" hidden></button>
             <button type="button" id="toastDismissBtn" class="toast-dismiss" aria-label="Dismiss">&times;</button>
         </div>
         <div class="toast-bar-track">
@@ -268,6 +269,26 @@
                 <button type="button" class="doc-action-btn" data-canvas-cmd="inverse" title="Invert Selection (Ctrl+Shift+I)">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
                     <span>Invert</span>
+                </button>
+            </div>
+            <!-- Artwork Operations -->
+            <div class="doc-popover-subtitle">Artwork Operations</div>
+            <div class="doc-popover-actions doc-art-actions">
+                <button type="button" class="doc-action-btn" data-canvas-cmd="unlockAll" title="Unlock All Locked Objects (Ctrl+Alt+2)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                    <span>Unlock All</span>
+                </button>
+                <button type="button" class="doc-action-btn" data-canvas-cmd="showAll" title="Show All Hidden Objects (Ctrl+Alt+3)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Show All</span>
+                </button>
+                <button type="button" class="doc-action-btn" data-canvas-cmd="group" title="Group Selection (Ctrl+G)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Group</span>
+                </button>
+                <button type="button" class="doc-action-btn" data-canvas-cmd="ungroup" title="Ungroup Selection (Ctrl+Shift+G)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    <span>Ungroup</span>
                 </button>
             </div>
         </div>
