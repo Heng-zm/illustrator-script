@@ -4,7 +4,7 @@
   <img src="assets/logo.png" alt="Ozo Tools Logo" width="520">
 </p>
 
-> **Ozo Tools — Professional Adobe Illustrator Plugin & Automation Script Suite (v2.6.36)**  
+> **Ozo Tools — Professional Adobe Illustrator Plugin & Automation Script Suite (v2.6.37)**  
 > Production-ready ExtendScript (ES3) tools and dockable CEP extension panel for print shops, signage, vinyl cutters, packaging, and design automation.
 
 ---
