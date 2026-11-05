@@ -621,10 +621,32 @@
     // Live document tracking. The panel used to learn about the document only
     // on focus/Refresh, so opening, closing or switching a document left the
     // footer stale. A light poll keeps it current without user action.
-    var DOC_POLL_INTERVAL = 1200;
+    var DOC_POLL_ACTIVE = 1200;
+    var DOC_POLL_IDLE = 2600;
+    var docPollCurrentInterval = DOC_POLL_ACTIVE;
+    var docUnchangedPollCount = 0;
     var docPollTimer = null;
     var docPollInFlight = false;
     var lastDocSignature = null;
+
+    function adjustDocPollInterval(ms) {
+        if (docPollCurrentInterval === ms) return;
+        docPollCurrentInterval = ms;
+        if (docPollTimer) {
+            clearInterval(docPollTimer);
+            docPollTimer = setInterval(function () {
+                if (document.hidden) return;
+                refreshDocumentStatus();
+            }, docPollCurrentInterval);
+        }
+    }
+
+    function wakeDocPoll() {
+        docUnchangedPollCount = 0;
+        if (docPollCurrentInterval !== DOC_POLL_ACTIVE) {
+            adjustDocPollInterval(DOC_POLL_ACTIVE);
+        }
+    }
 
     function loadFavorites() {
         var out = [];
@@ -745,7 +767,10 @@
     function toolName(tool) { return isKhmer() ? tool.nameKm : tool.nameEn; }
     function toolDesc(tool) { return isKhmer() ? tool.descKm : tool.descEn; }
 
+    var cardHtmlCache = {};
+
     function applyI18n() {
+        cardHtmlCache = {};
         document.documentElement.lang = currentLang; // lets the browser pick proper Khmer fonts/line-breaking
 
         each(document.querySelectorAll("[data-i18n]"), function (el) {
@@ -1107,7 +1132,15 @@
         var sig = docSignature(info);
         var prev = lastDocSignature;
         lastDocSignature = sig;
-        if (prev !== null && prev !== sig) handleDocumentChange(prev, sig);
+        if (prev !== null && prev !== sig) {
+            wakeDocPoll();
+            handleDocumentChange(prev, sig);
+        } else if (prev !== null) {
+            docUnchangedPollCount++;
+            if (docUnchangedPollCount >= 3) {
+                adjustDocPollInterval(DOC_POLL_IDLE);
+            }
+        }
     }
 
     // Keep the embedded view in step when a document opens or closes. Forms the
@@ -1156,7 +1189,10 @@
         docPollTimer = setInterval(function () {
             if (document.hidden) return; // panel collapsed or tab is in the background
             refreshDocumentStatus();
-        }, DOC_POLL_INTERVAL);
+        }, docPollCurrentInterval);
+        // Wake up to active polling whenever user touches the panel
+        document.addEventListener("pointerdown", wakeDocPoll, { passive: true });
+        document.addEventListener("keydown", wakeDocPoll, { passive: true });
     }
 
     // ------------------------------------------------------------------
@@ -1333,7 +1369,7 @@
     }
 
     function highlight(text) {
-        if (!highlightRe) return escapeHtml(text);
+        if (!highlightRe || !text) return escapeHtml(text || "");
         var parts = String(text).split(highlightRe);
         var out = "";
         for (var i = 0; i < parts.length; i++) {
@@ -1426,20 +1462,8 @@
         return favs.concat(rest);
     }
 
-    function buildCard(tool) {
-        var name = toolName(tool);
-        var desc = toolDesc(tool);
-        var fav = isFav(tool.id);
-
-        var card = document.createElement("div");
-        card.className = "tool-card cat-" + tool.category;
-        card.setAttribute("data-id", tool.id);
-        card.setAttribute("tabindex", "0");
-        card.setAttribute("role", "button");
-        card.setAttribute("aria-label", name + ": " + desc);
-        card.title = name + "\n" + desc; // grid view hides the description
-
-        card.innerHTML =
+    function buildCardInner(tool, name, desc, fav) {
+        return (
             '<div class="tool-icon-wrap">' + tool.icon + "</div>" +
             '<div class="tool-info">' +
                 '<div class="tool-header-row">' +
@@ -1458,7 +1482,34 @@
                     '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
                 '</button>' +
                 '<button type="button" class="run-btn" tabindex="-1" title="' + escapeHtml(t("run.title", { name: name })) + '">' + escapeHtml(t("run.label")) + "</button>" +
-            "</div>";
+            "</div>"
+        );
+    }
+
+    function buildCard(tool) {
+        var name = toolName(tool);
+        var desc = toolDesc(tool);
+        var fav = isFav(tool.id);
+
+        var card = document.createElement("div");
+        card.className = "tool-card cat-" + tool.category;
+        card.setAttribute("data-id", tool.id);
+        card.setAttribute("tabindex", "0");
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-label", name + ": " + desc);
+        card.title = name + "\n" + desc; // grid view hides the description
+
+        var inner;
+        if (!searchQuery) {
+            var cacheKey = tool.id + "_" + currentLang + "_" + (fav ? "1" : "0") + "_" + (popFavId === tool.id ? "1" : "0");
+            inner = cardHtmlCache[cacheKey];
+            if (!inner) {
+                inner = cardHtmlCache[cacheKey] = buildCardInner(tool, name, desc, fav);
+            }
+        } else {
+            inner = buildCardInner(tool, name, desc, fav);
+        }
+        card.innerHTML = inner;
 
         return card;
     }
@@ -1705,11 +1756,19 @@
     function syncRunningUI() {
         each(toolList.querySelectorAll(".tool-card"), function (card) {
             var on = card.getAttribute("data-id") === runningId;
+            var isRunning = card.classList.contains("is-running");
+            if (isRunning !== on) {
+                card.classList.toggle("is-running", on);
+                card.setAttribute("aria-busy", on ? "true" : "false");
+            }
             var runBtn = card.querySelector(".run-btn");
-            card.classList.toggle("is-running", on);
-            card.setAttribute("aria-busy", on ? "true" : "false");
-            runBtn.classList.toggle("running", on);
-            runBtn.textContent = t(on ? "run.busy" : "run.label");
+            if (runBtn) {
+                var btnRunning = runBtn.classList.contains("running");
+                if (btnRunning !== on) {
+                    runBtn.classList.toggle("running", on);
+                    runBtn.textContent = t(on ? "run.busy" : "run.label");
+                }
+            }
         });
     }
 
@@ -7751,7 +7810,15 @@
     renderTools();
     if (splashReady) splashReady();
     moveTabIndicator();
-    window.addEventListener("resize", moveTabIndicator);
+    var resizeRaf = null;
+    function debouncedMoveTabIndicator() {
+        if (resizeRaf) return;
+        resizeRaf = requestAnimationFrame(function () {
+            resizeRaf = null;
+            moveTabIndicator();
+        });
+    }
+    window.addEventListener("resize", debouncedMoveTabIndicator, { passive: true });
     window.addEventListener("load", moveTabIndicator);
     refreshDocumentStatus();
     startDocumentMonitor();
