@@ -909,10 +909,10 @@
     // Quick Presets for Embedded Tools
     var TOOL_PRESETS = {
         cutcontour: [
-            { labelEn: "Standard Bleed (2mm)", labelKm: "Bleed ស្តង់ដារ (2mm)", bleed: 2, spot: "CutContour", stroke: 0.5 },
-            { labelEn: "Sticker DieCut (1.5mm)", labelKm: "ស្ទីគ័រ Sticker (1.5mm)", bleed: 1.5, spot: "CutContour", stroke: 0.5 },
-            { labelEn: "Box Packaging (3mm)", labelKm: "ប្រអប់វេចខ្ចប់ (3mm)", bleed: 3, spot: "CutContour", stroke: 0.75 },
-            { labelEn: "Tight Cut (0.5mm)", labelKm: "កាត់គែមជិត (0.5mm)", bleed: 0.5, spot: "CutContour", stroke: 0.25 }
+            { labelEn: "Standard Bleed (2mm)", labelKm: "Bleed ស្តង់ដារ (2mm)", bleed: 2, offset: 2, spot: "CutContour", stroke: 0.5 },
+            { labelEn: "Sticker DieCut (1.5mm)", labelKm: "ស្ទីគ័រ Sticker (1.5mm)", bleed: 1.5, offset: 1.5, spot: "CutContour", stroke: 0.5 },
+            { labelEn: "Box Packaging (3mm)", labelKm: "ប្រអប់វេចខ្ចប់ (3mm)", bleed: 3, offset: 3, spot: "CutContour", stroke: 0.75 },
+            { labelEn: "Tight Cut (0.5mm)", labelKm: "កាត់គែមជិត (0.5mm)", bleed: 0.5, offset: 0.5, spot: "CutContour", stroke: 0.25 }
         ],
         qr: [
             { labelEn: "Card (25mm)", labelKm: "នាមប័ណ្ណ (25mm)", size: 25, unit: "mm", correction: "M" },
@@ -920,8 +920,8 @@
             { labelEn: "Poster / Banner (80mm)", labelKm: "ផ្ទាំងធំ (80mm)", size: 80, unit: "mm", correction: "H" }
         ],
         khqr: [
-            { labelEn: "Standee (USD)", labelKm: "ស្លាកលើតុ (USD)", style: "Standee Card (Table)", cur: "USD", w: 100 },
-            { labelEn: "Standee (KHR)", labelKm: "ស្លាកលើតុ (KHR)", style: "Standee Card (Table)", cur: "KHR", w: 100 },
+            { labelEn: "Bakong Standee (USD)", labelKm: "បាគងលើតុ (USD)", style: "Bakong Red Standee", cur: "USD", w: 100 },
+            { labelEn: "ABA Standee (KHR)", labelKm: "ABA លើតុ (KHR)", style: "ABA Navy Standee", cur: "KHR", w: 100 },
             { labelEn: "Vector QR (40mm)", labelKm: "QR សុទ្ធ (40mm)", style: "Vector QR Only", cur: "USD", w: 40 }
         ],
         richblack: [
@@ -960,12 +960,22 @@
         var id = activeEmbeddedTool.id;
 
         if (id === "cutcontour") {
-            var bleedInp = $("ccBleedInput");
-            var spotInp = $("ccSpotColorInput");
-            var strokeInp = $("ccStrokeWeightInput");
-            if (bleedInp && p.bleed !== undefined) { bleedInp.value = p.bleed; bleedInp.dispatchEvent(new Event("input")); }
-            if (spotInp && p.spot !== undefined) { spotInp.value = p.spot; spotInp.dispatchEvent(new Event("input")); }
-            if (strokeInp && p.stroke !== undefined) { strokeInp.value = p.stroke; strokeInp.dispatchEvent(new Event("input")); }
+            var cutOff = $("cutOffsetInput");
+            var cutKissName = $("cutKissNameInput");
+            var cutKissOff = $("cutKissOffsetInput");
+            var valOffset = (p.offset !== undefined) ? p.offset : p.bleed;
+            if (cutOff && valOffset !== undefined) {
+                cutOff.value = valOffset;
+                cutOff.dispatchEvent(new Event("input"));
+            }
+            if (cutKissName && p.spot !== undefined) {
+                cutKissName.value = p.spot;
+                cutKissName.dispatchEvent(new Event("input"));
+            }
+            if (cutKissOff && valOffset !== undefined) {
+                cutKissOff.value = valOffset;
+                cutKissOff.dispatchEvent(new Event("input"));
+            }
         } else if (id === "qr") {
             var sizeInp = $("qrSizeInput");
             var unitSel = $("qrUnitSelect");
@@ -981,18 +991,27 @@
             if (p.style) {
                 var styleBtns = embeddedContent.querySelectorAll("#khqrStyleSegmented .embed-seg-btn");
                 for (var b = 0; b < styleBtns.length; b++) {
-                    if (styleBtns[b].getAttribute("data-val") === p.style) styleBtns[b].click();
+                    var bStyle = styleBtns[b].getAttribute("data-style") || styleBtns[b].getAttribute("data-val");
+                    if (bStyle === p.style) {
+                        styleBtns[b].click();
+                        break;
+                    }
                 }
             }
         } else if (id === "richblack") {
-            var cIn = $("rbCyanInput");
-            var mIn = $("rbMagentaInput");
-            var yIn = $("rbYellowInput");
-            var kIn = $("rbBlackInput");
-            if (cIn && p.c !== undefined) { cIn.value = p.c; cIn.dispatchEvent(new Event("input")); }
-            if (mIn && p.m !== undefined) { mIn.value = p.m; mIn.dispatchEvent(new Event("input")); }
-            if (yIn && p.y !== undefined) { yIn.value = p.y; yIn.dispatchEvent(new Event("input")); }
-            if (kIn && p.k !== undefined) { kIn.value = p.k; kIn.dispatchEvent(new Event("input")); }
+            var rbPreset = $("rbPresetSelect");
+            var cIn = $("rbCInput");
+            var mIn = $("rbMInput");
+            var yIn = $("rbYInput");
+            var kIn = $("rbKInput");
+            if (rbPreset) {
+                rbPreset.value = "4";
+                rbPreset.dispatchEvent(new Event("change"));
+            }
+            if (cIn && p.c !== undefined) { cIn.disabled = false; cIn.value = p.c; cIn.dispatchEvent(new Event("input")); }
+            if (mIn && p.m !== undefined) { mIn.disabled = false; mIn.value = p.m; mIn.dispatchEvent(new Event("input")); }
+            if (yIn && p.y !== undefined) { yIn.disabled = false; yIn.value = p.y; yIn.dispatchEvent(new Event("input")); }
+            if (kIn && p.k !== undefined) { kIn.disabled = false; kIn.value = p.k; kIn.dispatchEvent(new Event("input")); }
         }
 
         var label = isKhmer() ? p.labelKm : p.labelEn;
@@ -3919,7 +3938,10 @@
 
         // 2. Sequence Values Card
         html.push('<div class="embed-card">');
-        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "តម្លៃលេខរៀង (Sequence Range)" : "Sequence Range") + '</span></div>');
+        html.push('  <div class="embed-card-header">');
+        html.push('    <span>' + (isKhmer() ? "តម្លៃលេខរៀង (Sequence Range)" : "Sequence Range") + '</span>');
+        html.push('    <span class="embed-badge-soft" id="numTotalBadge">' + (Math.abs(state.end - state.start) + 1) + (isKhmer() ? " លេខ" : " numbers") + '</span>');
+        html.push('  </div>');
         html.push('  <div class="embed-row-3col">');
         html.push('    <div>');
         html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ចាប់ផ្តើម:" : "Start:") + '</label>');
@@ -3946,8 +3968,11 @@
         html.push('      </select>');
         html.push('    </div>');
         html.push('  </div>');
+        html.push('  <div style="margin-top:6px;display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg-main);border-radius:var(--radius-sm);border:1px solid var(--border-color);font-size:10.5px;">');
+        html.push('    <span style="color:var(--text-muted);font-weight:600;">' + (isKhmer() ? "គំរូទម្រង់៖" : "Preview:") + '</span>');
+        html.push('    <span id="numSamplePill" style="font-family:var(--font-mono);font-weight:600;color:var(--accent);">--</span>');
+        html.push('  </div>');
         html.push('</div>');
-
         // 3. Affixes Card
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "អក្សរមុខ-ក្រោយ (Prefix & Suffix)" : "Prefix & Suffix") + '</span></div>');
@@ -5855,70 +5880,7 @@
             tHtml += '<div class="ticket-line-mat">' + escapeHtml(pName) + '</div>';
             tHtml += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
             tHtml += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" • ")) + '</div>';
-            tHtml += '<button type="button" id="btnCopyKhqrPayload" class="btn-copy-ticket" style="margin-top:6px;width:100%;">';
-            tHtml += uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
-            tHtml += '</button>';
             box.innerHTML = tHtml;
-
-            var btnCopyPayload = box.querySelector("#btnCopyKhqrPayload");
-            if (btnCopyPayload) {
-                btnCopyPayload.onclick = function (e) {
-                    e.stopPropagation();
-                    function formatKhqrTag(tag, val) {
-                        var str = String(val);
-                        var l = str.length;
-                        return tag + (l < 10 ? "0" + l : l) + str;
-                    }
-                    function calculateKhqrCRC16(str) {
-                        var crc = 0xFFFF;
-                        for (var i = 0; i < str.length; i++) {
-                            var c = str.charCodeAt(i) & 0xFF;
-                            crc ^= (c << 8);
-                            for (var j = 0; j < 8; j++) {
-                                if ((crc & 0x8000) !== 0) {
-                                    crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
-                                } else {
-                                    crc = (crc << 1) & 0xFFFF;
-                                }
-                            }
-                        }
-                        var hex = crc.toString(16).toUpperCase();
-                        while (hex.length < 4) hex = "0" + hex;
-                        return hex;
-                    }
-                    var amtNum = parseFloat(amt);
-                    var isDyn = !isNaN(amtNum) && amtNum > 0;
-                    var curCode = cur === "KHR" ? "116" : "840";
-                    var bClean = (bId || "merchant@abab").replace(/\s+/g, "");
-                    var mInfo = formatKhqrTag("00", "bakong@cbrd") + formatKhqrTag("01", bClean);
-                    var p = "";
-                    p += formatKhqrTag("00", "01");
-                    p += formatKhqrTag("01", isDyn ? "12" : "11");
-                    p += formatKhqrTag("29", mInfo);
-                    p += formatKhqrTag("52", "5999");
-                    p += formatKhqrTag("53", curCode);
-                    if (isDyn) {
-                        p += formatKhqrTag("54", curCode === "KHR" ? String(Math.round(amtNum)) : amtNum.toFixed(2));
-                    }
-                    p += formatKhqrTag("58", "KH");
-                    p += formatKhqrTag("59", (mName || "OZO MERCHANT").substring(0, 25));
-                    p += formatKhqrTag("60", "Phnom Penh");
-                    var billNum = khqrBillInput ? khqrBillInput.value.trim() : state.billNumber;
-                    if (billNum) {
-                        p += formatKhqrTag("62", formatKhqrTag("01", String(billNum).substring(0, 25)));
-                    }
-                    var toChecksum = p + "6304";
-                    var rawPayload = toChecksum + calculateKhqrCRC16(toChecksum);
-
-                    copyToClipboard(rawPayload, function () {
-                        btnCopyPayload.innerHTML = uiIcon("check", 11) + " <span>" + (isKhmer() ? "បានចម្លងរួចរាល់!" : "Copied Payload!") + "</span>";
-                        setStatus(isKhmer() ? "បានចម្លង KHQR String ទៅ Clipboard!" : "KHQR payload copied to clipboard!", "success", 2000);
-                        setTimeout(function () {
-                            btnCopyPayload.innerHTML = uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
-                        }, 1600);
-                    });
-                };
-            }
         }
 
         function saveRbState() {
@@ -6169,7 +6131,70 @@
             tHtml += '<div class="ticket-line-mat">' + escapeHtml(mName) + ' (' + escapeHtml(bId) + ')</div>';
             tHtml += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
             tHtml += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" • ")) + '</div>';
+            tHtml += '<button type="button" id="btnCopyKhqrPayload" class="btn-copy-ticket" style="margin-top:6px;width:100%;">';
+            tHtml += uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
+            tHtml += '</button>';
             box.innerHTML = tHtml;
+
+            var btnCopyPayload = box.querySelector("#btnCopyKhqrPayload");
+            if (btnCopyPayload) {
+                btnCopyPayload.onclick = function (e) {
+                    e.stopPropagation();
+                    function formatKhqrTag(tag, val) {
+                        var str = String(val);
+                        var l = str.length;
+                        return tag + (l < 10 ? "0" + l : l) + str;
+                    }
+                    function calculateKhqrCRC16(str) {
+                        var crc = 0xFFFF;
+                        for (var i = 0; i < str.length; i++) {
+                            var c = str.charCodeAt(i) & 0xFF;
+                            crc ^= (c << 8);
+                            for (var j = 0; j < 8; j++) {
+                                if ((crc & 0x8000) !== 0) {
+                                    crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+                                } else {
+                                    crc = (crc << 1) & 0xFFFF;
+                                }
+                            }
+                        }
+                        var hex = crc.toString(16).toUpperCase();
+                        while (hex.length < 4) hex = "0" + hex;
+                        return hex;
+                    }
+                    var amtNum = parseFloat(amt);
+                    var isDyn = !isNaN(amtNum) && amtNum > 0;
+                    var curCode = cur === "KHR" ? "116" : "840";
+                    var bClean = (bId || "merchant@abab").replace(/\s+/g, "");
+                    var mInfo = formatKhqrTag("00", "bakong@cbrd") + formatKhqrTag("01", bClean);
+                    var p = "";
+                    p += formatKhqrTag("00", "01");
+                    p += formatKhqrTag("01", isDyn ? "12" : "11");
+                    p += formatKhqrTag("29", mInfo);
+                    p += formatKhqrTag("52", "5999");
+                    p += formatKhqrTag("53", curCode);
+                    if (isDyn) {
+                        p += formatKhqrTag("54", curCode === "KHR" ? String(Math.round(amtNum)) : amtNum.toFixed(2));
+                    }
+                    p += formatKhqrTag("58", "KH");
+                    p += formatKhqrTag("59", (mName || "OZO MERCHANT").substring(0, 25));
+                    p += formatKhqrTag("60", "Phnom Penh");
+                    var billNum = khqrBillInput ? khqrBillInput.value.trim() : state.billNumber;
+                    if (billNum) {
+                        p += formatKhqrTag("62", formatKhqrTag("01", String(billNum).substring(0, 25)));
+                    }
+                    var toChecksum = p + "6304";
+                    var rawPayload = toChecksum + calculateKhqrCRC16(toChecksum);
+
+                    copyToClipboard(rawPayload, function () {
+                        btnCopyPayload.innerHTML = uiIcon("check", 11) + " <span>" + (isKhmer() ? "បានចម្លងរួចរាល់!" : "Copied Payload!") + "</span>";
+                        setStatus(isKhmer() ? "បានចម្លង KHQR String ទៅ Clipboard!" : "KHQR payload copied to clipboard!", "success", 2000);
+                        setTimeout(function () {
+                            btnCopyPayload.innerHTML = uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
+                        }, 1600);
+                    });
+                };
+            }
         }
 
         var khqrBadgeBtns = embeddedContent.querySelectorAll("#khqrBadgeSegmented .embed-seg-btn");

@@ -4244,3 +4244,231 @@ select:focus-visible,
     height: 26px !important;
     padding: 0 4px !important;
 }
+
+
+/* ==================================================================
+   Clean Modern UI / UX Redesign Layer
+   Streamlined layout, high-contrast crisp typography, polished controls,
+   and responsive micro-interactions for modern Adobe panel UX.
+   ================================================================== */
+
+/* 1. Embedded Header & Controls Clean Cadence */
+.embedded-header {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+}
+.embedded-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+/* 2. Embedded Tool Selection Ribbon */
+.embedded-sel-ribbon {
+    padding: 6px 12px;
+    font-size: 10.5px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.embedded-sel-ribbon.ribbon-sel-active {
+    background: rgba(var(--accent-rgb), 0.08);
+    border-bottom-color: rgba(var(--accent-rgb), 0.22);
+}
+.embedded-sel-ribbon.ribbon-sel-active .sel-ribbon-text {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.sel-ribbon-btn {
+    border-radius: 99px;
+    font-size: 9.5px;
+    padding: 2px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+}
+.sel-ribbon-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-surface-hover);
+}
+
+/* 3. Preset Strip Modern Palette Look */
+.embed-presets-wrap {
+    padding: 6px 12px;
+    gap: 8px;
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+}
+.embed-preset-chip {
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: 500;
+    border-radius: 6px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: all 0.14s ease;
+}
+.embed-preset-chip:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+}
+.embed-preset-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+/* 4. Embedded Card Clean Spacing & Borders */
+.embed-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: border-color 0.15s ease;
+}
+.embed-card:hover {
+    border-color: var(--border-strong);
+}
+.embed-card-header {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
+}
+
+/* 5. Inputs, Selects, and Number Steppers */
+.embed-input,
+.embed-select {
+    height: 27px;
+    font-size: 11px;
+    border-radius: 5px;
+    padding: 0 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-main);
+    color: var(--text-primary);
+    transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.embed-input:focus,
+.embed-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.22);
+    outline: none;
+}
+.embed-input-mono {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+}
+
+/* 6. Live Job Ticket Visual Clarity */
+.feature-ticket-card {
+    background: var(--bg-main) !important;
+    border: 1px solid var(--border-strong) !important;
+}
+.print-job-ticket-card {
+    background: var(--bg-surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 10.5px;
+    line-height: 1.45;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.print-job-ticket-card:hover {
+    background: var(--bg-surface-hover);
+}
+.ticket-line-date {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+.ticket-line-mat {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.ticket-line-dim {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-top: 1px;
+}
+.ticket-line-note {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+.btn-copy-ticket {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+.btn-copy-ticket:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+}
+
+/* 7. Segmented Controls Clean Pill Style */
+.embed-segmented {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    padding: 2px;
+    gap: 2px;
+}
+.embed-seg-btn {
+    border-radius: 5px;
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 5px 8px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    transition: all 0.14s ease;
+}
+.embed-seg-btn:hover {
+    color: var(--text-primary);
+}
+.embed-seg-btn.active {
+    background: var(--bg-surface);
+    color: var(--accent);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* 8. Action Buttons Clean Modern Accent */
+.btn-action-primary {
+    height: 32px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    gap: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
