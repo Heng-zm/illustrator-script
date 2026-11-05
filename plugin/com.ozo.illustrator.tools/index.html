@@ -93,13 +93,21 @@
         </div>
     </div>
 
-    <!-- Script / update error banner -->
-    <div id="errorBanner" class="error-banner" role="alert" hidden>
+    <!-- Script / update alert banner -->
+    <div id="errorBanner" class="error-banner banner-alert-error" role="alert" hidden>
+        <span id="errorBannerIcon" class="error-banner-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
         <div class="error-banner-body">
             <strong id="errorTitle" class="error-banner-title"></strong>
             <div id="errorMessage" class="error-banner-message"></div>
         </div>
-        <button type="button" id="errorDismissBtn" class="update-dismiss" data-i18n-title="dismiss" title="Dismiss">&times;</button>
+        <div class="error-banner-actions">
+            <button type="button" id="errorCopyBtn" class="error-copy-btn" title="Copy message">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+            <button type="button" id="errorDismissBtn" class="update-dismiss" data-i18n-title="dismiss" title="Dismiss">&times;</button>
+        </div>
     </div>
 
     <!-- Catalog View (Tools Grid / List) -->
@@ -316,6 +324,22 @@
                 <button type="button" id="shortcutsCloseBtn" class="shortcuts-close" aria-label="Close">&times;</button>
             </div>
             <div class="shortcuts-body" id="shortcutsBody"></div>
+        </div>
+    </div>
+
+    <!-- Custom Modal Alert / Confirm Dialog -->
+    <div id="alertModal" class="alert-modal" hidden>
+        <div class="alert-backdrop" id="alertBackdrop"></div>
+        <div class="alert-dialog" role="alertdialog" aria-modal="true" aria-labelledby="alertModalTitle" aria-describedby="alertModalMessage">
+            <div class="alert-dialog-header">
+                <span id="alertModalIcon" class="alert-modal-icon"></span>
+                <span id="alertModalTitle" class="alert-modal-title">Alert</span>
+            </div>
+            <div id="alertModalMessage" class="alert-modal-message"></div>
+            <div class="alert-dialog-actions">
+                <button type="button" id="alertModalCancelBtn" class="alert-modal-btn alert-btn-secondary" hidden>Cancel</button>
+                <button type="button" id="alertModalOkBtn" class="alert-modal-btn alert-btn-primary">OK</button>
+            </div>
         </div>
     </div>
 

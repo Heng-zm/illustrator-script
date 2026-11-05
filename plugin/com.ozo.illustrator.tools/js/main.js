@@ -673,6 +673,17 @@
     var errorTitle = $("errorTitle");
     var errorMessage = $("errorMessage");
     var errorDismissBtn = $("errorDismissBtn");
+    var errorBannerIcon = $("errorBannerIcon");
+    var errorCopyBtn = $("errorCopyBtn");
+    var alertModal = $("alertModal");
+    var alertBackdrop = $("alertBackdrop");
+    var alertModalIcon = $("alertModalIcon");
+    var alertModalTitle = $("alertModalTitle");
+    var alertModalMessage = $("alertModalMessage");
+    var alertModalOkBtn = $("alertModalOkBtn");
+    var alertModalCancelBtn = $("alertModalCancelBtn");
+    var activeAlertCallback = null;
+    var activeCancelCallback = null;
     var recentToolsWrap = $("recentToolsWrap");
     var recentToolsList = $("recentToolsList");
     var embeddedResetBtn = $("embeddedResetBtn");
@@ -1149,22 +1160,164 @@
     }
 
     // ------------------------------------------------------------------
-    // Error banner (non-blocking replacement for alert())
     // ------------------------------------------------------------------
-    function showError(title, message) {
+    // Alert & Error Banner (non-blocking replacement for alert())
+    // ------------------------------------------------------------------
+    function showAlertBanner(title, message, type) {
+        if (!errorBanner || !errorTitle || !errorMessage) return;
+        var t = type || "error";
         errorTitle.textContent = title;
         errorMessage.textContent = message;
+        errorBanner.className = "error-banner banner-alert-" + t;
+        if (errorBannerIcon) {
+            if (t === "warning") {
+                errorBannerIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+            } else if (t === "success") {
+                errorBannerIcon.innerHTML = uiIcon("check", 14);
+            } else if (t === "info") {
+                errorBannerIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+            } else {
+                errorBannerIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+            }
+        }
         errorBanner.hidden = false;
         errorBanner.classList.remove("error-shake");
         void errorBanner.offsetWidth;
-        errorBanner.classList.add("error-shake");
+        if (t === "error") errorBanner.classList.add("error-shake");
+    }
+
+    function showError(title, message) {
+        showAlertBanner(title, message, "error");
     }
 
     function hideError() {
-        errorBanner.hidden = true;
+        if (errorBanner) errorBanner.hidden = true;
+    }
+
+    if (errorCopyBtn) {
+        errorCopyBtn.addEventListener("click", function () {
+            var fullText = (errorTitle ? errorTitle.textContent : "") + "\n" + (errorMessage ? errorMessage.textContent : "");
+            copyToClipboard(fullText, function () {
+                showToast(isKhmer() ? "បានចម្លងសារកំហុស!" : "Copied error details!", "info", 1500);
+            });
+        });
     }
 
     // ------------------------------------------------------------------
+    // Custom Modal Alert & Confirm (Themed, Non-blocking for CEP)
+    // ------------------------------------------------------------------
+    function showAlertModal(title, message, type, onOk) {
+        if (!alertModal || !alertModalTitle || !alertModalMessage) {
+            showError(title, message);
+            if (typeof onOk === "function") onOk();
+            return;
+        }
+        var t = type || "info";
+        alertModalTitle.textContent = title || (isKhmer() ? "ដំណឹង" : "Alert");
+        alertModalMessage.textContent = message || "";
+        activeAlertCallback = (typeof onOk === "function") ? onOk : null;
+        activeCancelCallback = null;
+
+        if (alertModalCancelBtn) alertModalCancelBtn.hidden = true;
+        if (alertModalOkBtn) {
+            alertModalOkBtn.textContent = isKhmer() ? "យល់ព្រម (OK)" : "OK";
+            alertModalOkBtn.focus();
+        }
+
+        if (alertModalIcon) {
+            if (t === "error") {
+                alertModalIcon.className = "alert-modal-icon alert-icon-error";
+                alertModalIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+            } else if (t === "warning") {
+                alertModalIcon.className = "alert-modal-icon alert-icon-warn";
+                alertModalIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+            } else if (t === "success") {
+                alertModalIcon.className = "alert-modal-icon alert-icon-success";
+                alertModalIcon.innerHTML = uiIcon("check", 20);
+            } else {
+                alertModalIcon.className = "alert-modal-icon alert-icon-info";
+                alertModalIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+            }
+        }
+
+        alertModal.hidden = false;
+        alertModal.classList.add("alert-open");
+    }
+
+    function showConfirmModal(title, message, onConfirm, onCancel) {
+        if (!alertModal || !alertModalTitle || !alertModalMessage) {
+            if (confirm(message)) { if (onConfirm) onConfirm(); } else { if (onCancel) onCancel(); }
+            return;
+        }
+        alertModalTitle.textContent = title || (isKhmer() ? "បញ្ជាក់" : "Confirm");
+        alertModalMessage.textContent = message || "";
+        activeAlertCallback = (typeof onConfirm === "function") ? onConfirm : null;
+        activeCancelCallback = (typeof onCancel === "function") ? onCancel : null;
+
+        if (alertModalIcon) {
+            alertModalIcon.className = "alert-modal-icon alert-icon-warn";
+            alertModalIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        }
+
+        if (alertModalCancelBtn) {
+            alertModalCancelBtn.textContent = isKhmer() ? "បោះបង់ (Cancel)" : "Cancel";
+            alertModalCancelBtn.hidden = false;
+        }
+        if (alertModalOkBtn) {
+            alertModalOkBtn.textContent = isKhmer() ? "យល់ព្រម (OK)" : "Confirm";
+            alertModalOkBtn.focus();
+        }
+
+        alertModal.hidden = false;
+        alertModal.classList.add("alert-open");
+    }
+
+    function closeAlertModal() {
+        if (!alertModal || alertModal.hidden) return;
+        alertModal.classList.remove("alert-open");
+        alertModal.hidden = true;
+    }
+
+    if (alertModalOkBtn) {
+        alertModalOkBtn.addEventListener("click", function () {
+            closeAlertModal();
+            if (activeAlertCallback) {
+                var cb = activeAlertCallback; 
+                activeAlertCallback = null; 
+                cb(); 
+            }
+        });
+    }
+
+    if (alertModalCancelBtn) {
+        alertModalCancelBtn.addEventListener("click", function () {
+            closeAlertModal();
+            if (activeCancelCallback) {
+                var cb = activeCancelCallback; 
+                activeCancelCallback = null; 
+                cb(); 
+            }
+        });
+    }
+
+    if (alertBackdrop) {
+        alertBackdrop.addEventListener("click", function () {
+            closeAlertModal();
+            if (activeCancelCallback) {
+                var cb = activeCancelCallback; 
+                activeCancelCallback = null; 
+                cb(); 
+            }
+        });
+    }
+
+    // Override native alert to use the beautiful themed non-blocking modal
+    window.alert = function (msg) {
+        showAlertModal(isKhmer() ? "ដំណឹង" : "Alert", String(msg), "info");
+    };
+    window.showAlert = showAlertModal;
+    window.showConfirm = showConfirmModal;
+
     // Search
     // ------------------------------------------------------------------
     function setSearch(value) {
@@ -6693,6 +6846,10 @@
                 return;
             }
         } else if (key === "Escape") {
+            if (alertModal && !alertModal.hidden) {
+                closeAlertModal();
+                return;
+            }
             if (docPopover && !docPopover.hidden) {
                 closeDocPopover();
                 return;

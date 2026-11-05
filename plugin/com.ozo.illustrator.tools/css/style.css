@@ -4472,3 +4472,337 @@ select:focus-visible,
     justify-content: center;
     width: 100%;
 }
+
+
+/* ==================================================================
+   Modern Alert & Notification System Layer
+   Elevated update banner, versatile severity alert banners (error, warning, info, success),
+   one-click error copy action, and Adobe-native modal alert/confirm dialog.
+   ================================================================== */
+
+/* 1. Update Notification Banner (Update Alert) */
+.update-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 8px 12px 4px;
+    padding: 8px 10px 8px 12px;
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.14) 0%, rgba(var(--accent-rgb), 0.06) 100%);
+    border: 1px solid rgba(var(--accent-rgb), 0.45);
+    border-radius: var(--radius-md);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16), 0 0 16px rgba(var(--accent-rgb), 0.12);
+    animation: alertSlideDown 0.24s var(--ease-spring);
+}
+.update-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+.update-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: rgba(var(--accent-rgb), 0.2);
+    color: var(--accent);
+    flex-shrink: 0;
+    animation: alertIconPulse 2s infinite ease-in-out;
+}
+.update-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.update-btn {
+    border-radius: 99px !important;
+    padding: 4px 12px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em;
+    background: var(--accent) !important;
+    box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.35);
+    transition: all 0.15s ease !important;
+}
+.update-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.5);
+}
+
+/* 2. Versatile Inline Alert Banner */
+.error-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 8px 12px 4px;
+    padding: 8px 10px 8px 12px;
+    border-radius: var(--radius-md);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+    font-size: 11px;
+    line-height: 1.4;
+    animation: alertSlideDown 0.22s var(--ease-out);
+}
+.error-banner-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.error-banner-body {
+    min-width: 0;
+    flex: 1;
+}
+.error-banner-title {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+}
+.error-banner-message {
+    font-size: 10.5px;
+    max-height: 80px;
+    overflow-y: auto;
+    word-break: break-word;
+    white-space: pre-wrap;
+    user-select: text;
+    -webkit-user-select: text;
+}
+.error-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-top: -1px;
+}
+.error-copy-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 3px 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.14s ease;
+}
+.error-copy-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-color);
+}
+
+/* Severity Styling */
+.banner-alert-error {
+    background: rgba(239, 83, 80, 0.12);
+    border: 1px solid rgba(239, 83, 80, 0.45);
+}
+.banner-alert-error .error-banner-icon {
+    background: rgba(239, 83, 80, 0.2);
+    color: var(--danger);
+}
+.banner-alert-error .error-banner-title {
+    color: var(--danger);
+}
+.banner-alert-error .error-banner-message {
+    color: var(--text-primary);
+}
+
+.banner-alert-warning {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+}
+.banner-alert-warning .error-banner-icon {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+.banner-alert-warning .error-banner-title {
+    color: #f59e0b;
+}
+.banner-alert-warning .error-banner-message {
+    color: var(--text-primary);
+}
+
+.banner-alert-info {
+    background: rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.45);
+}
+.banner-alert-info .error-banner-icon {
+    background: rgba(var(--accent-rgb), 0.2);
+    color: var(--accent);
+}
+.banner-alert-info .error-banner-title {
+    color: var(--accent);
+}
+.banner-alert-info .error-banner-message {
+    color: var(--text-primary);
+}
+
+.banner-alert-success {
+    background: rgba(52, 201, 139, 0.12);
+    border: 1px solid rgba(52, 201, 139, 0.45);
+}
+.banner-alert-success .error-banner-icon {
+    background: rgba(52, 201, 139, 0.2);
+    color: var(--success);
+}
+.banner-alert-success .error-banner-title {
+    color: var(--success);
+}
+.banner-alert-success .error-banner-message {
+    color: var(--text-primary);
+}
+
+/* 3. Custom Modal Alert Dialog */
+.alert-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: modalFadeIn 0.18s ease-out;
+}
+.alert-modal[hidden] {
+    display: none !important;
+}
+.alert-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.alert-dialog {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 310px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.5), 0 2px 10px rgba(0, 0, 0, 0.25);
+    padding: 16px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: modalPopIn 0.22s var(--ease-spring);
+}
+.alert-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.alert-modal-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.alert-icon-error {
+    background: rgba(239, 83, 80, 0.18);
+    color: var(--danger);
+}
+.alert-icon-warn {
+    background: rgba(245, 158, 11, 0.18);
+    color: #f59e0b;
+}
+.alert-icon-info {
+    background: rgba(var(--accent-rgb), 0.18);
+    color: var(--accent);
+}
+.alert-icon-success {
+    background: rgba(52, 201, 139, 0.18);
+    color: var(--success);
+}
+.alert-modal-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+.alert-modal-message {
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-height: 180px;
+    overflow-y: auto;
+    word-break: break-word;
+    user-select: text;
+    -webkit-user-select: text;
+    padding-left: 2px;
+}
+.alert-dialog-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+.alert-modal-btn {
+    height: 28px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+.alert-btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.3);
+}
+.alert-btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+.alert-btn-primary:active {
+    transform: scale(0.97);
+}
+.alert-btn-secondary {
+    background: var(--bg-main);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+.alert-btn-secondary:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+    background: var(--bg-surface-hover);
+}
+
+@keyframes alertSlideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes alertIconPulse {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+@keyframes modalPopIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+}
