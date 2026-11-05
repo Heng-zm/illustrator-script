@@ -187,6 +187,14 @@
                 <span id="embeddedToolIcon" class="embedded-tool-icon" aria-hidden="true"></span>
                 <span id="embeddedToolTitle" class="embedded-tool-title"></span>
             </div>
+            <div class="embedded-quick-canvas" role="toolbar" aria-label="Quick Canvas Controls">
+                <button type="button" class="embed-canvas-btn" data-canvas-cmd="fitin" title="Fit Active Artboard (Ctrl+0)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button type="button" class="embed-canvas-btn" data-canvas-cmd="fitall" title="Fit All Artboards (Ctrl+Alt+0)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
+                </button>
+            </div>
             <button type="button" id="embeddedResetBtn" class="embedded-dialog-btn" data-i18n-title="reset.title" title="Reset tool defaults">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -203,6 +211,14 @@
                 <span data-i18n="open.dialog">Dialog</span>
             </button>
         </div>
+
+        <!-- Live Selection & Artboard Context Ribbon -->
+        <div id="embeddedSelRibbon" class="embedded-sel-ribbon" hidden>
+            <span id="embeddedSelIcon" class="sel-ribbon-icon">📐</span>
+            <span id="embeddedSelText" class="sel-ribbon-text"></span>
+            <button type="button" class="sel-ribbon-btn" data-canvas-cmd="fitin" title="Fit Active Artboard (Ctrl+0)">Fit Artboard</button>
+        </div>
+
         <div id="embeddedContent" class="embedded-content"></div>
     </div>
 

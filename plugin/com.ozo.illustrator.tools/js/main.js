@@ -682,6 +682,10 @@
     var shortcutsCloseBtn = $("shortcutsCloseBtn");
     var shortcutsBody = $("shortcutsBody");
     var searchTagsWrap = $("searchTagsWrap");
+    var embeddedHeader = $("embeddedHeader") || (embeddedBackBtn ? embeddedBackBtn.parentNode : null);
+    var embeddedSelRibbon = $("embeddedSelRibbon");
+    var embeddedSelIcon = $("embeddedSelIcon");
+    var embeddedSelText = $("embeddedSelText");
     var docPopover = $("docPopover");
     var docPopoverClose = $("docPopoverClose");
     var docPopoverStats = $("docPopoverStats");
@@ -873,6 +877,35 @@
         ].join("|");
     }
 
+    function updateEmbeddedSelRibbon(info) {
+        if (!embeddedSelRibbon || !embeddedSelText) return;
+        if (!activeEmbeddedTool) {
+            embeddedSelRibbon.hidden = true;
+            return;
+        }
+        var inf = info || latestDocInfo;
+        if (!inf || !inf.hasDoc) {
+            embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-warn";
+            if (embeddedSelIcon) embeddedSelIcon.textContent = "⚠";
+            embeddedSelText.textContent = isKhmer() ? "គ្មានឯកសារបើកក្នុង Illustrator ទេ" : "No active document open in Illustrator";
+            embeddedSelRibbon.hidden = false;
+            return;
+        }
+
+        if (inf.selectedCount > 0) {
+            embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-active";
+            if (embeddedSelIcon) embeddedSelIcon.textContent = "✓";
+            var dimStr = (inf.selWidthMm && inf.selHeightMm) ? (' (' + inf.selWidthMm + ' × ' + inf.selHeightMm + ' mm)') : '';
+            embeddedSelText.textContent = inf.selectedCount + ' ' + (isKhmer() ? "វត្ថុបានជ្រើសរើស" : "object(s) selected") + dimStr;
+        } else {
+            embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-idle";
+            if (embeddedSelIcon) embeddedSelIcon.textContent = "📄";
+            var abSize = (inf.artboardWidthMm && inf.artboardHeightMm) ? (' (' + inf.artboardWidthMm + ' × ' + inf.artboardHeightMm + ' mm)') : '';
+            embeddedSelText.textContent = (isKhmer() ? "គ្មានវត្ថុជ្រើស — ប្រើ Artboard៖ " : "No selection (Target: ") + (inf.activeArtboardName || "Artboard") + abSize + ')';
+        }
+        embeddedSelRibbon.hidden = false;
+    }
+
     function applyDocumentStatus(info) {
         if (!info) return;
         latestDocInfo = info;
@@ -894,6 +927,11 @@
         } else {
             if (statusDot) statusDot.classList.remove("has-doc");
             setIdleStatus(t("status.noDoc"));
+        }
+
+        updateEmbeddedSelRibbon(info);
+        if (docPopover && !docPopover.hidden) {
+            openDocPopover();
         }
 
         var sig = docSignature(info);
@@ -1468,6 +1506,8 @@
             primaryBtn.setAttribute("title", isKhmer() ? "ដំណើរការ (Ctrl+Enter)" : "Run (Ctrl+Enter)");
         }
 
+        updateEmbeddedSelRibbon();
+
         // Auto-focus first interactive input for fast keyboard workflows
         setTimeout(function () {
             if (!activeEmbeddedTool) return;
@@ -1599,6 +1639,7 @@
     function closeEmbeddedView() {
         var prevId = lastOpenedToolId;
         activeEmbeddedTool = null;
+        if (embeddedSelRibbon) embeddedSelRibbon.hidden = true;
         viewEmbedded.style.display = "none";
         viewCatalog.style.display = "flex";
         goBackToCatalog();
@@ -6489,6 +6530,36 @@
         });
     }
 
+    var embedHdrEl = $("embeddedHeader") || (embeddedBackBtn ? embeddedBackBtn.parentNode : null);
+    if (embedHdrEl) {
+        embedHdrEl.addEventListener("click", function (e) {
+            var cBtn = closest(e.target, ".embed-canvas-btn", embedHdrEl);
+            if (!cBtn) return;
+            var cmd = cBtn.getAttribute("data-canvas-cmd");
+            if (!cmd) return;
+            if (csInterface) {
+                csInterface.evalScript("ozoExecuteCanvasCommand('" + cmd + "')", function () {
+                    refreshDocumentStatus();
+                });
+            }
+            showToast(cmd === "fitin" ? "Fit Artboard (Ctrl+0)" : (cmd === "fitall" ? "Fit All (Ctrl+Alt+0)" : "100% Zoom"), "info", 1400);
+        });
+    }
+
+    if (embeddedSelRibbon) {
+        embeddedSelRibbon.addEventListener("click", function (e) {
+            var rBtn = closest(e.target, ".sel-ribbon-btn", embeddedSelRibbon);
+            if (!rBtn) return;
+            var cmd = rBtn.getAttribute("data-canvas-cmd") || "fitin";
+            if (csInterface) {
+                csInterface.evalScript("ozoExecuteCanvasCommand('" + cmd + "')", function () {
+                    refreshDocumentStatus();
+                });
+            }
+            showToast("Fit Artboard (Ctrl+0)", "info", 1400);
+        });
+    }
+
     if (embeddedResetBtn) {
         embeddedResetBtn.addEventListener("click", function () {
             if (!activeEmbeddedTool) return;
@@ -6592,6 +6663,48 @@
             else openDocPopover();
         });
     }
+
+    // Auto-refresh document status whenever user switches back into panel
+    window.addEventListener("focus", function () {
+        refreshDocumentStatus();
+    });
+
+    // Global Illustrator Canvas Shortcuts (Ctrl+0, Ctrl+Alt+0, Ctrl+1) from panel
+    window.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "0" && !e.altKey) {
+            if (csInterface) {
+                e.preventDefault();
+                csInterface.evalScript("ozoExecuteCanvasCommand('fitin')", function () {
+                    refreshDocumentStatus();
+                });
+                showToast("Fit Artboard (Ctrl+0)", "info", 1200);
+                return;
+            }
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === "0" && e.altKey) {
+            if (csInterface) {
+                e.preventDefault();
+                csInterface.evalScript("ozoExecuteCanvasCommand('fitall')", function () {
+                    refreshDocumentStatus();
+                });
+                showToast("Fit All (Ctrl+Alt+0)", "info", 1200);
+                return;
+            }
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === "1" && !e.altKey && !e.shiftKey) {
+            var aTag = (document.activeElement && document.activeElement.tagName) || "";
+            if (aTag !== "INPUT" && aTag !== "TEXTAREA") {
+                if (csInterface) {
+                    e.preventDefault();
+                    csInterface.evalScript("ozoExecuteCanvasCommand('actualsize')", function () {
+                        refreshDocumentStatus();
+                    });
+                    showToast("Actual Size 100% (Ctrl+1)", "info", 1200);
+                    return;
+                }
+            }
+        }
+    });
 
     // Mouse thumb button Back (button 3)
     window.addEventListener("mouseup", function (e) {
