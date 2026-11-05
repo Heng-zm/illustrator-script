@@ -8,6 +8,7 @@
     --bg-surface: #2a2a2a;
     --bg-surface-hover: #343434;
     --bg-surface-active: #3e3e3e;
+    --bg-hover: var(--bg-surface-hover);
     --border-color: #383838;
     --border-strong: #505050;
     --text-primary: #ececec;
@@ -303,6 +304,7 @@ button:focus-visible,
 /* ---------- Tool list ---------- */
 .tool-list {
     flex: 1;
+    scroll-behavior: smooth;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -956,6 +958,7 @@ body.theme-light {
 /* Scrollable Container */
 .embedded-content {
     flex: 1;
+    scroll-behavior: smooth;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -1487,7 +1490,7 @@ body.theme-light {
 }
 .btn-copy-ticket:hover {
     color: var(--text-primary);
-    background: var(--bg-hover);
+    background: var(--bg-surface-hover);
     border-color: var(--accent);
 }
 .btn-copy-ticket:active {
@@ -2693,7 +2696,8 @@ body.theme-medium-light {
     box-shadow: var(--shadow-1);
     transition: background-color 0.12s, border-color 0.12s, box-shadow 0.18s, transform 0.12s var(--ease-out);
 }
-.tool-card:hover { box-shadow: var(--shadow-2); }
+.tool-card:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
+.tool-card:active { transform: translateY(0); }
 .tool-card:focus-visible { box-shadow: var(--shadow-1), var(--ring); }
 .tool-card.is-running { box-shadow: var(--shadow-1), 0 0 0 3px rgba(var(--accent-rgb), 0.12); }
 
@@ -2822,7 +2826,7 @@ mark.search-match { border-radius: 3px; padding: 0 2px; }
 
 .embed-action-wrap {
     padding-top: 14px;
-    background: linear-gradient(to top, var(--bg-main) 65%, rgba(0, 0, 0, 0));
+    background: linear-gradient(to top, var(--bg-main) 65%, transparent);
 }
 .btn-action-primary {
     height: 38px;
