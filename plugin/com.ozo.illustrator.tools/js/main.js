@@ -7662,8 +7662,12 @@
     function failUpdate(message) {
         updateBusy = false;
         setUpdateBtn("retry");
-        setStatus(t("update.failStatus", { msg: String(message).replace(/\s+/g, " ") }), "error", 8000);
-        showError(t("update.failTitle"), message);
+        var cleanMsg = String(message).replace(/\s+/g, " ");
+        if (/504|Gateway Timeout/i.test(cleanMsg)) {
+            cleanMsg = isKhmer() ? "ការទាញយកលើសពេល (504 Gateway Timeout)។ សូមចុច 'ព្យាយាមម្តងទៀត' បន្តិចទៀតនេះ។" : "Download timed out (504 Gateway Timeout). Please click 'Retry' in a moment.";
+        }
+        setStatus(t("update.failStatus", { msg: cleanMsg }), "error", 8000);
+        showError(t("update.failTitle"), cleanMsg);
     }
 
     function performUpdate(rel) {
