@@ -1,4 +1,4 @@
-# Ozo Tools - Adobe Illustrator Plugin Suite (v2.6.16)
+# Ozo Tools - Adobe Illustrator Plugin Suite (v2.6.17)
 
 <p align="center">
   <img src="assets/logo.png" alt="Ozo Tools Logo" width="520">
