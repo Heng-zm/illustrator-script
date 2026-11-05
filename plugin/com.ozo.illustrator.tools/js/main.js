@@ -4497,6 +4497,8 @@
         html.push('        <option value="0" ' + (state.divide === 0 ? "selected" : "") + '>No division</option>');
         html.push('        <option value="1" ' + (state.divide === 1 ? "selected" : "") + '>Color - grouped</option>');
         html.push('        <option value="2" ' + (state.divide === 2 ? "selected" : "") + '>Layer - grouped</option>');
+        html.push('        <option value="3" ' + (state.divide === 3 ? "selected" : "") + '>' + (isKhmer() ? "ពណ៌ - សន្លឹកដាច់ដោយឡែក" : "Color - separate sheets") + '</option>');
+        html.push('        <option value="4" ' + (state.divide === 4 ? "selected" : "") + '>' + (isKhmer() ? "ស្រទាប់ - សន្លឹកដាច់ដោយឡែក" : "Layer - separate sheets") + '</option>');
         html.push('      </select>');
         html.push('    </div>');
         html.push('  </div>');
@@ -4680,6 +4682,9 @@
 
         btnNestSubmit.addEventListener("click", function () {
             hideError();
+            // Never leave the previous run's numbers on screen while a new
+            // calculation is running or after it fails.
+            nestResultCard.style.display = "none";
             saveNestingState();
             btnNestSubmit.disabled = true;
             btnNestSubmit.innerHTML = uiIcon("refresh") + " " + (isKhmer() ? "កំពុងគណនា..." : "Optimizing Nesting...");
@@ -4722,31 +4727,39 @@
                 return;
             }
 
-            csInterface.evalScript("ozoExecuteNesting(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
+            try {
+                csInterface.evalScript("ozoExecuteNesting(" + JSON.stringify(JSON.stringify(params)) + ")", function (raw) {
+                    btnNestSubmit.disabled = false;
+                    btnNestSubmit.innerHTML = uiIcon("nest") + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting");
+                    var res = null;
+                    try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                    if (res && res.success) {
+                        nestResultCard.style.display = "block";
+                        var u = (res.utilization !== undefined ? res.utilization : 0) + "%";
+                        nestUtilVal.textContent = u;
+                        nestUtilFill.style.width = u;
+                        nestStatPlaced.textContent = res.placed + "/" + res.total;
+                        nestStatSheets.textContent = res.sheets || 1;
+                        nestStatFixed.textContent = res.fixed || 0;
+
+                        var okMsg = isKhmer()
+                            ? "បានរៀបចំវត្ថុ " + res.placed + "/" + res.total + " ដោយជោគជ័យ (សន្សំសំចៃ " + u + ")"
+                            : "Nesting complete: Placed " + res.placed + "/" + res.total + " items (" + u + " utilization)";
+                        setStatus(okMsg, "success", 4000);
+                    } else {
+                        var errMsg = (res && res.message) || String(raw || "Failed to nest artwork");
+                        showError(isKhmer() ? "ការរៀបចំបរាជ័យ" : "Nesting Failed", errMsg);
+                        setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                    }
+                });
+            } catch (evalError) {
                 btnNestSubmit.disabled = false;
                 btnNestSubmit.innerHTML = uiIcon("nest") + (isKhmer() ? "ចាប់ផ្តើមរៀបចំ (Run Nesting)" : "Run Sheet Nesting");
-                var res = null;
-                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
-
-                if (res && res.success) {
-                    nestResultCard.style.display = "block";
-                    var u = (res.utilization !== undefined ? res.utilization : 0) + "%";
-                    nestUtilVal.textContent = u;
-                    nestUtilFill.style.width = u;
-                    nestStatPlaced.textContent = res.placed + "/" + res.total;
-                    nestStatSheets.textContent = res.sheets || 1;
-                    nestStatFixed.textContent = res.fixed || 0;
-
-                    var okMsg = isKhmer()
-                        ? "បានរៀបចំវត្ថុ " + res.placed + "/" + res.total + " ដោយជោគជ័យ (សន្សំសំចៃ " + u + ")"
-                        : "Nesting complete: Placed " + res.placed + "/" + res.total + " items (" + u + " utilization)";
-                    setStatus(okMsg, "success", 4000);
-                } else {
-                    var errMsg = (res && res.message) || String(raw || "Failed to nest artwork");
-                    showError(isKhmer() ? "ការរៀបចំបរាជ័យ" : "Nesting Failed", errMsg);
-                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
-                }
-            });
+                var bridgeMsg = (evalError && evalError.message) || String(evalError);
+                showError(isKhmer() ? "ការរៀបចំបរាជ័យ" : "Nesting Failed", bridgeMsg);
+                setStatus(isKhmer() ? "បញ្ហា៖ " + bridgeMsg : "Error: " + bridgeMsg, "error", 6000);
+            }
         });
     }
 

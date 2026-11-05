@@ -225,6 +225,28 @@
         }
     }
 
+    // Compound fill rule. Some builds only expose `evenodd` after it has been
+    // assigned, so fall back to the child paths as well. Reading the same rule
+    // everywhere keeps hole detection, collision and utilisation consistent.
+    function isEvenOddCompound(item) {
+        if (!item) return false;
+        try {
+            if (item.evenodd === true) {
+                return true;
+            }
+        } catch (ignoreEvenOdd) {}
+        try {
+            if (item.pathItems) {
+                for (var i = 0; i < item.pathItems.length; i++) {
+                    if (item.pathItems[i].evenodd === true) {
+                        return true;
+                    }
+                }
+            }
+        } catch (ignoreChildEvenOdd) {}
+        return false;
+    }
+
     function contourGeometry(item, bounds) {
         var centerX = (bounds[0] + bounds[2]) / 2;
         var centerY = (bounds[1] + bounds[3]) / 2;
@@ -235,7 +257,7 @@
                 if (current.typename === "PathItem") {
                     var polygon = pathPolygon(current, centerX, centerY);
                     if (polygon) {
-                        components.push({contours: [polygon]});
+                        components.push({contours: [polygon], evenOdd: false});
                     } else {
                         complete = false;
                     }
@@ -253,7 +275,7 @@
                         return polygonArea(second) - polygonArea(first);
                     });
                     if (contours.length) {
-                        components.push({contours: contours});
+                        components.push({contours: contours, evenOdd: isEvenOddCompound(current)});
                     }
                 } else if (current.pageItems) {
                     if (current.pageItems.length === 0) {
@@ -292,7 +314,7 @@
                 }
                 contours.push(transformed);
             }
-            result.push({contours: contours});
+            result.push({contours: contours, evenOdd: geometry[c].evenOdd === true});
         }
         return result;
     }
@@ -313,15 +335,82 @@
         return inside;
     }
 
-    function pointInComponent(point, component) {
-        if (!point || !component || !component.contours) return false;
-        var inside = false;
-        for (var i = 0; i < component.contours.length; i++) {
-            if (pointInPolygon(point, component.contours[i])) {
-                inside = !inside;
+    function windingNumber(point, polygon) {
+        if (!point || !polygon || polygon.length < 3) return 0;
+        var winding = 0;
+        for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            var first = polygon[j];
+            var second = polygon[i];
+            if (!first || !second) continue;
+            if (first[1] <= point[1]) {
+                if (second[1] > point[1] && orientation(first, second, point) > 0) {
+                    winding++;
+                }
+            } else if (second[1] <= point[1] && orientation(first, second, point) < 0) {
+                winding--;
             }
         }
-        return inside;
+        return winding;
+    }
+
+    function pointInComponent(point, component) {
+        if (!point || !component || !component.contours) return false;
+        // Even-odd compounds treat every nested contour as a hole. Non-zero
+        // compounds only do so when the contour is wound the opposite way, so
+        // filled islands inside another contour (same winding) stay solid and
+        // the packer will not try to nest into them.
+        if (component.evenOdd) {
+            var inside = false;
+            for (var i = 0; i < component.contours.length; i++) {
+                if (pointInPolygon(point, component.contours[i])) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+        var winding = 0;
+        for (var contourIndex = 0; contourIndex < component.contours.length; contourIndex++) {
+            winding += windingNumber(point, component.contours[contourIndex]);
+        }
+        return winding !== 0;
+    }
+
+    // True when the point lies in an empty pocket of the component (not on
+    // filled ink). Used to keep main-bin placements from sneaking into a hole
+    // without the requested edge padding, or at all when nesting inside holes
+    // is disabled.
+    function pointInHole(point, component) {
+        if (!point || !component || !component.contours) return false;
+        var depth = 0;
+        var winding = 0;
+        for (var i = 0; i < component.contours.length; i++) {
+            var contour = component.contours[i];
+            if (pointInPolygon(point, contour)) {
+                depth++;
+            }
+            winding += windingNumber(point, contour);
+        }
+        if (depth === 0) {
+            return false;
+        }
+        return component.evenOdd ? (depth % 2 === 0) : (winding === 0);
+    }
+
+    function rectCenterInHole(rect, placed) {
+        if (!placed || !placed.geometry) return false;
+        var point = [(rect.l + rect.r) / 2, (rect.t + rect.b) / 2];
+        // A pocket always lies inside the container's bounding box, so skip
+        // the polygon tests for containers nowhere near the candidate.
+        if (point[0] < placed.l || point[0] > placed.r ||
+                point[1] < placed.b || point[1] > placed.t) {
+            return false;
+        }
+        for (var c = 0; c < placed.geometry.length; c++) {
+            if (pointInHole(point, placed.geometry[c])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function orientation(first, second, third) {
@@ -358,13 +447,18 @@
 
     function polygonEdgesNear(first, second, gap) {
         if (!first || !second || first.length < 2 || second.length < 2) return false;
+        // Candidates that sit exactly on the requested gap are valid, but the
+        // offset is computed by adding then subtracting the same value, which
+        // can land one floating-point step below it. Tolerate that rounding so
+        // an exact-fit placement is not rejected as a collision.
+        var limit = gap > 0 ? gap - 0.000001 : 0;
         for (var i = 0; i < first.length; i++) {
             var firstNext = first[(i + 1) % first.length];
             for (var j = 0; j < second.length; j++) {
                 var secondNext = second[(j + 1) % second.length];
                 if (segmentsCross(first[i], firstNext, second[j], secondNext) ||
-                        (gap > 0 && (pointSegmentDistance(first[i], second[j], secondNext) < gap ||
-                        pointSegmentDistance(second[j], first[i], firstNext) < gap))) {
+                        (limit > 0 && (pointSegmentDistance(first[i], second[j], secondNext) < limit ||
+                        pointSegmentDistance(second[j], first[i], firstNext) < limit))) {
                     return true;
                 }
             }
@@ -422,6 +516,67 @@
         return all;
     }
 
+    // Filled area of the true shape, used for utilization. Compound-path
+    // contours are combined with an even/odd style containment depth so holes
+    // are subtracted instead of counted twice (which could report >100%).
+    function geometryArea(geometry) {
+        if (!geometry || geometry.length === 0) {
+            return 0;
+        }
+        var total = 0;
+        for (var c = 0; c < geometry.length; c++) {
+            var component = geometry[c];
+            if (!component || !component.contours || component.contours.length === 0) {
+                continue;
+            }
+            var contours = component.contours;
+            if (contours.length === 1) {
+                total += polygonArea(contours[0]);
+                continue;
+            }
+            if (!component.evenOdd) {
+                // Non-zero winding: nested contours wound the same way add up
+                // (filled island), opposite windings subtract (hole).
+                var signedTotal = 0;
+                for (var signedIndex = 0; signedIndex < contours.length; signedIndex++) {
+                    signedTotal += signedPolygonArea(contours[signedIndex]);
+                }
+                total += Math.abs(signedTotal);
+                continue;
+            }
+            var areas = [];
+            var boxes = [];
+            for (var i = 0; i < contours.length; i++) {
+                areas.push(polygonArea(contours[i]));
+                boxes.push(contourBounds(contours[i]));
+            }
+            for (i = 0; i < contours.length; i++) {
+                if (!contours[i] || contours[i].length < 3) {
+                    continue;
+                }
+                var probe = contours[i][0];
+                var depth = 0;
+                for (var j = 0; j < contours.length; j++) {
+                    if (j === i || !contours[j] || contours[j].length < 3) {
+                        continue;
+                    }
+                    // Cheap bounding-box prefilter before the point-in-polygon
+                    // test; compound paths can have many islands.
+                    var box = boxes[j];
+                    if (probe[0] <= box[0] || probe[0] >= box[2] ||
+                            probe[1] >= box[1] || probe[1] <= box[3]) {
+                        continue;
+                    }
+                    if (pointInPolygon(probe, contours[j])) {
+                        depth++;
+                    }
+                }
+                total += (depth % 2 === 0 ? 1 : -1) * areas[i];
+            }
+        }
+        return Math.max(0, total);
+    }
+
     function geometryBounds(geometry) {
         if (!geometry || geometry.length === 0) {
             return null;
@@ -461,7 +616,7 @@
                 }
                 contours.push(points);
             }
-            result.push({contours: contours});
+            result.push({contours: contours, evenOdd: geometry[c].evenOdd === true});
         }
         return result;
     }
@@ -691,7 +846,9 @@
             var normalized = String(unitInputs[i].text)
                 .replace(/,/g, ".")
                 .replace(/^\s+|\s+$/g, "");
-            var value = Number(normalized);
+            // Accept an optional unit suffix; OZO.parseNumber strips it so a
+            // typed value such as "2 mm" still converts on unit changes.
+            var value = OZO.parseNumber ? OZO.parseNumber(normalized, NaN) : NaN;
             if (normalized !== "" && isFinite(value)) {
                 unitInputs[i].text = formatUnitValue(value * oldFactor / newFactor);
             }
@@ -827,13 +984,7 @@
             return holes;
         }
         var outerWinding = signedPolygonArea(outerPolygon);
-        var evenOdd = false;
-        try {
-            evenOdd = item.evenodd === true;
-            if (!evenOdd && item.pathItems[largestIndex]) {
-                evenOdd = item.pathItems[largestIndex].evenodd === true;
-            }
-        } catch (ignoreEvenOdd) {}
+        var evenOdd = isEvenOddCompound(item);
 
         for (i = 0; i < pathBounds.length; i++) {
             var hole = pathBounds[i];
@@ -880,7 +1031,20 @@
     for (stateIndex = 0; stateIndex < itemStates.length; stateIndex++) {
         itemStates[stateIndex].color = colorKey(itemStates[stateIndex].item);
         try {
-            itemStates[stateIndex].layer = itemStates[stateIndex].item.layer.name;
+            // Layer names are not unique in Illustrator, so include the
+            // layer's ordinal in the document. Layer.index is not exposed by
+            // every build, so resolve it by identity. Otherwise two different
+            // layers sharing a name would be treated as one group and would
+            // wrongly share a sheet in "Layer - separate sheets" mode.
+            var itemLayer = itemStates[stateIndex].item.layer;
+            var layerOrdinal = -1;
+            for (var layerIndex = 0; layerIndex < doc.layers.length; layerIndex++) {
+                if (doc.layers[layerIndex] === itemLayer) {
+                    layerOrdinal = layerIndex;
+                    break;
+                }
+            }
+            itemStates[stateIndex].layer = itemLayer.name + "\u001f" + layerOrdinal;
         } catch (ignoreLayer) {
             itemStates[stateIndex].layer = "Layer";
         }
@@ -996,12 +1160,13 @@
                 continue;
             }
             var state = itemStates[i];
+            var trueArea = geometryArea(state.geometry);
             result.push({
                 id: state.id,
                 state: state,
                 width: state.width,
                 height: state.height,
-                area: state.width * state.height,
+                area: trueArea > 0 ? trueArea : state.width * state.height,
                 color: state.color,
                 layer: state.layer,
                 geometry: state.geometry,
@@ -1082,12 +1247,22 @@
                 (bounds[1] + bounds[3]) / 2,
                 0
             );
+            var matched = false;
             for (var b = 0; b < bins.length; b++) {
-                if (containsBounds(bins[b].base, bounds)) {
+                // A locked obstacle that straddles a sheet edge still blocks
+                // the part that lies inside the usable area, so accept any
+                // overlap instead of requiring full containment. It must be
+                // registered on every sheet it overlaps: "All artboards" can
+                // place different groups on adjacent boards, and blocking only
+                // the first one would let artwork collide with the obstacle.
+                if (bins[b].r > bounds[0] && bounds[2] > bins[b].l &&
+                        bins[b].t > bounds[3] && bounds[1] > bins[b].b) {
                     bins[b].placed.push(fixedRect);
-                    count++;
-                    break;
+                    matched = true;
                 }
+            }
+            if (matched) {
+                count++;
             }
         }
         return count;
@@ -1102,7 +1277,7 @@
             return [0];
         }
         if (/\[90\]/i.test(name) || settings.rotation === 1) {
-            return [0, 90];
+            return [0, 90, 180, 270];
         }
         if (settings.rotation === 2) {
             return [0, 180];
@@ -1120,7 +1295,7 @@
         }
 
         var result = [];
-        for (var angle = 0; angle < 180; angle += step) {
+        for (var angle = 0; angle < 360; angle += step) {
             result.push(angle);
         }
         return result;
@@ -1175,7 +1350,7 @@
             for (var p = 0; p < source[i].placed.length; p++) {
                 var rect = source[i].placed[p];
                 placed.push({l: rect.l, t: rect.t, r: rect.r, b: rect.b,
-                    id: rect.id, geometry: rect.geometry});
+                    id: rect.id, geometry: rect.geometry, holeHost: rect.holeHost === true});
             }
             result.push({
                 l: source[i].l,
@@ -1225,7 +1400,8 @@
         return result;
     }
 
-    function fitsCandidate(rect, bin, spacing) {
+    function fitsCandidate(rect, bin, settings) {
+        var spacing = settings.spacing;
         var eps = 0.0001;
         if (rect.l < bin.l - eps || rect.r > bin.r + eps || rect.t > bin.t + eps || rect.b < bin.b - eps) {
             return false;
@@ -1270,6 +1446,17 @@
                     geometriesIntersect(rect, bin.placed[i], spacing)) {
                 return false;
             }
+            // A candidate can sit inside a hole without touching any ink (that
+            // is why the true-shape test above allows it). Hole bins enforce
+            // the edge padding for those pockets, so let them handle it
+            // instead of accepting a tighter spot in the main bin. When
+            // nesting inside holes is disabled the pocket is not free space at
+            // all.
+            if (!bin.boundary && rectCenterInHole(rect, bin.placed[i])) {
+                if (!settings.allowInside || bin.placed[i].holeHost) {
+                    return false;
+                }
+            }
         }
         return true;
     }
@@ -1295,8 +1482,6 @@
                 // dense jobs to exhaust the budget at 0 degrees and skip rotation.
                 var tested = 0;
                 var size = rotatedSize(descriptor, angles[a]);
-                var xs = baseXs.slice(0);
-                var ys = baseYs.slice(0);
                 var paired = [];
                 var sampleLimit = settings.quality === 1 ? 18 : 10;
                 var localPoints = descriptorSamplePoints(descriptor, angles[a], sampleLimit);
@@ -1318,10 +1503,6 @@
                                 localPoints[localIndex][0] + geometryLeft;
                             var alignedY = obstaclePoints[obstacleIndex][1] -
                                 localPoints[localIndex][1] + geometryTop;
-                            xs.push(alignedX + settings.spacing);
-                            xs.push(alignedX - settings.spacing);
-                            ys.push(alignedY + settings.spacing);
-                            ys.push(alignedY - settings.spacing);
                             paired.push([alignedX + settings.spacing, alignedY + settings.spacing]);
                             paired.push([alignedX + settings.spacing, alignedY - settings.spacing]);
                             paired.push([alignedX - settings.spacing, alignedY + settings.spacing]);
@@ -1357,7 +1538,7 @@
                     } else {
                         rect.geometry = null;
                     }
-                    if (!fitsCandidate(rect, bin, settings.spacing)) {
+                    if (!fitsCandidate(rect, bin, settings)) {
                         return;
                     }
                     best = {score: score, rect: rect, angle: angles[a], bin: bin,
@@ -1370,10 +1551,15 @@
                     tested++;
                     considerCandidate(paired[pairIndex][0], paired[pairIndex][1]);
                 }
-                for (var y = 0; y < ys.length && tested < candidateLimit; y++) {
-                    for (var x = 0; x < xs.length && tested < candidateLimit; x++) {
+                // The paired points above only probe contact positions. Always
+                // finish with the sheet-corner cross-product so a nearly empty
+                // sheet still offers row/column starts. Using the (much larger)
+                // paired coordinate lists here used to burn the remaining
+                // budget on the first row and leave free rows unexplored.
+                for (var y = 0; y < baseYs.length && tested < candidateLimit; y++) {
+                    for (var x = 0; x < baseXs.length && tested < candidateLimit; x++) {
                         tested++;
-                        considerCandidate(xs[x], ys[y]);
+                        considerCandidate(baseXs[x], baseYs[y]);
                     }
                 }
             }
@@ -1386,9 +1572,13 @@
     }
 
     function addHoleBins(descriptor, placement, bins, settings) {
-        if (!settings.allowInside || descriptor.holes.length === 0) {
+        if (!settings.allowInside || !descriptor.geometry ||
+                !descriptor.holes || descriptor.holes.length === 0) {
             return;
         }
+        // Marks a container whose pockets are handled by dedicated hole bins,
+        // so main-bin placements must not bypass their edge padding.
+        placement.rect.holeHost = true;
         var centerX = (placement.rect.l + placement.rect.r) / 2;
         var centerY = (placement.rect.t + placement.rect.b) / 2;
         var offsetX = placement.geometryOffset ? placement.geometryOffset[0] : centerX;
@@ -1455,6 +1645,14 @@
                 rightmost = Math.max(rightmost, bins[existingIndex].base[2]);
             }
         }
+        // Bins describe the nesting containers only. In a document with more
+        // artboards, a new sheet must clear those too or it would be created
+        // on top of existing artwork.
+        try {
+            for (var artboardIndex = 0; artboardIndex < doc.artboards.length; artboardIndex++) {
+                rightmost = Math.max(rightmost, doc.artboards[artboardIndex].artboardRect[2]);
+            }
+        } catch (ignoreArtboards) {}
         var offset = rightmost + Math.max(36, settings.spacing + settings.edge * 2) -
             template.base[0];
         var base = [template.base[0] + offset, template.base[1],
@@ -1577,6 +1775,30 @@
                 var queueKey = groupsLeft[groupIndex].key;
 
                 var remaining = [];
+                var groupTemplate = null;
+                // Overflow sheets should copy the sheet that belongs to this
+                // group. "All artboards" can have differently sized boards,
+                // and using bins[0] would create a wrong-sized sheet.
+                for (var templateIndex = 0; templateIndex < best.bins.length; templateIndex++) {
+                    var templateBin = best.bins[templateIndex];
+                    if (!templateBin.ownerId && templateBin.groupKey === queueKey &&
+                            !templateBin.generated) {
+                        groupTemplate = templateBin;
+                        break;
+                    }
+                }
+                if (!groupTemplate) {
+                    for (templateIndex = 0; templateIndex < best.bins.length; templateIndex++) {
+                        templateBin = best.bins[templateIndex];
+                        if (!templateBin.ownerId && templateBin.groupKey === queueKey) {
+                            groupTemplate = templateBin;
+                            break;
+                        }
+                    }
+                }
+                if (!groupTemplate) {
+                    groupTemplate = best.bins[0];
+                }
                 for (var u = 0; u < queue.length; u++) {
                     var allowed = [];
                     for (var binIndex = 0; binIndex < best.bins.length; binIndex++) {
@@ -1600,7 +1822,7 @@
                 }
 
                 while (remaining.length > 0 && sheetsAdded < maxAdditionalSheets) {
-                    addSeparatedSheet(best.bins, best.bins[0], settings);
+                    addSeparatedSheet(best.bins, groupTemplate, settings);
                     sheetsAdded++;
                     var newBin = best.bins[best.bins.length - 1];
                     newBin.groupKey = queueKey;
@@ -1616,7 +1838,15 @@
                         placement.descriptor = remaining[u];
                         best.plan.push(placement);
                         best.score += placement.score;
-                        addHoleBins(remaining[u], placement, newBinList, settings);
+                        var newHoleStart = best.bins.length;
+                        addHoleBins(remaining[u], placement, best.bins, settings);
+                        for (var newHoleIndex = newHoleStart;
+                                newHoleIndex < best.bins.length; newHoleIndex++) {
+                            best.bins[newHoleIndex].groupKey = queueKey;
+                            // Expose the fresh pocket to the rest of the
+                            // leftovers that are packed onto this new sheet.
+                            newBinList.push(best.bins[newHoleIndex]);
+                        }
                         placedOnSheet++;
                     }
                     remaining = stillNeeded;
@@ -1799,6 +2029,11 @@
                 drawBounds([bin.l, bin.t, bin.r, bin.b], null, usablePen);
                 for (var f = 0; f < bin.placed.length; f++) {
                     var fixed = bin.placed[f];
+                    // Positive ids are packed parts and are drawn from
+                    // previewModel.plan below. Only draw fixed obstacles here.
+                    if (!fixed || fixed.id > 0) {
+                        continue;
+                    }
                     drawBounds([fixed.l, fixed.t, fixed.r, fixed.b], fixedBrush, null);
                 }
             }
@@ -1820,15 +2055,31 @@
         }
     }
 
+    function binHasItems(bin) {
+        if (!bin || !bin.placed) {
+            return false;
+        }
+        for (var i = 0; i < bin.placed.length; i++) {
+            // Fixed obstacles use negative ids; sheets are "used" only when at
+            // least one of the user's objects was actually placed on them.
+            if (bin.placed[i] && bin.placed[i].id > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function countSheets(bins) {
         if (!bins) {
             return 0;
         }
         // Interior "hole" pockets share their owner sheet and carry an
-        // ownerId, so they must not be reported as extra sheets.
+        // ownerId, so they must not be reported as extra sheets. Empty
+        // artboards (for example in "All artboards" mode) are not used
+        // sheets either.
         var count = 0;
         for (var i = 0; i < bins.length; i++) {
-            if (!bins[i].ownerId) {
+            if (!bins[i].ownerId && binHasItems(bins[i])) {
                 count++;
             }
         }
@@ -1882,13 +2133,13 @@
         }
         var sheetArea = 0;
         for (i = 0; i < resultBins.length; i++) {
-            if (!resultBins[i].ownerId) {
+            if (!resultBins[i].ownerId && binHasItems(resultBins[i])) {
                 sheetArea += (resultBins[i].r - resultBins[i].l) *
                     (resultBins[i].t - resultBins[i].b);
             }
         }
         result.utilization = sheetArea > 0 ?
-            Math.round(sourceArea / sheetArea * 1000) / 10 : 0;
+            Math.min(100, Math.round(sourceArea / sheetArea * 1000) / 10) : 0;
         result.fixedCount = fixedCount;
         result.sourceCount = sources.length;
         result.bins = resultBins;
