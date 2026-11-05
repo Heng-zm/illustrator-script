@@ -104,6 +104,7 @@ function makeArtboardDoc(spec) {
         documentColorSpace: "DocumentColorSpace.CMYK",
         rulerUnits: spec.rulerUnits,
         pageItems: { length: spec.pageItems || 0 },
+        layers: spec.layers || [],
         selection: spec.selection === undefined ? null : spec.selection,
         artboards: artboards
     };
@@ -295,6 +296,92 @@ test("print defaults measure selection when artwork is selected", function () {
     near(defaults.width, 10, "selection cm width");
     near(defaults.height, 5, "selection cm height");
     assert.ok(defaults.artboardName.indexOf("Selection") !== -1, "artboardName mentions Selection");
+});
+
+test("print defaults ignore a previously generated print header", function () {
+    var context = makeContext();
+    context.__app.documents = [{}];
+    context.__app.activeDocument = makeArtboardDoc({
+        widthPt: 283.4645669,
+        heightPt: 141.7322835,
+        rulerUnits: RulerUnits.Centimeters,
+        selection: [
+            { typename: "GroupItem", layer: { name: "[Print Job Info]" }, geometricBounds: [-20, 360, 300, 260] },
+            { typename: "PathItem", layer: { name: "Artwork" }, geometricBounds: [0, 141.7322835, 283.4645669, 0] }
+        ],
+        pageItems: 2
+    });
+    var defaults = JSON.parse(context.ozoGetPrintJobDefaults());
+    assert.strictEqual(defaults.status, "success");
+    assert.strictEqual(defaults.isArtboard, false, "still measures the user artwork");
+    near(defaults.width, 10, "artwork cm width");
+    near(defaults.height, 5, "artwork cm height");
+});
+
+test("print defaults fall back to the artboard when only the header is selected", function () {
+    var context = makeContext();
+    context.__app.documents = [{}];
+    context.__app.activeDocument = makeArtboardDoc({
+        widthPt: 283.4645669,
+        heightPt: 141.7322835,
+        rulerUnits: RulerUnits.Centimeters,
+        selection: { typename: "GroupItem", layer: { name: "[Print Job Info]" }, geometricBounds: [-20, 360, 300, 260] },
+        pageItems: 1
+    });
+    var defaults = JSON.parse(context.ozoGetPrintJobDefaults());
+    assert.strictEqual(defaults.status, "success");
+    assert.strictEqual(defaults.isArtboard, true, "ignores the generated header");
+    near(defaults.width, 10, "artboard cm width");
+    near(defaults.height, 5, "artboard cm height");
+});
+
+test("print defaults strip a previous header out of the artboard height", function () {
+    var context = makeContext();
+    context.__app.documents = [{}];
+    context.__app.activeDocument = makeArtboardDoc({
+        widthPt: 283.4645669,
+        heightPt: 200, // artboard already expanded by an earlier header
+        rulerUnits: RulerUnits.Centimeters,
+        pageItems: 1,
+        layers: [{
+            name: "[Print Job Info]",
+            pageItems: [{
+                name: "Print Header Block",
+                geometricBounds: [0, 200, 283.4645669, 141.7322835]
+            }]
+        }]
+    });
+    var defaults = JSON.parse(context.ozoGetPrintJobDefaults());
+    assert.strictEqual(defaults.status, "success");
+    assert.strictEqual(defaults.isArtboard, true);
+    near(defaults.width, 10, "artboard cm width");
+    near(defaults.height, 5, "original artwork cm height");
+});
+
+test("print defaults use the recorded header height without a dark box", function () {
+    var context = makeContext();
+    context.__app.documents = [{}];
+    context.__app.activeDocument = makeArtboardDoc({
+        widthPt: 283.4645669,
+        heightPt: 201.7322835, // 141.73pt artwork + 60pt header
+        rulerUnits: RulerUnits.Centimeters,
+        pageItems: 1,
+        layers: [{
+            name: "[Print Job Info]",
+            pageItems: [{
+                name: "Print Header Block",
+                note: "OZO_PRINT_JOB_HEADER|headerHeight=60",
+                // Text-only group: its bottom edge sits inside the header band.
+                geometricBounds: [0, 201.7322835, 283.4645669, 151.7322835],
+                pageItems: []
+            }]
+        }]
+    });
+    var defaults = JSON.parse(context.ozoGetPrintJobDefaults());
+    assert.strictEqual(defaults.status, "success");
+    assert.strictEqual(defaults.isArtboard, true);
+    near(defaults.width, 10, "artboard cm width");
+    near(defaults.height, 5, "original artwork cm height");
 });
 
 // ------------------------------------------------------------------

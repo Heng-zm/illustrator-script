@@ -1008,6 +1008,61 @@ function ozoExecuteSmartDimension(paramsJsonStr) {
 // -------------------------------------------------------------
 // Print Job Info Bridge
 // -------------------------------------------------------------
+// A generated header stays selected after creation. It must not be measured as
+// artwork, otherwise the next run builds another banner above the first one.
+function ozoIsGeneratedPrintJobItem(item) {
+    try {
+        var layer = item && item.layer;
+        return !!layer && (layer.name === "[Print Job Info]" || layer.name === "__PrintJobInfo_Preview__");
+    } catch (eLayer) {
+        return false;
+    }
+}
+
+// Returns the header created by an earlier run, if any.
+function ozoGetPreviousPrintJobHeader() {
+    try {
+        var doc = app.activeDocument;
+        for (var li = 0; li < doc.layers.length; li++) {
+            var layer = doc.layers[li];
+            if (layer.name !== "[Print Job Info]") continue;
+            for (var pi = 0; pi < layer.pageItems.length; pi++) {
+                var item = layer.pageItems[pi];
+                try {
+                    if (item.name !== "Print Header Block" || !item.geometricBounds) continue;
+                    var b = item.geometricBounds;
+                    if (!b || b.length !== 4) continue;
+
+                    var headerHeight = null;
+                    var noteMatch = /headerHeight=([0-9.+-]+)/.exec(String(item.note || ""));
+                    if (noteMatch) {
+                        var parsedHeight = parseFloat(noteMatch[1]);
+                        if (isFinite(parsedHeight) && parsedHeight > 0) headerHeight = parsedHeight;
+                    }
+
+                    var backgroundBottom = null;
+                    try {
+                        for (var ci = 0; ci < item.pageItems.length; ci++) {
+                            var child = item.pageItems[ci];
+                            if (child.name === "Header Background" && child.geometricBounds) {
+                                backgroundBottom = child.geometricBounds[3];
+                                break;
+                            }
+                        }
+                    } catch (eChildren) {}
+
+                    return {
+                        bounds: [b[0], b[1], b[2], b[3]],
+                        headerHeight: headerHeight,
+                        backgroundBottom: backgroundBottom
+                    };
+                } catch (eItem) {}
+            }
+        }
+    } catch (eLayer) {}
+    return null;
+}
+
 function ozoGetPrintJobDefaults() {
     try {
         if (app.documents.length === 0) {
@@ -1033,6 +1088,7 @@ function ozoGetPrintJobDefaults() {
             if (selItems.length > 0) {
                 var combined = null;
                 for (var i = 0; i < selItems.length; i++) {
+                    if (ozoIsGeneratedPrintJobItem(selItems[i])) continue;
                     var b = null;
                     try { b = selItems[i].geometricBounds; } catch (eGeo) {
                         try { b = selItems[i].visibleBounds; } catch (eVis) {}
@@ -1060,8 +1116,21 @@ function ozoGetPrintJobDefaults() {
         if (abIdx < 0 || abIdx >= doc.artboards.length) abIdx = 0;
         if (isArtboard) {
             var rect = doc.artboards[abIdx].artboardRect;
+            var artboardTop = rect[1];
+            // A previous header sits inside the top band of an expanded artboard;
+            // report the original artwork height instead of the header-inflated one.
+            var previousHeader = ozoGetPreviousPrintJobHeader();
+            if (previousHeader) {
+                var headerBottom = previousHeader.headerHeight
+                    ? previousHeader.bounds[1] - previousHeader.headerHeight
+                    : (previousHeader.backgroundBottom !== null ? previousHeader.backgroundBottom : previousHeader.bounds[3]);
+                if (headerBottom < rect[1] && headerBottom > rect[3] &&
+                        previousHeader.bounds[0] < rect[2] && previousHeader.bounds[2] > rect[0]) {
+                    artboardTop = headerBottom;
+                }
+            }
             widthPt = Math.abs(rect[2] - rect[0]);
-            heightPt = Math.abs(rect[1] - rect[3]);
+            heightPt = Math.abs(artboardTop - rect[3]);
             sourceName = doc.artboards[abIdx].name || ("Artboard " + (abIdx + 1));
         }
 

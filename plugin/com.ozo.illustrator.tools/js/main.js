@@ -2718,7 +2718,8 @@
             qty: saved.qty !== undefined ? saved.qty : 1,
             note: saved.note || "",
             expandArtboard: saved.expandArtboard !== false,
-            darkBox: saved.darkBox === true,
+            // Match the standalone dialog: the dark header box is on by default.
+            darkBox: saved.darkBox !== false,
             textColorIndex: saved.textColorIndex !== undefined ? saved.textColorIndex : 0,
             alignmentIndex: saved.alignmentIndex !== undefined ? saved.alignmentIndex : 0,
             fontSizeIndex: saved.fontSizeIndex !== undefined ? saved.fontSizeIndex : 0,
@@ -2920,6 +2921,28 @@
         var pjTicketDim = $("pjTicketDim");
         var pjTicketNote = $("pjTicketNote");
         var pjTicketCard = $("pjTicketCard");
+        var pjPreviousUnit = state.unit;
+
+        // Same point conversions as OZO.toPoints / OZO.fromPoints in ExtendScript.
+        function pjUnitToPoints(value, unit) {
+            if (unit === "mm") return value * (72 / 25.4);
+            if (unit === "cm") return value * (72 / 2.54);
+            if (unit === "in") return value * 72;
+            if (unit === "m") return value * (72000 / 25.4);
+            return value; // pt
+        }
+
+        function pjPointsToUnit(points, unit) {
+            if (unit === "mm") return points * (25.4 / 72);
+            if (unit === "cm") return points * (2.54 / 72);
+            if (unit === "in") return points / 72;
+            if (unit === "m") return points * (25.4 / 72000);
+            return points; // pt
+        }
+
+        function pjCleanNumber(value) {
+            return String(Math.round(value * 100) / 100);
+        }
 
         function getEffectiveMaterial() {
             if (pjMatSelect.value === "Custom") {
@@ -3012,7 +3035,19 @@
         pjNoteInput.addEventListener("input", saveState);
         pjWidthInput.addEventListener("input", saveState);
         pjHeightInput.addEventListener("input", saveState);
-        pjUnitSelect.addEventListener("change", saveState);
+        pjUnitSelect.addEventListener("change", function() {
+            var newUnit = pjUnitSelect.value;
+            var wVal = parseFloat(String(pjWidthInput.value).replace(/,/g, "."));
+            var hVal = parseFloat(String(pjHeightInput.value).replace(/,/g, "."));
+            if (isFinite(wVal)) {
+                pjWidthInput.value = pjCleanNumber(pjPointsToUnit(pjUnitToPoints(wVal, pjPreviousUnit), newUnit));
+            }
+            if (isFinite(hVal)) {
+                pjHeightInput.value = pjCleanNumber(pjPointsToUnit(pjUnitToPoints(hVal, pjPreviousUnit), newUnit));
+            }
+            pjPreviousUnit = newUnit;
+            saveState();
+        });
         pjFontSizeSelect.addEventListener("change", saveState);
         pjColorSelect.addEventListener("change", saveState);
         pjFontSelect.addEventListener("change", saveState);
@@ -3034,10 +3069,22 @@
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
                 if (res && res.status === "success") {
-                    if (!pjWidthInput.value || pjWidthInput.value === "0") pjWidthInput.value = res.width;
-                    if (!pjHeightInput.value || pjHeightInput.value === "0") pjHeightInput.value = res.height;
+                    var oldUnit = pjPreviousUnit;
+                    var existingW = parseFloat(String(pjWidthInput.value).replace(/,/g, "."));
+                    var existingH = parseFloat(String(pjHeightInput.value).replace(/,/g, "."));
+                    if (isFinite(existingW) && existingW > 0) {
+                        pjWidthInput.value = pjCleanNumber(pjPointsToUnit(pjUnitToPoints(existingW, oldUnit), res.unit));
+                    } else {
+                        pjWidthInput.value = res.width;
+                    }
+                    if (isFinite(existingH) && existingH > 0) {
+                        pjHeightInput.value = pjCleanNumber(pjPointsToUnit(pjUnitToPoints(existingH, oldUnit), res.unit));
+                    } else {
+                        pjHeightInput.value = res.height;
+                    }
                     if (!pjDateInput.value) pjDateInput.value = res.dateStr;
                     pjUnitSelect.value = res.unit;
+                    pjPreviousUnit = res.unit;
                     saveState();
                 }
             });
@@ -3052,6 +3099,7 @@
                     pjWidthInput.value = res.width;
                     pjHeightInput.value = res.height;
                     pjUnitSelect.value = res.unit;
+                    pjPreviousUnit = res.unit;
                     if (res.dateStr) pjDateInput.value = res.dateStr;
                     saveState();
                     setStatus(isKhmer() ? "បានទាញយកទំហំ " + res.width + " x " + res.height + " " + res.unit : "Synced " + res.width + " x " + res.height + " " + res.unit + " from " + res.artboardName, "success", 3000);

@@ -52,6 +52,65 @@
         }
     }
 
+    // Previous headers stay selected after generation. Measuring them would make
+    // the next run treat the header as artwork and stack a new banner on top of
+    // the old one, so generated items never participate in measurement.
+    function isGeneratedItem(item) {
+        try {
+            var layer = item && item.layer;
+            return !!layer && (layer.name === RESULT_LAYER_NAME || layer.name === PREVIEW_LAYER_NAME);
+        } catch (eLayer) {
+            return false;
+        }
+    }
+
+    // Expanding the artboard leaves the previous header inside the artboard's
+    // top band. Its top edge minus the recorded header height is the real
+    // artwork top, so re-running replaces the old banner instead of growing the
+    // artboard (and the font size) again. Older headers fall back to the dark
+    // background box, then to the group bounds.
+    function findExistingHeader() {
+        try {
+            for (var li = 0; li < doc.layers.length; li++) {
+                var layer = doc.layers[li];
+                if (layer.name !== RESULT_LAYER_NAME) continue;
+                for (var pi = 0; pi < layer.pageItems.length; pi++) {
+                    var item = layer.pageItems[pi];
+                    try {
+                        if (item.name !== "Print Header Block" || !item.geometricBounds) continue;
+                        var b = item.geometricBounds;
+                        if (!b || b.length !== 4) continue;
+
+                        var headerHeight = null;
+                        var noteMatch = /headerHeight=([0-9.+-]+)/.exec(String(item.note || ""));
+                        if (noteMatch) {
+                            var parsedHeight = parseFloat(noteMatch[1]);
+                            if (isFinite(parsedHeight) && parsedHeight > 0) headerHeight = parsedHeight;
+                        }
+
+                        var backgroundBottom = null;
+                        try {
+                            for (var ci = 0; ci < item.pageItems.length; ci++) {
+                                var child = item.pageItems[ci];
+                                if (child.name === "Header Background" && child.geometricBounds) {
+                                    backgroundBottom = child.geometricBounds[3];
+                                    break;
+                                }
+                            }
+                        } catch (eChildren) {}
+
+                        return {
+                            bounds: [b[0], b[1], b[2], b[3]],
+                            headerHeight: headerHeight,
+                            backgroundBottom: backgroundBottom
+                        };
+                    } catch (eItem) {}
+                }
+            }
+        } catch (eHeaderLayer) {}
+        return null;
+    }
+
     var initialSelectedTextFrame = null;
     try {
         var initSel = getNormalizedSelection();
@@ -250,7 +309,6 @@
 
         // 3. Search document text frames (prioritizing PointText with Khmer)
         try {
-            var khmerPointDonor = null;
             var khmerAnyDonor = null;
             var anyPointDonor = null;
             var anyDonor = null;
@@ -270,7 +328,7 @@
                 if (!anyDonor) anyDonor = tf;
             }
 
-            return khmerPointDonor || anyPointDonor || khmerAnyDonor || anyDonor;
+            return anyPointDonor || khmerAnyDonor || anyDonor;
         } catch (eDocTf) {}
 
         return null;
@@ -281,6 +339,7 @@
         if (sel.length > 0) {
             var combined = null;
             for (var i = 0; i < sel.length; i++) {
+                if (isGeneratedItem(sel[i])) continue;
                 var b = null;
                 try { b = sel[i].geometricBounds; } catch (eGeo) {
                     try { b = sel[i].visibleBounds; } catch (eVis) {}
@@ -314,6 +373,17 @@
         if (abIdx === activeArtboardIndex && originalArtboardRect) {
             rect = originalArtboardRect;
         }
+        // Ignore the band occupied by a header from a previous run.
+        var previousHeader = findExistingHeader();
+        if (previousHeader) {
+            var headerBottom = previousHeader.headerHeight
+                ? previousHeader.bounds[1] - previousHeader.headerHeight
+                : (previousHeader.backgroundBottom !== null ? previousHeader.backgroundBottom : previousHeader.bounds[3]);
+            if (headerBottom < rect[1] && headerBottom > rect[3] &&
+                    previousHeader.bounds[0] < rect[2] && previousHeader.bounds[2] > rect[0]) {
+                rect = [rect[0], headerBottom, rect[2], rect[3]];
+            }
+        }
         return {
             bounds: [rect[0], rect[1], rect[2], rect[3]],
             isArtboard: true,
@@ -329,6 +399,7 @@
             if (ru === RulerUnits.Centimeters) return "cm";
             if (ru === RulerUnits.Inches) return "in";
             if (ru === RulerUnits.Meters) return "m";
+            if (ru === RulerUnits.Points) return "pt";
         } catch (eRu) {}
         return "cm";
     }
@@ -570,13 +641,14 @@
     heightInput._ozoNoSave = true;
 
     dimRow.add("statictext", undefined, OZO.tr("Unit:"));
-    var unitList = dimRow.add("dropdownlist", undefined, ["cm", "mm", "m", "in"]);
+    var unitList = dimRow.add("dropdownlist", undefined, ["cm", "mm", "m", "in", "pt"]);
     var defaultUnitIdx = 0;
     if (defaultUnit === "mm") defaultUnitIdx = 1;
     else if (defaultUnit === "m") defaultUnitIdx = 2;
     else if (defaultUnit === "in") defaultUnitIdx = 3;
+    else if (defaultUnit === "pt") defaultUnitIdx = 4;
     unitList.selection = defaultUnitIdx;
-    unitList.preferredSize.width = 60;
+    unitList.preferredSize.width = 70;
 
     var refreshDimBtn = dimRow.add("button", undefined, "⟳");
     refreshDimBtn.preferredSize = [26, 24];
@@ -595,11 +667,11 @@
         var newUnit = unitList.selection.text;
         var wVal = parseFloat(widthInput.text.replace(/,/g, "."));
         var hVal = parseFloat(heightInput.text.replace(/,/g, "."));
-        if (isFinite(wVal) && isFinite(hVal)) {
-            var ptW = unitToPoints(wVal, previousUnit);
-            var ptH = unitToPoints(hVal, previousUnit);
-            widthInput.text = cleanNumber(pointsToUnit(ptW, newUnit));
-            heightInput.text = cleanNumber(pointsToUnit(ptH, newUnit));
+        if (isFinite(wVal)) {
+            widthInput.text = cleanNumber(pointsToUnit(unitToPoints(wVal, previousUnit), newUnit));
+        }
+        if (isFinite(hVal)) {
+            heightInput.text = cleanNumber(pointsToUnit(unitToPoints(hVal, previousUnit), newUnit));
         }
         previousUnit = newUnit;
         triggerPreviewUpdate();
@@ -864,22 +936,14 @@
         if (!expandArtboard || !originalArtboardRect || activeArtboardIndex < 0 || activeArtboardIndex >= doc.artboards.length) {
             return originalArtboardRect;
         }
-        if (target.isArtboard) {
-            return [
-                originalArtboardRect[0],
-                originalArtboardRect[1] + geom.headerHeight,
-                originalArtboardRect[2],
-                originalArtboardRect[3]
-            ];
-        } else {
-            // When artwork is selected, fit the artboard to enclose the artwork plus the header on top
-            return [
-                target.bounds[0],
-                target.bounds[1] + geom.headerHeight,
-                target.bounds[2],
-                target.bounds[3]
-            ];
-        }
+        // target.bounds already excludes a header from a previous run, so using it
+        // for both artboard and selection targets keeps repeat runs stable.
+        return [
+            target.bounds[0],
+            target.bounds[1] + geom.headerHeight,
+            target.bounds[2],
+            target.bounds[3]
+        ];
     }
 
     function cleanupPreview() {
@@ -914,6 +978,9 @@
     function renderHeaderGroup(container, target, settings, geom) {
         var grp = container.groupItems.add();
         grp.name = "Print Header Block";
+        // Lets a later run measure the artwork top even when the dark background
+        // box is disabled and the text does not reach the header's bottom edge.
+        try { grp.note = "OZO_PRINT_JOB_HEADER|headerHeight=" + geom.headerHeight; } catch (eNote) {}
 
         var targetBounds = target.bounds;
         var left = targetBounds[0];
