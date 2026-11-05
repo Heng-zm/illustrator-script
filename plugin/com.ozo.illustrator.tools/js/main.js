@@ -2231,9 +2231,17 @@
         html.push('  </div>');
         html.push('</div>');
 
-        // 3. Formats Card
+                // 3. Formats Card
         html.push('<div class="embed-card">');
-        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់នាំចេញ" : "Export Formats") + '</span></div>');
+        html.push('  <div class="embed-card-header" style="display:flex;justify-content:space-between;align-items:center;">');
+        html.push('    <span>' + (isKhmer() ? "\u1791\u1798\u17d2\u179a\u1784\u17cb\u1793\u17b6\u17c6\u1785\u17c1\u1789" : "Export Formats") + '</span>');
+        html.push('    <div class="embed-chips exp-dpi-quickbar" style="margin:0;">');
+        html.push('      <button type="button" class="embed-chip exp-dpi-btn" data-dpi="72" title="' + (isKhmer() ? "\u1780\u17c6\u178e\u178f\u17cb\u1782\u17d2\u179a\u1794\u17cb\u1791\u1798\u17d2\u179a\u1784\u17cb\u1787\u17b6 72 DPI (Web)" : "Set all to 72 DPI (Web)") + '">72</button>');
+        html.push('      <button type="button" class="embed-chip exp-dpi-btn" data-dpi="150" title="' + (isKhmer() ? "\u1780\u17c6\u178e\u178f\u17cb\u1782\u17d2\u179a\u1794\u17cb\u1791\u1798\u17d2\u179a\u1784\u17cb\u1787\u17b6 150 DPI (Proof)" : "Set all to 150 DPI (Proof)") + '">150</button>');
+        html.push('      <button type="button" class="embed-chip exp-dpi-btn" data-dpi="300" title="' + (isKhmer() ? "\u1780\u17c6\u178e\u178f\u17cb\u1782\u17d2\u179a\u1794\u17cb\u1791\u1798\u17d2\u179a\u1784\u17cb\u1787\u17b6 300 DPI (Print)" : "Set all to 300 DPI (Print)") + '">300</button>');
+        html.push('      <button type="button" class="embed-chip exp-dpi-btn" data-dpi="600" title="' + (isKhmer() ? "\u1780\u17c6\u178e\u178f\u17cb\u1782\u17d2\u179a\u1794\u17cb\u1791\u1798\u17d2\u179a\u1784\u17cb\u1787\u17b6 600 DPI (Ultra)" : "Set all to 600 DPI (Ultra)") + '">600</button>');
+        html.push('    </div>');
+        html.push('  </div>');
         html.push('  <div class="embed-format-group">');
 
         // Format PDF
@@ -2259,7 +2267,7 @@
         html.push('        <label class="embed-format-label"><input type="checkbox" id="chkTiff" ' + (state.tiff ? "checked" : "") + '> TIFF (Prepress / RIP)</label>');
         html.push('      </div>');
         html.push('      <div class="embed-format-options" id="optTiff" style="display:' + (state.tiff ? "flex" : "none") + ';">');
-        html.push('        <select id="selTiffDpi" class="embed-select"><option value="300" ' + (state.tiffDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.tiffDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.tiffDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
+        html.push('        <select id="selTiffDpi" class="embed-select"><option value="600" ' + (state.tiffDpi == 600 ? "selected" : "") + '>600 DPI</option><option value="300" ' + (state.tiffDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.tiffDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.tiffDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
         html.push('        <select id="selTiffColor" class="embed-select"><option value="CMYK" ' + (state.tiffColor === "CMYK" ? "selected" : "") + '>CMYK</option><option value="RGB" ' + (state.tiffColor === "RGB" ? "selected" : "") + '>RGB</option></select>');
         html.push('        <label class="embed-check-row"><input type="checkbox" id="chkTiffLzw" ' + (state.tiffLzw ? "checked" : "") + '> LZW</label>');
         html.push('      </div>');
@@ -2271,7 +2279,7 @@
         html.push('        <label class="embed-format-label"><input type="checkbox" id="chkPng" ' + (state.png ? "checked" : "") + '> PNG (Transparent Web)</label>');
         html.push('      </div>');
         html.push('      <div class="embed-format-options" id="optPng" style="display:' + (state.png ? "flex" : "none") + ';">');
-        html.push('        <select id="selPngDpi" class="embed-select"><option value="300" ' + (state.pngDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.pngDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.pngDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
+        html.push('        <select id="selPngDpi" class="embed-select"><option value="600" ' + (state.pngDpi == 600 ? "selected" : "") + '>600 DPI</option><option value="300" ' + (state.pngDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.pngDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.pngDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
         html.push('        <label class="embed-check-row"><input type="checkbox" id="chkPngTrans" ' + (state.pngTrans ? "checked" : "") + '> Transparent</label>');
         html.push('      </div>');
         html.push('    </div>');
@@ -2282,7 +2290,7 @@
         html.push('        <label class="embed-format-label"><input type="checkbox" id="chkJpg" ' + (state.jpg ? "checked" : "") + '> JPEG (Client Proof)</label>');
         html.push('      </div>');
         html.push('      <div class="embed-format-options" id="optJpg" style="display:' + (state.jpg ? "flex" : "none") + ';">');
-        html.push('        <select id="selJpgDpi" class="embed-select"><option value="300" ' + (state.jpgDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.jpgDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.jpgDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
+        html.push('        <select id="selJpgDpi" class="embed-select"><option value="600" ' + (state.jpgDpi == 600 ? "selected" : "") + '>600 DPI</option><option value="300" ' + (state.jpgDpi == 300 ? "selected" : "") + '>300 DPI</option><option value="150" ' + (state.jpgDpi == 150 ? "selected" : "") + '>150 DPI</option><option value="72" ' + (state.jpgDpi == 72 ? "selected" : "") + '>72 DPI</option></select>');
         html.push('        <span style="font-size:11px;color:var(--text-muted);">' + (isKhmer() ? "គុណភាព 100% (អតិបរមា)" : "Quality 100% (Max)") + '</span>');
         html.push('      </div>');
         html.push('    </div>');
@@ -2329,6 +2337,14 @@
         html.push('      <option value="[color]">[color] Color</option>');
         html.push('      <option value="[fmt]">[fmt] Format</option>');
         html.push('    </select>');
+        html.push('  </div>');
+        html.push('  <div class="embed-chips" style="margin-top:6px;margin-bottom:6px;">');
+        html.push('    <button type="button" class="embed-chip exp-token-btn" data-token="[doc]" title="' + (isKhmer() ? "\u1788\u17d2\u1798\u17c4\u17c7\u17af\u1780\u179f\u17b6\u179a" : "Document Name") + '">[doc]</button>');
+        html.push('    <button type="button" class="embed-chip exp-token-btn" data-token="[ab]" title="' + (isKhmer() ? "\u1788\u17d2\u1798\u17c4\u17c7 Artboard" : "Artboard Name") + '">[ab]</button>');
+        html.push('    <button type="button" class="embed-chip exp-token-btn" data-token="[w]x[h][unit]" title="' + (isKhmer() ? "\u1791\u17c6\u17a0\u17c6 WxH" : "Dimensions WxH") + '">[w]x[h][unit]</button>');
+        html.push('    <button type="button" class="embed-chip exp-token-btn" data-token="[num]" title="' + (isKhmer() ? "\u179b\u17c1\u1781\u179b\u17c6\u178a\u17b6\u1794\u17cb 01, 02" : "Padded Number") + '">[num]</button>');
+        html.push('    <button type="button" class="embed-chip exp-token-btn" data-token="[date]" title="' + (isKhmer() ? "\u1780\u17b6\u179b\u1794\u179a\u17b7\u1785\u17d2\u178b\u17c1\u1791 YYYY-MM-DD" : "Date") + '">[date]</button>');
+        html.push('    <button type="button" class="embed-chip exp-token-btn" data-token="[color]" title="' + (isKhmer() ? "\u1794\u17d2\u179a\u1796\u17d0\u1793\u17d2\u178b\u1796\u178e\u17cc" : "Color Space") + '">[color]</button>');
         html.push('  </div>');
         html.push('  <input type="text" id="expTemplateInput" class="embed-input embed-input-mono" value="' + escapeHtml(state.template) + '">');
         html.push('  <div class="embed-naming-preview" id="expNamingPreview">' + (isKhmer() ? "ឧទាហរណ៍ឈ្មោះឯកសារ" : "Sample filename preview") + '</div>');
@@ -2565,6 +2581,43 @@
             }
         });
         expTemplateInput.addEventListener("input", updateExportPreview);
+
+        function insertTokenToTemplate(token) {
+            if (!token || !expTemplateInput) return;
+            var input = expTemplateInput;
+            var start = input.selectionStart;
+            var end = input.selectionEnd;
+            var val = input.value;
+            if (typeof start === "number" && typeof end === "number") {
+                input.value = val.slice(0, start) + token + val.slice(end);
+                input.selectionStart = input.selectionEnd = start + token.length;
+            } else {
+                input.value = val + token;
+            }
+            input.focus();
+            updateExportPreview();
+        }
+
+        var tokenBtns = embeddedContent.querySelectorAll(".exp-token-btn");
+        for (var tb = 0; tb < tokenBtns.length; tb++) {
+            tokenBtns[tb].addEventListener("click", function () {
+                var tok = this.getAttribute("data-token");
+                insertTokenToTemplate(tok);
+            });
+        }
+
+        var dpiBtns = embeddedContent.querySelectorAll(".exp-dpi-btn");
+        for (var db = 0; db < dpiBtns.length; db++) {
+            dpiBtns[db].addEventListener("click", function () {
+                var dpi = this.getAttribute("data-dpi");
+                if (selTiffDpi) selTiffDpi.value = dpi;
+                if (selPngDpi) selPngDpi.value = dpi;
+                if (selJpgDpi) selJpgDpi.value = dpi;
+                for (var j = 0; j < dpiBtns.length; j++) dpiBtns[j].classList.remove("active");
+                this.classList.add("active");
+                updateExportPreview();
+            });
+        }
 
         // Destination folder
         btnBrowseDest.addEventListener("click", function () {
@@ -2848,8 +2901,27 @@
             html += '<div class="ticket-line-mat">' + escapeHtml(state.style) + '</div>';
             html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
             html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
+            html += '<button type="button" id="btnCopyQrContent" class="btn-copy-ticket" style="margin-top:6px;width:100%;">';
+            html += uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "\u1785\u1798\u17d2\u179b\u1784\u1791\u17b7\u1793\u17d2\u1793\u1793\u17d0\u1799 QR \u1791\u17c5 Clipboard" : "Copy QR Content to Clipboard") + '</span>';
+            html += '</button>';
 
             box.innerHTML = html;
+
+            var btnCopyQr = box.querySelector("#btnCopyQrContent");
+            if (btnCopyQr) {
+                btnCopyQr.onclick = function (e) {
+                    e.stopPropagation();
+                    var text = (qrContentInput ? qrContentInput.value.trim() : state.content) || "";
+                    if (!text) return;
+                    copyToClipboard(text, function () {
+                        btnCopyQr.innerHTML = uiIcon("check", 11) + " <span>" + (isKhmer() ? "\u1794\u17b6\u1793\u1785\u1798\u17d2\u179b\u1784\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb!" : "Copied Data!") + "</span>";
+                        setStatus(isKhmer() ? "\u1794\u17b6\u1793\u1785\u1798\u17d2\u179b\u1784\u1791\u17b7\u1793\u17d2\u1793\u1793\u17d0\u1799 QR \u1791\u17c5 Clipboard!" : "QR content copied to clipboard!", "success", 2000);
+                        setTimeout(function () {
+                            btnCopyQr.innerHTML = uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "\u1785\u1798\u17d2\u179b\u1784\u1791\u17b7\u1793\u17d2\u1793\u1793\u17d0\u1799 QR \u1791\u17c5 Clipboard" : "Copy QR Content to Clipboard") + '</span>';
+                        }, 1600);
+                    });
+                };
+            }
         }
 
         // Style Segmented
@@ -3330,10 +3402,10 @@
 
         // 2. Units & Offset Card
         html.push('<div class="embed-card">');
-        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ខ្នាត និងគម្លាត (Units & Offset)" : "Units & Distance") + '</span></div>');
+        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "\u1781\u17d2\u1793\u17b6\u178f \u1793\u17b7\u1784\u1782\u1798\u17d2\u179b\u17b6\u178f (Units & Offset)" : "Units & Distance") + '</span></div>');
         html.push('  <div class="embed-row-2col">');
         html.push('    <div>');
-        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ខ្នាតរង្វាស់:" : "Unit:") + '</label>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "\u1781\u17d2\u1793\u17b6\u178f\u179a\u1784\u17d2\u179c\u17b6\u179f\u17cb:" : "Unit:") + '</label>');
         html.push('      <select id="dimUnitSelect" class="embed-select" style="width:100%;margin-top:2px;">');
         var dimUnits = ["mm", "cm", "in", "pt", "m"];
         for (var du = 0; du < dimUnits.length; du++) {
@@ -3342,9 +3414,16 @@
         html.push('      </select>');
         html.push('    </div>');
         html.push('    <div>');
-        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "គម្លាតពីគែម (Offset):" : "Offset Distance:") + '</label>');
+        html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "\u1782\u1798\u17d2\u179b\u17b6\u178f\u1796\u17b8\u1782\u17c2\u1798 (Offset):" : "Offset Distance:") + '</label>');
         html.push('      <input type="number" id="dimOffsetInput" class="embed-input" value="' + state.offset + '" step="1" min="0" style="width:100%;margin-top:2px;">');
         html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div class="embed-chips" style="margin-top:6px;">');
+        html.push('    <span style="font-size:9.5px;color:var(--text-muted);align-self:center;margin-right:2px;">Quick Offset:</span>');
+        html.push('    <button type="button" class="embed-chip dim-offset-btn" data-offset="2">2' + state.unit + '</button>');
+        html.push('    <button type="button" class="embed-chip dim-offset-btn" data-offset="5">5' + state.unit + '</button>');
+        html.push('    <button type="button" class="embed-chip dim-offset-btn" data-offset="10">10' + state.unit + '</button>');
+        html.push('    <button type="button" class="embed-chip dim-offset-btn" data-offset="15">15' + state.unit + '</button>');
         html.push('  </div>');
         html.push('  <div class="embed-row-2col" style="margin-top:4px;">');
         html.push('    <div>');
@@ -3441,6 +3520,15 @@
                 for (var mb = 0; mb < modeBtns.length; mb++) modeBtns[mb].classList.remove("active");
                 this.classList.add("active");
                 state.mode = parseInt(this.getAttribute("data-mode"), 10);
+                updateDimState();
+            });
+        }
+
+        var offsetBtns = embeddedContent.querySelectorAll(".dim-offset-btn");
+        for (var ob = 0; ob < offsetBtns.length; ob++) {
+            offsetBtns[ob].addEventListener("click", function () {
+                var off = parseFloat(this.getAttribute("data-offset")) || 5;
+                if (dimOffsetInput) dimOffsetInput.value = off;
                 updateDimState();
             });
         }
@@ -6202,7 +6290,34 @@
         html.push('    <div><label style="font-size:10px;color:var(--text-secondary);">Y %</label><input type="number" id="rbYInput" class="embed-input" value="' + state.y + '" min="0" max="100" style="width:100%;margin-top:2px;"></div>');
         html.push('    <div><label style="font-size:10px;color:var(--text-secondary);">K %</label><input type="number" id="rbKInput" class="embed-input" value="' + state.k + '" min="0" max="100" style="width:100%;margin-top:2px;"></div>');
         html.push('  </div>');
-        html.push('  <div id="rbTicBadge" style="margin-top:6px;font-size:11px;color:var(--accent);font-weight:600;"></div>');
+        html.push('  <div class="rb-tic-container" style="margin-top:10px;">');
+        html.push('    <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:4px;">');
+        html.push('      <span style="color:var(--text-secondary);font-weight:600;">' + (isKhmer() ? "\u1780\u1798\u17d2\u179a\u17b7\u178f\u1782\u17d2\u179a\u1794\u178a\u178e\u17d2\u178a\u1794\u17cb\u1791\u17b9\u1780\u1781\u17d2\u1798\u17c5 (TIC)" : "Total Ink Coverage (TIC / TAC)") + '</span>');
+        html.push('      <span id="rbTicPercent" style="font-weight:700;font-size:12px;color:var(--accent);">240%</span>');
+        html.push('    </div>');
+        html.push('    <div class="rb-meter-track">');
+        html.push('      <div class="rb-meter-fill" id="rbMeterFill" style="width:60%;"></div>');
+        html.push('      <div class="rb-meter-marker" style="left:75%;" title="300% TAC Press Limit"></div>');
+        html.push('    </div>');
+        html.push('    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin-top:3px;">');
+        html.push('      <span>0%</span>');
+        html.push('      <span style="color:#10b981;">\u2264260% Safe</span>');
+        html.push('      <span style="color:#f59e0b;">300% TAC Max</span>');
+        html.push('      <span>400%</span>');
+        html.push('    </div>');
+        html.push('  </div>');
+        html.push('  <div class="rb-swatch-box" style="margin-top:10px;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg-surface-active);border-radius:6px;border:1px solid var(--border-color);">');
+        html.push('    <div class="rb-swatch-preview" style="display:flex;width:64px;height:42px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.15);flex-shrink:0;">');
+        html.push('      <div style="flex:1;background:#1e1e1e;position:relative;" title="Pure Black (K100)"><span style="position:absolute;bottom:2px;left:3px;font-size:7.5px;color:#888;font-weight:600;">K100</span></div>');
+        html.push('      <div id="rbSwatchRight" style="flex:1;background:#050508;position:relative;" title="Rich Black Mix"><span style="position:absolute;bottom:2px;right:3px;font-size:7.5px;color:#fff;font-weight:700;">RICH</span></div>');
+        html.push('    </div>');
+        html.push('    <div style="flex:1;min-width:0;">');
+        html.push('      <div id="rbSafetyText" style="font-size:11px;font-weight:600;color:var(--accent);">' + (isKhmer() ? "\u179f\u17bb\u179c\u178f\u17d2\u1790\u17b7\u1797\u17b6\u1796\u179a\u17c4\u1784\u1796\u17bb\u1798\u17d2\u1796" : "Safe for Offset / Digital") + '</div>');
+        html.push('      <div id="rbChannelsText" style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">C:60% M:40% Y:40% K:100%</div>');
+        html.push('    </div>');
+        html.push('    <button type="button" id="btnCopyRbSpec" class="embed-chip" style="white-space:nowrap;align-self:center;" title="' + (isKhmer() ? "\u1785\u1798\u17d2\u179b\u1784 Spec" : "Copy Spec") + '">\uD83D\uDCCB ' + (isKhmer() ? "\u1785\u1798\u17d2\u179b\u1784" : "Copy") + '</button>');
+        html.push('  </div>');
+        html.push('  <div id="rbTicBadge" style="display:none;"></div>');
         html.push('</div>');
 
         // 2. Scope & Target Card
@@ -6263,6 +6378,54 @@
             var safety = tic <= 260 ? "Safe for Press" : (tic <= 300 ? "Heavy Ink (Dry Time)" : "Warning: Over 300%");
             rbTicBadge.textContent = "Total Ink Coverage (TIC): " + tic + "% (" + safety + ")";
             rbTicBadge.style.color = tic > 300 ? "var(--danger)" : "var(--accent)";
+
+            var rbTicPercent = $("rbTicPercent");
+            var rbMeterFill = $("rbMeterFill");
+            var rbSwatchRight = $("rbSwatchRight");
+            var rbSafetyText = $("rbSafetyText");
+            var rbChannelsText = $("rbChannelsText");
+
+            var meterPct = Math.min(100, Math.max(0, (tic / 400) * 100));
+            if (rbMeterFill) {
+                rbMeterFill.style.width = meterPct + "%";
+                if (tic <= 260) {
+                    rbMeterFill.style.background = "#10b981";
+                } else if (tic <= 300) {
+                    rbMeterFill.style.background = "#f59e0b";
+                } else {
+                    rbMeterFill.style.background = "#ef4444";
+                }
+            }
+
+            if (rbTicPercent) {
+                rbTicPercent.textContent = tic + "%";
+                rbTicPercent.style.color = (tic > 300) ? "var(--danger)" : ((tic > 260) ? "var(--warning)" : "#10b981");
+            }
+
+            if (rbChannelsText) {
+                rbChannelsText.textContent = "C:" + c + "% M:" + m + "% Y:" + y + "% K:" + k + "%";
+            }
+
+            if (rbSafetyText) {
+                if (tic <= 260) {
+                    rbSafetyText.textContent = isKhmer() ? "\u179f\u17bb\u179c\u178f\u17d2\u1790\u17b7\u1797\u17b6\u1796\u179b\u17d2\u17a2\u1794\u17c6\u1795\u17bb\u178f (Safe)" : "Optimal: Safe for All Presses";
+                    rbSafetyText.style.color = "#10b981";
+                } else if (tic <= 300) {
+                    rbSafetyText.textContent = isKhmer() ? "\u1791\u17b9\u1780\u1781\u17d2\u1798\u17c5\u1780\u17d2\u179a\u17b6\u179f\u17cb (Drying Required)" : "Heavy Ink (Allow Extended Drying)";
+                    rbSafetyText.style.color = "#f59e0b";
+                } else {
+                    rbSafetyText.textContent = isKhmer() ? "\u179b\u17be\u179f\u1780\u1798\u17d2\u179a\u17b7\u178f 300% (TAC Warning)" : "Prepress Warning: Exceeds 300% TAC";
+                    rbSafetyText.style.color = "var(--danger)";
+                }
+            }
+
+            if (rbSwatchRight) {
+                var kr = (1 - (k / 100));
+                var rCol = Math.round(255 * (1 - c / 100 * 0.9) * kr * 0.12);
+                var gCol = Math.round(255 * (1 - m / 100 * 0.9) * kr * 0.12);
+                var bCol = Math.round(255 * (1 - y / 100 * 0.9) * kr * 0.14);
+                rbSwatchRight.style.backgroundColor = "rgb(" + rCol + "," + gCol + "," + bCol + ")";
+            }
 
             var targets = [];
             if (chkRbFills.checked) targets.push(isKhmer() ? "ផ្ទៃក្នុង" : "Fills");
@@ -6328,6 +6491,26 @@
         chkRbStrokes.addEventListener("change", saveRbState);
         chkRbProtectText.addEventListener("change", saveRbState);
         chkRbOverprint.addEventListener("change", saveRbState);
+
+        var btnCopyRbSpec = $("btnCopyRbSpec");
+        if (btnCopyRbSpec) {
+            btnCopyRbSpec.addEventListener("click", function (e) {
+                e.stopPropagation();
+                var c = parseInt(rbCInput.value, 10) || 0;
+                var m = parseInt(rbMInput.value, 10) || 0;
+                var y = parseInt(rbYInput.value, 10) || 0;
+                var k = parseInt(rbKInput.value, 10) || 0;
+                var tic = c + m + y + k;
+                var spec = "Rich Black Spec: C:" + c + "% M:" + m + "% Y:" + y + "% K:" + k + "% | TIC: " + tic + "%";
+                copyToClipboard(spec, function () {
+                    btnCopyRbSpec.textContent = isKhmer() ? "\u2713 \u1794\u17b6\u1793\u1785\u1798\u17d2\u179b\u1784" : "\u2713 Copied";
+                    setStatus(isKhmer() ? "\u1794\u17b6\u1793\u1785\u1798\u17d2\u179b\u1784 Prepress Spec \u1791\u17c5 Clipboard!" : "Rich Black spec copied to clipboard!", "success", 2000);
+                    setTimeout(function () {
+                        btnCopyRbSpec.textContent = "\uD83D\uDCCB " + (isKhmer() ? "\u1785\u1798\u17d2\u179b\u1784" : "Copy");
+                    }, 1600);
+                });
+            });
+        }
 
         for (var sb = 0; sb < rbScopeBtns.length; sb++) {
             rbScopeBtns[sb].addEventListener("click", function () {
@@ -7405,6 +7588,8 @@
             else if (activeEmbeddedTool.id === "nesting") renderEmbeddedNesting();
             else if (activeEmbeddedTool.id === "icons") renderEmbeddedIcons();
             else if (activeEmbeddedTool.id === "launcher") renderEmbeddedLauncher();
+            else if (activeEmbeddedTool.id === "richblack") renderEmbeddedRichBlack();
+            else if (activeEmbeddedTool.id === "khqr") renderEmbeddedKHQR();
             else renderEmbeddedGeneric(activeEmbeddedTool);
         } else {
             renderTools();
