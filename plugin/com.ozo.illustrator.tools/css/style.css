@@ -2777,6 +2777,16 @@ mark.search-match { border-radius: 3px; padding: 0 2px; }
     background: var(--bg-main);
     border: 1px solid var(--border-color);
     border-radius: 99px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s, border-color 0.15s, transform 0.12s;
+}
+.status-indicator:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--border-strong);
+}
+.status-indicator:active {
+    transform: scale(0.97);
 }
 .donate-link { border-radius: 99px; padding: 3px 9px; }
 

@@ -589,7 +589,8 @@
     // ------------------------------------------------------------------
     var currentLang = store.get("ozo_lang", "en") === "km" ? "km" : "en";
     var viewMode = store.get("ozo_view_mode", "list") === "grid" ? "grid" : "list";
-    var currentCategory = "all";
+    var currentCategory = store.get("ozo_category", "all");
+    if (CATEGORIES.indexOf(currentCategory) === -1 && currentCategory !== "all" && currentCategory !== "favorites") currentCategory = "all";
     var searchQuery = "";
     var searchTokens = [];
     var highlightRe = null;
@@ -701,6 +702,13 @@
             var text = t(el.getAttribute("data-i18n-placeholder"));
             el.placeholder = text;
             el.setAttribute("aria-label", text);
+        });
+
+        var catHints = ["Alt+1", "Alt+2", "Alt+3", "Alt+4", "Alt+5"];
+        each(tabBtns, function (b, idx) {
+            var cat = b.getAttribute("data-category");
+            var label = t("cat." + cat);
+            b.title = label + (catHints[idx] ? " (" + catHints[idx] + ")" : "");
         });
 
         langToggleBtn.textContent = isKhmer() ? "KM" : "EN";
@@ -994,10 +1002,43 @@
         return card;
     }
 
+    function matchesInAllCategories(tokens) {
+        if (!tokens || !tokens.length) return 0;
+        var count = 0;
+        for (var i = 0; i < TOOLS.length; i++) {
+            var ok = true;
+            for (var k = 0; k < tokens.length; k++) {
+                if (TOOLS[i].haystack.indexOf(tokens[k]) < 0) { ok = false; break; }
+            }
+            if (ok) count++;
+        }
+        return count;
+    }
+
     function updateEmptyState() {
         var noFavsYet = currentCategory === "favorites" && !searchQuery;
-        emptyText.textContent = t(noFavsYet ? "empty.favorites" : "empty.search");
-        emptyClearBtn.hidden = noFavsYet;
+        if (noFavsYet) {
+            emptyText.textContent = t("empty.favorites");
+            emptyClearBtn.hidden = true;
+            return;
+        }
+
+        var matchesAll = (currentCategory !== "all" && searchQuery) ? matchesInAllCategories(searchTokens) : 0;
+        if (matchesAll > 0) {
+            emptyText.textContent = isKhmer() ?
+                "មិនមានឧបករណ៍ត្រូវគ្នាក្នុងប្រភេទនេះទេ។ មាន " + matchesAll + " ឧបករណ៍ក្នុងប្រភេទផ្សេងទៀត។" :
+                "No tools match in this category, but " + matchesAll + " match(es) exist in other categories.";
+            emptyClearBtn.textContent = isKhmer() ?
+                "បង្ហាញក្នុងគ្រប់ប្រភេទ (" + matchesAll + ")" :
+                "Show in All Categories (" + matchesAll + ")";
+            emptyClearBtn.title = isKhmer() ? "ប្តូរទៅប្រភេទទាំងអស់ដើម្បីមើលឧបករណ៍ទាំងនេះ" : "Switch to All categories to view these tools";
+            emptyClearBtn.hidden = false;
+        } else {
+            emptyText.textContent = t("empty.search");
+            emptyClearBtn.textContent = t("empty.clear");
+            emptyClearBtn.title = t("empty.clearTitle");
+            emptyClearBtn.hidden = !searchQuery;
+        }
     }
 
     function renderTools() {
@@ -1068,6 +1109,7 @@
             b.setAttribute("aria-selected", on ? "true" : "false");
         });
         currentCategory = btn.getAttribute("data-category");
+        store.set("ozo_category", currentCategory);
         moveTabIndicator();
         playEnter();
         renderTools();
@@ -1151,6 +1193,7 @@
         embeddedToolIcon.innerHTML = tool.icon;
         embeddedToolTitle.textContent = toolName(tool);
         embeddedContent.innerHTML = "";
+        embeddedContent.scrollTop = 0;
 
         if (tool.id === "exporter") {
             renderEmbeddedExporter();
@@ -5754,6 +5797,25 @@
         if (btn) setCategory(btn);
     });
 
+    tabsContainer.addEventListener("keydown", function (e) {
+        var key = keyOf(e);
+        var activeBtn = document.activeElement;
+        if (!activeBtn || !activeBtn.classList || !activeBtn.classList.contains("tab-btn")) return;
+        var btns = Array.prototype.slice.call(tabBtns);
+        var idx = btns.indexOf(activeBtn);
+        if (idx === -1) return;
+        var nextIdx = -1;
+        if (key === "ArrowRight") nextIdx = (idx + 1) % btns.length;
+        else if (key === "ArrowLeft") nextIdx = (idx - 1 + btns.length) % btns.length;
+        else if (key === "Home") nextIdx = 0;
+        else if (key === "End") nextIdx = btns.length - 1;
+        if (nextIdx !== -1) {
+            e.preventDefault();
+            btns[nextIdx].focus();
+            setCategory(btns[nextIdx]);
+        }
+    });
+
     searchInput.addEventListener("input", onSearchChanged);
 
     searchInput.addEventListener("keydown", function (e) {
@@ -5785,6 +5847,18 @@
                     primaryBtn.click();
                     return;
                 }
+            }
+        }
+
+        // Quick tab switching: Alt+1 to Alt+5
+        if (e.altKey && !e.ctrlKey && !e.metaKey && e.key >= "1" && e.key <= "5") {
+            var tabIdx = parseInt(e.key, 10) - 1;
+            if (tabBtns[tabIdx]) {
+                e.preventDefault();
+                if (activeEmbeddedTool) closeEmbeddedView();
+                tabBtns[tabIdx].focus();
+                setCategory(tabBtns[tabIdx]);
+                return;
             }
         }
 
@@ -5834,6 +5908,29 @@
     }
 
     if (embeddedContent) {
+        // Fast numeric stepping with Shift (10x) and Alt (0.1x)
+        embeddedContent.addEventListener("keydown", function (e) {
+            var target = e.target;
+            if (!target || target.tagName !== "INPUT" || target.type !== "number") return;
+            var key = keyOf(e);
+            if (key === "ArrowUp" || key === "ArrowDown") {
+                if (!e.shiftKey && !e.altKey) return;
+                e.preventDefault();
+                var step = parseFloat(target.step) || 1;
+                var mult = e.shiftKey ? 10 : 0.1;
+                var delta = (key === "ArrowUp" ? 1 : -1) * step * mult;
+                var val = parseFloat(target.value);
+                if (isNaN(val)) val = parseFloat(target.min) || 0;
+                var next = val + delta;
+                if (target.min !== "" && !isNaN(parseFloat(target.min))) next = Math.max(parseFloat(target.min), next);
+                if (target.max !== "" && !isNaN(parseFloat(target.max))) next = Math.min(parseFloat(target.max), next);
+                var decimals = (e.altKey || step < 1) ? 2 : 0;
+                target.value = decimals > 0 ? parseFloat(next.toFixed(decimals)) : Math.round(next);
+                target.dispatchEvent(new Event("input", { bubbles: true }));
+                target.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+        });
+
         embeddedContent.addEventListener("click", function (e) {
             var copyBtn = closest(e.target, ".btn-copy-ticket", embeddedContent);
             if (copyBtn) {
@@ -5854,7 +5951,37 @@
     }
 
     searchClearBtn.addEventListener("click", function () { clearSearch(true); });
-    emptyClearBtn.addEventListener("click", function () { clearSearch(true); });
+    emptyClearBtn.addEventListener("click", function () {
+        if (currentCategory !== "all" && matchesInAllCategories(searchTokens) > 0) {
+            setCategory(tabBtns[0]);
+        } else {
+            clearSearch(true);
+        }
+    });
+
+    var statusIndicator = statusDot ? statusDot.parentNode : null;
+    if (statusIndicator) {
+        statusIndicator.setAttribute("title", isKhmer() ? "ចុចដើម្បីពិនិត្យឯកសារឡើងវិញ (Refresh)" : "Click to refresh document status");
+        statusIndicator.addEventListener("click", function () {
+            playEnter();
+            refreshDocumentStatus();
+            statusDot.style.transform = "scale(1.4)";
+            setTimeout(function () { statusDot.style.transform = ""; }, 250);
+        });
+    }
+
+    // Mouse thumb button Back (button 3)
+    window.addEventListener("mouseup", function (e) {
+        if (e.button === 3) {
+            if (activePreviewTool) {
+                e.preventDefault();
+                closePreviewPanel();
+            } else if (activeEmbeddedTool) {
+                e.preventDefault();
+                closeEmbeddedView();
+            }
+        }
+    });
     errorDismissBtn.addEventListener("click", hideError);
 
     viewToggleBtn.addEventListener("click", function () {
@@ -6303,6 +6430,16 @@
     if (csInterface) {
         csInterface.addEventListener(CSInterface.THEME_COLOR_CHANGED_EVENT, updateTheme);
         updateTheme();
+    }
+
+    // Restore saved category tab
+    var savedTabBtn = tabsContainer.querySelector('.tab-btn[data-category="' + currentCategory + '"]');
+    if (savedTabBtn) {
+        each(tabBtns, function (b) {
+            var on = b === savedTabBtn;
+            b.classList.toggle("active", on);
+            b.setAttribute("aria-selected", on ? "true" : "false");
+        });
     }
 
     applyI18n();
