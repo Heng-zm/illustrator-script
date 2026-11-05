@@ -48,35 +48,25 @@
         <div class="brand">
             <img src="assets/logo-square.png" class="brand-logo" alt="Ozo Tools" draggable="false">
             <span class="brand-title">OZO TOOLS</span>
-            <button type="button" id="brandBadge" class="brand-badge" data-i18n-title="badge.title">v2.6.35</button>
         </div>
         <div class="header-actions" role="toolbar">
             <button type="button" id="langToggleBtn" class="lang-btn" data-i18n-title="lang.toggle" title="Switch language">EN</button>
+            <span class="header-sep" aria-hidden="true"></span>
             <button type="button" id="openFolderBtn" class="icon-btn" data-i18n-title="folder" title="Open Scripts Directory">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
             </button>
             <button type="button" id="refreshBtn" class="icon-btn" data-i18n-title="refresh" title="Refresh Panel">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-                </svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4.5h-4.5"/></svg>
             </button>
             <button type="button" id="densityToggleBtn" class="icon-btn" data-i18n-title="density.toggle" title="Toggle Compact / Comfortable View (Alt+D)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <line x1="3" y1="6" x2="21" y2="6"/>
-                    <line x1="3" y1="12" x2="21" y2="12"/>
-                    <line x1="3" y1="18" x2="21" y2="18"/>
-                </svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
             </button>
             <button type="button" id="shortcutsBtn" class="icon-btn" data-i18n-title="shortcuts.title" title="Keyboard Shortcuts (?)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7 14h10"/></svg>
             </button>
         </div>
+
+
     </header>
 
     <!-- Update Notification Banner -->
@@ -122,34 +112,23 @@
                 <kbd id="searchKbdHint" aria-hidden="true" class="search-kbd" data-i18n-title="search.hint" title="Press / to search">/</kbd>
                 <button type="button" id="searchClearBtn" class="search-clear" data-i18n-title="search.clear" title="Clear search">&times;</button>
             </div>
-            <!-- Quick Filter Chips -->
-            <div id="searchTagsWrap" class="search-tags-wrap" hidden>
-                <span class="search-tag tag-fav" data-query=":favorites">★ Favorites</span>
-                <span class="search-tag tag-all" data-query="">⚡ All</span>
-                <span class="search-tag" data-query="die cut">✂ DieCut</span>
-                <span class="search-tag" data-query="qr">▦ QR</span>
-                <span class="search-tag" data-query="export">↗ Export</span>
-                <span class="search-tag" data-query="guide">📐 Guides</span>
-                <span class="search-tag" data-query="black">⬛ Rich Black</span>
-                <span class="search-tag" data-query="khqr">💳 KHQR</span>
-            </div>
             <button type="button" id="viewToggleBtn" class="icon-btn view-toggle" aria-pressed="false" data-i18n-title="view.toggle" title="Toggle Grid / List View">
-                <svg id="viewIconGrid" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <svg id="viewIconList" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
+                <svg id="viewIconGrid" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
+                <svg id="viewIconList" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;"><rect x="3.5" y="4" width="17" height="4.5" rx="1.6"/><rect x="3.5" y="10" width="17" height="4.5" rx="1.6"/><rect x="3.5" y="16" width="17" height="4.5" rx="1.6"/></svg>
             </button>
         </div>
+
+            <!-- Quick Filter Chips -->
+            <div id="searchTagsWrap" class="search-tags-wrap" hidden>
+                <span class="search-tag tag-fav" data-query=":favorites"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span>Favorites</span></span>
+                <span class="search-tag tag-all" data-query=""><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg><span>All</span></span>
+                <span class="search-tag" data-query="die cut"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg><span>DieCut</span></span>
+                <span class="search-tag" data-query="qr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM19 19h2"/></svg><span>QR</span></span>
+                <span class="search-tag" data-query="export"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><span>Export</span></span>
+                <span class="search-tag" data-query="guide"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke-dasharray="2 2"/></svg><span>Guides</span></span>
+                <span class="search-tag" data-query="black"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg><span>Rich Black</span></span>
+                <span class="search-tag" data-query="khqr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M3 10.5h18"/></svg><span>KHQR</span></span>
+            </div>
 
         <!-- Category Tabs -->
         <div id="tabs" class="tabs-container" role="tablist">
@@ -194,8 +173,8 @@
                     </svg>
                     <span data-i18n="back.tools">Tools</span>
                 </button>
-                <button type="button" id="embeddedPrevBtn" class="embedded-nav-arrow" title="Previous Tool (Ctrl+[)">‹</button>
-                <button type="button" id="embeddedNextBtn" class="embedded-nav-arrow" title="Next Tool (Ctrl+])">›</button>
+                <button type="button" id="embeddedPrevBtn" class="embedded-nav-arrow" title="Previous Tool (Ctrl+[)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+                <button type="button" id="embeddedNextBtn" class="embedded-nav-arrow" title="Next Tool (Ctrl+])"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
             </div>
             <div class="embedded-title-wrap">
                 <span id="embeddedToolIcon" class="embedded-tool-icon" aria-hidden="true"></span>
@@ -228,14 +207,14 @@
 
         <!-- Live Selection & Artboard Context Ribbon -->
         <div id="embeddedSelRibbon" class="embedded-sel-ribbon" hidden>
-            <span id="embeddedSelIcon" class="sel-ribbon-icon">📐</span>
+            <span id="embeddedSelIcon" class="sel-ribbon-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M9 3v18"/></svg></span>
             <span id="embeddedSelText" class="sel-ribbon-text"></span>
             <button type="button" class="sel-ribbon-btn" data-canvas-cmd="fitin" title="Fit Active Artboard (Ctrl+0)">Fit Artboard</button>
         </div>
 
         <!-- Tool Presets Strip -->
         <div id="embedPresetsWrap" class="embed-presets-wrap" hidden>
-            <span class="embed-presets-label">⚡ Presets:</span>
+            <span class="embed-presets-label">Presets</span>
             <div id="embedPresetsList" class="embed-presets-list"></div>
         </div>
 
@@ -309,6 +288,7 @@
             <span id="statusMessage">Ready</span>
         </div>
         <div class="footer-links">
+            <button type="button" id="brandBadge" class="brand-badge" data-i18n-title="badge.title">v2.6.35</button>
             <button type="button" id="donateBtn" class="donate-link" data-i18n-title="donate.title" title="Support developer via ABA Pay">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="#e0245e" stroke="none" style="vertical-align:-1px;margin-right:2px;" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><span data-i18n="donate.text">Donate</span>
             </button>

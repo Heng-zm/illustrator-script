@@ -4967,3 +4967,267 @@ select:focus-visible,
 .btn-spinning svg {
     animation: ozoSpin 0.6s infinite linear;
 }
+
+
+/* ==================================================================
+   v3.0 – layout, icon & UX refresh (override layer, loaded last)
+   No class names or JS hooks changed. Direction: calm, flat and dense,
+   like a native Illustrator panel. Colour is used only for category;
+   depth comes from hairlines, not shadows.
+   ================================================================== */
+
+:root {
+    --tile: var(--bg-surface-active);
+    --hair: color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+/* ---------- Header ---------- */
+body .panel-header { padding: 8px 10px 8px 12px; box-shadow: none; border-bottom: 1px solid var(--border-color); }
+body .brand { gap: 8px; }
+body .brand-logo { width: 24px; height: 24px; border-radius: 6px; box-shadow: none; }
+body .brand-title { font-size: 12px; letter-spacing: 0.1em; }
+body .brand-badge { background: transparent; border-color: var(--border-color); font-weight: 500; }
+body .header-actions { gap: 1px; }
+body .header-actions .icon-btn { width: 28px; height: 28px; border-radius: 7px; }
+body .header-actions .icon-btn.active { color: var(--accent); background: var(--accent-subtle); }
+.header-sep { width: 1px; height: 14px; margin: 0 4px; background: var(--border-color); flex-shrink: 0; }
+body .lang-btn { height: 22px; margin: 0; border-radius: 6px; background: transparent; font-size: 10px; letter-spacing: 0.04em; }
+
+/* ---------- Search row ---------- */
+body .search-container { padding: 10px 12px 8px; gap: 6px; }
+body .search-input { height: 34px; border-radius: 9px; box-shadow: none; background: var(--bg-surface); border: 1px solid var(--border-color); }
+body .search-input:focus { box-shadow: var(--ring); border-color: var(--accent); }
+body .view-toggle { width: 34px; height: 34px; border-radius: 9px; box-shadow: none; background: var(--bg-surface); border: 1px solid var(--border-color); flex-shrink: 0; }
+body .view-toggle:hover { border-color: var(--border-strong); }
+
+/* ---------- Filter chips ---------- */
+body .search-tags-wrap {
+    padding: 0 12px 8px;
+    margin-top: -2px;
+    gap: 6px;
+    background: var(--bg-main);
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+body .search-tags-wrap::-webkit-scrollbar { display: none; }
+body.density-compact .search-tags-wrap { padding: 0 10px 6px; gap: 4px; }
+body .search-tag { display: inline-flex; align-items: center; gap: 5px; border-radius: 99px; white-space: nowrap; }
+.search-tag svg { flex-shrink: 0; opacity: 0.85; }
+.search-tag.tag-fav svg { color: var(--star-active); }
+
+/* ---------- Tabs: segmented control ---------- */
+body .tabs-container {
+    margin: 0 12px 8px;
+    padding: 3px;
+    gap: 2px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 11px;
+}
+body .tab-btn { padding: 5px 10px; border-radius: 8px; color: var(--text-secondary); }
+body .tab-btn:hover { background: transparent; color: var(--text-primary); }
+body .tab-btn.active { color: var(--text-primary); font-weight: 600; }
+body .tab-indicator {
+    top: 3px;
+    bottom: 3px;
+    border-radius: 8px;
+    background: var(--tile);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+body .tab-count { opacity: 0.6; }
+
+/* ---------- Section headings ---------- */
+body .list-heading { text-transform: none; letter-spacing: 0.01em; font-size: 11px; font-weight: 600; padding-top: 10px; }
+
+/* ---------- Tool rows: flat, one hairline, quiet until hovered ---------- */
+body .tool-list { padding: 2px 10px 16px; gap: 4px; }
+body .tool-card {
+    background-image: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    box-shadow: none;
+    transform: none;
+    padding: 8px 8px 8px 8px;
+    min-height: 54px;
+    gap: 11px;
+}
+body .tool-card:hover { background-color: var(--bg-surface); border-color: var(--border-color); box-shadow: none; transform: none; }
+body .tool-card:active { background-color: var(--bg-surface-hover); transform: none; }
+body .tool-card:focus-visible { border-color: var(--accent); box-shadow: var(--ring); }
+body .tool-card.is-running { background-color: var(--accent-subtle); border-color: rgba(var(--accent-rgb), 0.45); box-shadow: none; }
+
+/* Icon tile: flat tint in the category colour, finer line weight */
+body .tool-icon-wrap,
+body .cat-prepress .tool-icon-wrap,
+body .cat-layout .tool-icon-wrap,
+body .cat-utilities .tool-icon-wrap { border-radius: 10px; box-shadow: none; transform: none; width: 36px; height: 36px; }
+body .cat-prepress .tool-icon-wrap  { background: rgba(var(--prepress-rgb), 0.13); }
+body .cat-layout .tool-icon-wrap    { background: rgba(var(--layout-rgb), 0.14); }
+body .cat-utilities .tool-icon-wrap { background: rgba(var(--util-rgb), 0.14); }
+body .tool-card:hover .tool-icon-wrap { transform: none; }
+.tool-icon-wrap svg { width: 19px; height: 19px; stroke-width: 1.75; }
+
+/* Name + quiet category label (dot + word instead of a filled pill) */
+body .tool-name { font-size: 12.5px; font-weight: 600; }
+body .tool-desc { font-size: 11px; opacity: 1; color: var(--text-secondary); }
+body .tool-badge {
+    background: none;
+    padding: 0;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.tool-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+body .badge-prepress  { color: rgb(var(--prepress-rgb)); }
+body .badge-layout    { color: rgb(var(--layout-rgb)); }
+body .badge-utilities { color: rgb(var(--util-rgb)); }
+
+/* Actions: secondary controls appear on hover/focus; Run stays a quiet outline */
+body .preview-card-btn, body .fav-btn { opacity: 0; transition: opacity 0.12s; }
+body .fav-btn.active { opacity: 1; }
+body .tool-card:hover .preview-card-btn, body .tool-card:hover .fav-btn,
+body .tool-card:focus-visible .preview-card-btn, body .tool-card:focus-visible .fav-btn { opacity: 1; }
+body .run-btn {
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    box-shadow: none;
+    font-weight: 600;
+}
+body .tool-card:hover .run-btn, body .tool-card:focus-visible .run-btn { background: var(--accent); color: var(--accent-text); border-color: var(--accent); box-shadow: none; }
+
+/* ---------- Grid view: icon-first tiles ---------- */
+body .tool-list.view-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+body .view-grid .tool-card {
+    padding: 14px 6px 10px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-surface);
+    border-radius: 12px;
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+}
+body .view-grid .tool-card:hover { background-color: var(--bg-surface-hover); border-color: var(--border-strong); }
+body .view-grid .tool-icon-wrap { width: 46px; height: 46px; border-radius: 13px; margin: 0 auto; }
+body .view-grid .tool-icon-wrap svg { width: 24px; height: 24px; }
+body .view-grid .tool-name { font-size: 11.5px; }
+body .view-grid .tool-badge { display: none; }
+body .view-grid .fav-btn, body .view-grid .preview-card-btn { opacity: 0; }
+body .view-grid .fav-btn.active { opacity: 1; }
+body .view-grid .tool-card:hover .fav-btn, body .view-grid .tool-card:hover .preview-card-btn { opacity: 1; }
+
+/* ---------- Empty state ---------- */
+body .empty-state { padding-top: 28px; }
+body .empty-state svg { box-shadow: none; color: var(--text-muted); }
+
+/* ---------- Embedded tool header: two rows, title gets the full width ---------- */
+body .embedded-header { flex-wrap: wrap; row-gap: 8px; padding: 8px 10px 10px; box-shadow: none; }
+body .embedded-nav-group { order: 1; display: flex; align-items: center; gap: 2px; }
+body .embedded-quick-canvas { order: 2; margin-left: auto; display: flex; gap: 2px; }
+body #embeddedResetBtn, body #embeddedDialogBtn { order: 2; }
+body .embedded-title-wrap { order: 3; flex: 1 0 100%; gap: 9px; }
+body .embedded-tool-title { font-size: 14px; font-weight: 700; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body .embedded-tool-icon { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-subtle); color: var(--accent); flex-shrink: 0; }
+body .embedded-tool-icon svg { width: 16px; height: 16px; stroke-width: 1.75; }
+body .embedded-nav-arrow { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; padding: 0; }
+body .embed-canvas-btn { width: 24px; height: 24px; }
+@media (max-width: 340px) {
+    body #embeddedResetBtn span, body #embeddedDialogBtn span { display: none; }
+}
+
+/* ---------- Context ribbon & presets ---------- */
+body .embedded-sel-ribbon { align-items: center; }
+.sel-ribbon-icon svg { display: block; }
+body .embed-presets-label { text-transform: none; letter-spacing: 0.01em; font-weight: 600; }
+
+/* ---------- Footer ---------- */
+body .panel-footer { padding: 6px 12px; box-shadow: none; }
+.donate-link svg { margin-right: 3px; }
+
+/* ---------- Narrow dock ---------- */
+@media (max-width: 260px) {
+    body .tool-card { padding: 6px; gap: 8px; min-height: 44px; }
+    body .tool-icon-wrap { width: 30px; height: 30px; }
+    .tool-icon-wrap svg { width: 16px; height: 16px; }
+    body .tool-badge { display: none; }
+    body .run-btn { padding: 0 8px; }
+}
+
+/* ---------- Touch / reduced motion ---------- */
+@media (hover: none) {
+    body .preview-card-btn, body .fav-btn { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body .tool-card, body .fav-btn, body .preview-card-btn { transition: none; }
+}
+
+
+/* ---------- v3.0 fixes: row width budget ---------- */
+/* Category is already encoded by the left rail + tile tint, so the label is dropped from rows */
+body .tool-card .tool-badge { display: none; }
+
+/* Rail: straight 3px bar instead of a curved border */
+body .tool-card.cat-prepress,
+body .tool-card.cat-layout,
+body .tool-card.cat-utilities { border-left: 1px solid transparent !important; position: relative; }
+body .tool-card.cat-prepress:hover,
+body .tool-card.cat-layout:hover,
+body .tool-card.cat-utilities:hover { border-left-color: var(--border-color) !important; }
+.tool-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 12px; bottom: 12px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--rail, transparent);
+    opacity: 0.9;
+}
+.cat-prepress  { --rail: rgb(var(--prepress-rgb)); }
+.cat-layout    { --rail: rgb(var(--layout-rgb)); }
+.cat-utilities { --rail: rgb(var(--util-rgb)); }
+.view-grid .tool-card::before { display: none; }
+
+/* Star stays in the row (dim until hover); the preview eye floats over the text only on hover */
+body .tool-actions { position: relative; gap: 2px; }
+body .fav-btn { opacity: 0.45; }
+body .fav-btn.active { opacity: 1; }
+body .tool-card:hover .fav-btn, body .tool-card:focus-visible .fav-btn { opacity: 1; }
+body .tool-card .preview-card-btn {
+    position: absolute;
+    right: calc(100% + 28px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-surface-hover);
+    border: 1px solid var(--border-color);
+    pointer-events: none;
+}
+body .tool-card:hover .preview-card-btn,
+body .tool-card:focus-visible .preview-card-btn { pointer-events: auto; opacity: 1; }
+body .view-grid .tool-card .preview-card-btn { position: static; transform: none; }
+body .run-btn { padding: 0 10px; height: 24px; font-size: 11px; }
+body .tool-card { padding-right: 8px; }
+
+/* Version badge now lives in the footer (header keeps identity + actions only) */
+.footer-links { display: flex; align-items: center; gap: 10px; }
+.footer-links .brand-badge { border: none; background: none; padding: 0; font-size: 10.5px; color: var(--text-muted); line-height: 1.4; }
+.footer-links .brand-badge:hover { color: var(--text-primary); }
+
+/* Grid view: rows size to their content instead of squeezing into the viewport height */
+body .tool-list.view-grid { grid-auto-rows: max-content; }
+body .view-grid .tool-card { min-height: 0; overflow: hidden; }
+body .view-grid .tool-name { min-height: 2.9em; }
+body .view-grid .tool-card .preview-card-btn { display: none; }
+body .view-grid .tool-card:hover .preview-card-btn { display: inline-flex; }
+
+body .embedded-title-wrap { justify-content: flex-start; text-align: left; }
