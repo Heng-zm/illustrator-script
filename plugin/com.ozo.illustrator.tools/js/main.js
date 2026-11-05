@@ -102,6 +102,8 @@
             "reset.label": "Reset",
             "reset.done": "Reset {name} to defaults",
             "recent.label": "Recent:",
+            "recent.clear": "Clear recent history",
+            "density.toggle": "Toggle Compact / Comfortable View (Alt+D)",
         },
         km: {
             "cat.all": "ទាំងអស់", "cat.favorites": "សំណព្វ", "cat.prepress": "មុនបោះពុម្ព",
@@ -170,6 +172,8 @@
             "reset.label": "កំណត់ឡើងវិញ",
             "reset.done": "បានកំណត់ {name} មកដូចដើមវិញ",
             "recent.label": "ទើបប្រើ៖",
+            "recent.clear": "សម្អាតប្រវត្តិឧបករណ៍ថ្មីៗ",
+            "density.toggle": "ប្តូររចនាប័ទ្ម បង្រួម / ធម្មតា (Alt+D)",
             "preview.title": "ព័តឹម័នឡបករណ៍",
             "preview.features": "លក្ខណែសំខាញ។",
             "preview.open": "បើកឡបករណ៍",
@@ -682,6 +686,14 @@
     var docPopoverClose = $("docPopoverClose");
     var docPopoverStats = $("docPopoverStats");
     var latestDocInfo = null;
+    var densityToggleBtn = $("densityToggleBtn");
+    var recentClearBtn = $("recentClearBtn");
+    var toastNotification = $("toastNotification");
+    var toastIcon = $("toastIcon");
+    var toastText = $("toastText");
+    var toastBar = $("toastBar");
+    var toastDismissBtn = $("toastDismissBtn");
+    var toastTimer = null;
 
     var viewCatalog = $("viewCatalog");
     var viewEmbedded = $("viewEmbedded");
@@ -770,6 +782,52 @@
         }, 1500);
     }
 
+    function showToast(msg, type, duration) {
+        if (!toastNotification || !toastText) return;
+        if (toastTimer) {
+            clearTimeout(toastTimer);
+            toastTimer = null;
+        }
+        var t = type || "info";
+        toastNotification.className = "toast-notification toast-" + t;
+        toastText.textContent = msg;
+        if (toastIcon) {
+            if (t === "success") {
+                toastIcon.innerHTML = uiIcon("check", 13);
+            } else if (t === "error") {
+                toastIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+            } else {
+                toastIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+            }
+        }
+        toastNotification.hidden = false;
+        var d = duration || 2600;
+        if (toastBar) {
+            toastBar.style.transition = "none";
+            toastBar.style.width = "100%";
+            setTimeout(function () {
+                toastBar.style.transition = "width " + d + "ms linear";
+                toastBar.style.width = "0%";
+            }, 30);
+        }
+        toastTimer = setTimeout(function () {
+            hideToast();
+        }, d);
+    }
+
+    function hideToast() {
+        if (!toastNotification || toastNotification.hidden) return;
+        toastNotification.classList.add("toast-out");
+        setTimeout(function () {
+            toastNotification.hidden = true;
+            toastNotification.classList.remove("toast-out");
+        }, 180);
+    }
+
+    if (toastDismissBtn) {
+        toastDismissBtn.addEventListener("click", hideToast);
+    }
+
     function setStatus(msg, type, duration) {
         if (statusTimer) {
             clearTimeout(statusTimer);
@@ -784,6 +842,10 @@
             var primaryBtn = embeddedContent.querySelector(".btn-action-primary") ||
                              embeddedContent.querySelector("#btnGenericRun");
             if (primaryBtn) flashButtonSuccess(primaryBtn);
+        }
+
+        if (type === "success" || type === "error") {
+            showToast(msg, type, duration || 2400);
         }
 
         if (duration > 0) {
@@ -1143,6 +1205,7 @@
                 items: [
                     { desc: km ? "ស្វែងរកឧបករណ៍" : "Search Tools", keys: ["/", km ? "ឬ" : "or", "Ctrl", "K"] },
                     { desc: km ? "ប្តូរប្រភេទ Tab" : "Switch Category Tab", keys: ["Alt", "1–5"] },
+                    { desc: km ? "ប្តូរបង្រួម / ធម្មតា" : "Toggle Density", keys: ["Alt", "D"] },
                     { desc: km ? "រំកិលរវាងឧបករណ៍" : "Navigate Tools", keys: ["↑", "↓", "←", "→"] },
                     { desc: km ? "បង្ហាញផ្ទាំងផ្លូវកាត់" : "Keyboard Help", keys: ["?"] }
                 ]
@@ -6107,15 +6170,74 @@
             var tag = closest(e.target, ".search-tag", searchTagsWrap);
             if (!tag) return;
             var q = tag.getAttribute("data-query");
-            if (q) {
-                searchInput.value = q;
-                setSearch(q);
+            if (q === ":favorites") {
+                if (tabBtns && tabBtns[1]) {
+                    setCategory(tabBtns[1]);
+                } else {
+                    currentCategory = "favorites";
+                    renderTools();
+                }
+                searchInput.value = "";
+                setSearch("");
                 renderTools();
                 searchTagsWrap.hidden = true;
-                searchInput.focus();
+                return;
             }
+            if (!q) {
+                if (tabBtns && tabBtns[0]) {
+                    setCategory(tabBtns[0]);
+                } else {
+                    currentCategory = "all";
+                    renderTools();
+                }
+                searchInput.value = "";
+                setSearch("");
+                renderTools();
+                searchTagsWrap.hidden = true;
+                return;
+            }
+            if (tag.classList.contains("active")) {
+                tag.classList.remove("active");
+                searchInput.value = "";
+                setSearch("");
+                renderTools();
+                return;
+            }
+            var allTags = searchTagsWrap.querySelectorAll(".search-tag");
+            for (var t = 0; t < allTags.length; t++) allTags[t].classList.remove("active");
+            tag.classList.add("active");
+            searchInput.value = q;
+            setSearch(q);
+            renderTools();
+            searchTagsWrap.hidden = true;
+            searchInput.focus();
         });
     }
+
+    // UI Density (Comfortable vs Compact)
+    var currentDensity = store.get("ozo_density", "comfortable");
+    function applyDensity(density) {
+        currentDensity = density === "compact" ? "compact" : "comfortable";
+        store.set("ozo_density", currentDensity);
+        if (currentDensity === "compact") {
+            document.body.classList.add("density-compact");
+            if (densityToggleBtn) densityToggleBtn.classList.add("active");
+        } else {
+            document.body.classList.remove("density-compact");
+            if (densityToggleBtn) densityToggleBtn.classList.remove("active");
+        }
+    }
+    function toggleDensity() {
+        var next = currentDensity === "compact" ? "comfortable" : "compact";
+        applyDensity(next);
+        showToast(next === "compact" ?
+            (isKhmer() ? "ទិដ្ឋភាពបង្រួម (Compact)" : "Compact Density Enabled") :
+            (isKhmer() ? "ទិដ្ឋភាពធម្មតា (Comfortable)" : "Comfortable Density Enabled"), "info", 1500);
+    }
+    if (densityToggleBtn) {
+        densityToggleBtn.addEventListener("click", toggleDensity);
+    }
+    applyDensity(currentDensity);
 
     // Document Inspector Popover
     function openDocPopover() {
@@ -6128,12 +6250,38 @@
         } else {
             var csClass = (info.colorSpace || "").toUpperCase().indexOf("CMYK") !== -1 ? "doc-stat-cmyk" : "doc-stat-rgb";
             var html = [];
-            html.push('<div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;word-break:break-all;">' + escapeHtml(info.name) + '</div>');
-            html.push('<div>');
-            if (info.colorSpace) html.push('<span class="doc-stat-badge ' + csClass + '">' + escapeHtml(info.colorSpace) + '</span>');
-            html.push((info.artboardsCount || 1) + ' ' + (isKhmer() ? "ផ្ទាំង Artboard" : "Artboard(s)") + ' • ');
-            html.push((info.selectedCount || 0) + ' ' + (isKhmer() ? "វត្ថុបានជ្រើស" : "selected") + ' / ' + (info.itemCount || 0) + ' total');
+            html.push('<div class="doc-popover-title-row">');
+            html.push('  <div class="doc-file-name" title="' + escapeHtml(info.name) + '">' + escapeHtml(info.name) + '</div>');
+            if (info.colorSpace) html.push('  <span class="doc-stat-badge ' + csClass + '">' + escapeHtml(info.colorSpace) + '</span>');
             html.push('</div>');
+
+            // Artboard Pager Bar
+            if (info.artboardsCount > 0) {
+                var abIdx = (info.activeArtboardIndex || 0) + 1;
+                var abName = info.activeArtboardName || ("Artboard " + abIdx);
+                var abDim = (info.artboardWidthMm && info.artboardHeightMm) ?
+                    (' (' + info.artboardWidthMm + ' × ' + info.artboardHeightMm + ' mm)') : '';
+                html.push('<div class="doc-ab-pager">');
+                html.push('  <button type="button" class="doc-ab-nav-btn" data-ab-nav="-1" title="' + (isKhmer() ? "ផ្ទាំងមុន (Previous Artboard)" : "Previous Artboard") + '">◀</button>');
+                html.push('  <div class="doc-ab-label" title="' + escapeHtml(abName + abDim) + '">');
+                html.push('    <span class="doc-ab-num">' + abIdx + '/' + info.artboardsCount + '</span> ');
+                html.push('    <span class="doc-ab-text">' + escapeHtml(abName) + '</span>');
+                html.push('  </div>');
+                html.push('  <button type="button" class="doc-ab-nav-btn" data-ab-nav="1" title="' + (isKhmer() ? "ផ្ទាំងបន្ទាប់ (Next Artboard)" : "Next Artboard") + '">▶</button>');
+                html.push('</div>');
+            }
+
+            // Live Dimension / Selection HUD
+            html.push('<div class="doc-hud-row">');
+            if (info.selectedCount > 0) {
+                var selDim = (info.selWidthMm && info.selHeightMm) ? (' • <span class="doc-hud-dim">' + info.selWidthMm + ' × ' + info.selHeightMm + ' mm</span>') : '';
+                html.push('  <span class="doc-hud-pill hud-sel">📐 ' + info.selectedCount + ' ' + (isKhmer() ? "វត្ថុបានជ្រើស" : "selected") + selDim + '</span>');
+            } else {
+                var abSizeText = (info.artboardWidthMm && info.artboardHeightMm) ? (info.artboardWidthMm + ' × ' + info.artboardHeightMm + ' mm') : (info.itemCount + ' items');
+                html.push('  <span class="doc-hud-pill hud-canvas">📄 Artboard: ' + abSizeText + ' • ' + (info.itemCount || 0) + ' total</span>');
+            }
+            html.push('</div>');
+
             docPopoverStats.innerHTML = html.join("");
         }
         docPopover.hidden = false;
@@ -6147,6 +6295,26 @@
 
     if (docPopover) {
         docPopover.addEventListener("click", function (e) {
+            var abBtn = closest(e.target, ".doc-ab-nav-btn", docPopover);
+            if (abBtn) {
+                var delta = parseInt(abBtn.getAttribute("data-ab-nav"), 10) || 0;
+                if (csInterface) {
+                    csInterface.evalScript("ozoSwitchArtboard(" + delta + ")", function (raw) {
+                        refreshDocumentStatus();
+                        setTimeout(openDocPopover, 120);
+                        try {
+                            var res = JSON.parse(raw);
+                            if (res.status === "success") {
+                                showToast((isKhmer() ? "ប្តូរទៅកាន់ " : "Switched to ") + res.name + " (" + (res.activeIndex + 1) + "/" + res.total + ")", "info", 1800);
+                            }
+                        } catch (eRes) {}
+                    });
+                } else {
+                    showToast("Switched artboard (simulated)", "info", 1500);
+                }
+                return;
+            }
+
             var btn = closest(e.target, ".doc-action-btn", docPopover);
             if (!btn) return;
             var cmd = btn.getAttribute("data-canvas-cmd");
@@ -6197,6 +6365,13 @@
                     return;
                 }
             }
+        }
+
+        // Toggle density: Alt+D
+        if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === "d" || e.key === "D")) {
+            e.preventDefault();
+            toggleDensity();
+            return;
         }
 
         // Quick tab switching: Alt+1 to Alt+5

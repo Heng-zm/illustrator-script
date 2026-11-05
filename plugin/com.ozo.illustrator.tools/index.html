@@ -9,6 +9,18 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+    <!-- Floating Pro Toast Notification -->
+    <div id="toastNotification" class="toast-notification" hidden role="alert" aria-live="assertive">
+        <div class="toast-inner">
+            <span id="toastIcon" class="toast-icon"></span>
+            <span id="toastText" class="toast-text"></span>
+            <button type="button" id="toastDismissBtn" class="toast-dismiss" aria-label="Dismiss">&times;</button>
+        </div>
+        <div class="toast-bar-track">
+            <div id="toastBar" class="toast-bar"></div>
+        </div>
+    </div>
     <!-- Welcome Splash Screen (decorative; auto-dismisses, not a real modal) -->
     <div id="welcomeSplash" class="welcome-splash" role="status" aria-live="polite">
         <div class="splash-card">
@@ -47,6 +59,13 @@
             <button type="button" id="refreshBtn" class="icon-btn" data-i18n-title="refresh" title="Refresh Panel">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+            </button>
+            <button type="button" id="densityToggleBtn" class="icon-btn" data-i18n-title="density.toggle" title="Toggle Compact / Comfortable View (Alt+D)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
                 </svg>
             </button>
             <button type="button" id="shortcutsBtn" class="icon-btn" data-i18n-title="shortcuts.title" title="Keyboard Shortcuts (?)">
@@ -96,6 +115,8 @@
             </div>
             <!-- Quick Filter Chips -->
             <div id="searchTagsWrap" class="search-tags-wrap" hidden>
+                <span class="search-tag tag-fav" data-query=":favorites">★ Favorites</span>
+                <span class="search-tag tag-all" data-query="">⚡ All</span>
                 <span class="search-tag" data-query="die cut">✂ DieCut</span>
                 <span class="search-tag" data-query="qr">▦ QR</span>
                 <span class="search-tag" data-query="export">↗ Export</span>
@@ -135,6 +156,7 @@
         <div id="recentToolsWrap" class="recent-tools-wrap" hidden>
             <span class="recent-tools-label" data-i18n="recent.label">Recent:</span>
             <div id="recentToolsList" class="recent-tools-list"></div>
+            <button type="button" id="recentClearBtn" class="recent-clear-btn" data-i18n-title="recent.clear" title="Clear Recent Tools">&times;</button>
         </div>
 
         <!-- Tool Card List (rendered by js/main.js) -->

@@ -382,6 +382,44 @@ function ozoExecuteCanvasCommand(cmd) {
     }
 }
 
+function ozoSwitchArtboard(delta) {
+    try {
+        if (app.documents.length === 0) {
+            return ozoJsonStringify({ status: "error", message: "No document open" });
+        }
+        var doc = app.activeDocument;
+        var total = doc.artboards.length;
+        if (total <= 1) {
+            return ozoJsonStringify({ status: "noop", message: "Single artboard", total: total });
+        }
+        var cur = 0;
+        try {
+            if (typeof doc.artboards.getActiveArtboardIndex === "function") {
+                cur = doc.artboards.getActiveArtboardIndex();
+            }
+        } catch (eIdx) {}
+        var next = cur + (parseInt(delta, 10) || 0);
+        if (next < 0) next = total - 1;
+        if (next >= total) next = 0;
+        if (typeof doc.artboards.setActiveArtboardIndex === "function") {
+            doc.artboards.setActiveArtboardIndex(next);
+        }
+        try {
+            app.executeMenuCommand("fitin");
+        } catch (eFit) {}
+        var ab = doc.artboards[next];
+        var name = ab && ab.name ? ab.name : ("Artboard " + (next + 1));
+        return ozoJsonStringify({
+            status: "success",
+            activeIndex: next,
+            total: total,
+            name: name
+        });
+    } catch (e) {
+        return ozoJsonStringify({ status: "error", message: e.message || String(e) });
+    }
+}
+
 function ozoGetDocumentStatus() {
     try {
         if (app.documents.length === 0) {
@@ -415,12 +453,64 @@ function ozoGetDocumentStatus() {
             if (doc.pageItems) itemCount = doc.pageItems.length;
         } catch (eItems) {}
 
+        var activeAbIndex = 0;
+        var activeAbName = "";
+        var abWidthMm = 0;
+        var abHeightMm = 0;
+        try {
+            if (doc.artboards && doc.artboards.length > 0) {
+                if (typeof doc.artboards.getActiveArtboardIndex === "function") {
+                    activeAbIndex = doc.artboards.getActiveArtboardIndex();
+                }
+                var ab = doc.artboards[activeAbIndex];
+                if (ab) {
+                    activeAbName = ab.name || ("Artboard " + (activeAbIndex + 1));
+                    if (ab.artboardRect) {
+                        var abW = Math.abs(ab.artboardRect[2] - ab.artboardRect[0]);
+                        var abH = Math.abs(ab.artboardRect[1] - ab.artboardRect[3]);
+                        abWidthMm = Math.round((abW * 25.4 / 72) * 10) / 10;
+                        abHeightMm = Math.round((abH * 25.4 / 72) * 10) / 10;
+                    }
+                }
+            }
+        } catch (eAb) {}
+
+        var selWidthMm = 0;
+        var selHeightMm = 0;
+        try {
+            if (selCount > 0 && doc.selection) {
+                var sList = (doc.selection instanceof Array || doc.selection.typename === "Array") ? doc.selection : [doc.selection];
+                var minX = Infinity, maxY = -Infinity, maxX = -Infinity, minY = Infinity;
+                var bCount = Math.min(sList.length, 50);
+                for (var sIdx = 0; sIdx < bCount; sIdx++) {
+                    var itm = sList[sIdx];
+                    var vb = itm.visibleBounds || itm.geometricBounds;
+                    if (vb) {
+                        if (vb[0] < minX) minX = vb[0];
+                        if (vb[1] > maxY) maxY = vb[1];
+                        if (vb[2] > maxX) maxX = vb[2];
+                        if (vb[3] < minY) minY = vb[3];
+                    }
+                }
+                if (minX !== Infinity && maxX > minX) {
+                    selWidthMm = Math.round(((maxX - minX) * 25.4 / 72) * 10) / 10;
+                    selHeightMm = Math.round(((maxY - minY) * 25.4 / 72) * 10) / 10;
+                }
+            }
+        } catch (eDim) {}
+
         return ozoJsonStringify({
             hasDoc: true,
             name: doc.name,
             colorSpace: String(doc.documentColorSpace).replace("DocumentColorSpace.", ""),
             artboardsCount: doc.artboards.length,
+            activeArtboardIndex: activeAbIndex,
+            activeArtboardName: activeAbName,
+            artboardWidthMm: abWidthMm,
+            artboardHeightMm: abHeightMm,
             selectedCount: selCount,
+            selWidthMm: selWidthMm,
+            selHeightMm: selHeightMm,
             itemCount: itemCount
         });
     } catch (e) {
