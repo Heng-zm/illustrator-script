@@ -483,6 +483,13 @@ test("host bridges exist for Rich Black Optimizer and ABA KHQR", function () {
     assert.strictEqual(resKh.status, "error");
 });
 
+test("host bridge exposes Nesting and reports a missing script", function () {
+    var ctx = makeContext();
+    assert.strictEqual(typeof ctx.ozoExecuteNesting, "function");
+    var res = JSON.parse(ctx.ozoExecuteNesting("{}"));
+    assert.strictEqual(res.status, "error");
+});
+
 test("ABA KHQR EMVCo string payload and CRC16 checksum", function () {
     var khqrScript = fs.readFileSync(path.join(ROOT, "Script all", "ABA KHQR Generator.jsx"), "utf8");
     var vmCtx = vm.createContext({});

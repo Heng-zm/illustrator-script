@@ -2588,3 +2588,583 @@ mark.search-match { animation: markIn 0.18s ease-out; }
     .tab-star svg { width: 9px; height: 9px; }
     .tab-count { display: none !important; } /* counts would force the last tab off-screen */
 }
+
+
+/* ==================================================================
+   v2.8 – modern visual polish
+   Override-only layer: no markup, JS hooks or class names changed.
+   Softer radii, depth, pill tabs, richer icon tiles, calmer chrome.
+   ================================================================== */
+
+/* ---------- Tokens ---------- */
+:root {
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.38);
+    --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+    --ring: 0 0 0 3px rgba(var(--accent-rgb), 0.25);
+}
+body.theme-light,
+body.theme-medium-light {
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.14);
+    --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+}
+
+/* ---------- Header ---------- */
+.panel-header {
+    padding: 10px 12px;
+    box-shadow: var(--shadow-1);
+    position: relative;
+    z-index: 2;
+}
+.brand { gap: 10px; }
+.brand-logo { width: 28px; height: 28px; border-radius: 8px; }
+.brand-title { font-size: 12.5px; letter-spacing: 0.08em; }
+.brand-badge {
+    border-radius: 99px;
+    padding: 0 8px;
+    border-color: var(--border-color);
+    background: var(--bg-main);
+}
+.header-actions { gap: 4px; }
+.header-actions .icon-btn { width: 28px; height: 28px; border-radius: 8px; }
+.lang-btn {
+    height: 24px;
+    border-radius: 99px;
+    border-color: var(--border-color);
+    background: var(--bg-main);
+    margin: 0 2px;
+}
+
+/* ---------- Search ---------- */
+.search-container { padding: 12px 12px 10px; gap: 8px; }
+.search-input {
+    height: 34px;
+    padding: 0 32px 0 34px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+}
+.search-icon { left: 11px; }
+.search-input:focus { box-shadow: var(--ring); }
+.view-toggle {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+}
+.search-kbd { border-radius: 5px; }
+
+/* ---------- Tabs: pill style (the existing sliding indicator becomes the pill) ---------- */
+.tabs-container {
+    padding: 2px 12px 10px;
+    gap: 4px;
+    border-bottom: none;
+}
+.tab-btn {
+    position: relative;
+    z-index: 1;
+    padding: 6px 11px;
+    border-radius: 99px;
+}
+.tab-btn:hover { background: var(--bg-surface-hover); }
+.tab-btn.active:hover { background: transparent; }
+.tab-btn.active { color: var(--text-primary); font-weight: 600; }
+.tab-indicator {
+    top: 2px;
+    bottom: 10px;
+    height: auto;
+    z-index: 0;
+    border-radius: 99px;
+    background: var(--accent-subtle);
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.4);
+}
+
+/* ---------- Tool list ---------- */
+.tool-list { padding: 4px 12px 16px; gap: 8px; }
+.tool-list::-webkit-scrollbar { width: 6px; }
+.tool-list::-webkit-scrollbar-thumb { border: none; border-radius: 3px; }
+
+.tool-card {
+    border-radius: var(--radius-md);
+    background-image: var(--sheen);
+    box-shadow: var(--shadow-1);
+    transition: background-color 0.12s, border-color 0.12s, box-shadow 0.18s, transform 0.12s var(--ease-out);
+}
+.tool-card:hover { box-shadow: var(--shadow-2); }
+.tool-card:focus-visible { box-shadow: var(--shadow-1), var(--ring); }
+.tool-card.is-running { box-shadow: var(--shadow-1), 0 0 0 3px rgba(var(--accent-rgb), 0.12); }
+
+/* Roomier rows, but leave the narrow-dock rules (<=260px) in charge there */
+@media (min-width: 261px) {
+    .tool-card { padding: 10px 10px 10px 11px; min-height: 58px; gap: 12px; }
+    .tool-icon-wrap { width: 38px; height: 38px; }
+}
+
+/* Icon tiles: tinted gradient + hairline ring in the category colour */
+.tool-icon-wrap { border-radius: 11px; }
+.cat-prepress .tool-icon-wrap {
+    background: linear-gradient(145deg, rgba(var(--prepress-rgb), 0.28), rgba(var(--prepress-rgb), 0.10));
+    box-shadow: inset 0 0 0 1px rgba(var(--prepress-rgb), 0.3);
+}
+.cat-layout .tool-icon-wrap {
+    background: linear-gradient(145deg, rgba(var(--layout-rgb), 0.28), rgba(var(--layout-rgb), 0.10));
+    box-shadow: inset 0 0 0 1px rgba(var(--layout-rgb), 0.3);
+}
+.cat-utilities .tool-icon-wrap {
+    background: linear-gradient(145deg, rgba(var(--util-rgb), 0.28), rgba(var(--util-rgb), 0.10));
+    box-shadow: inset 0 0 0 1px rgba(var(--util-rgb), 0.3);
+}
+
+.tool-name { font-size: 12.5px; }
+.tool-desc { font-size: 11px; opacity: 0.9; }
+
+/* Actions */
+.fav-btn, .preview-card-btn { border-radius: 8px; }
+.run-btn {
+    height: 26px;
+    padding: 0 13px;
+    border-radius: 99px;
+}
+.tool-card:hover .run-btn,
+.tool-card:focus-visible .run-btn { box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.4); }
+
+/* ---------- Grid view ---------- */
+.tool-list.view-grid { gap: 10px; }
+.view-grid .tool-card { border-radius: var(--radius-lg); padding: 18px 8px 12px; }
+.view-grid .tool-icon-wrap { width: 48px; height: 48px; border-radius: 14px; }
+.view-grid .tool-icon-wrap svg { width: 23px; height: 23px; }
+.view-grid .tool-name { font-size: 11.5px; }
+
+/* ---------- Search match ---------- */
+mark.search-match { border-radius: 3px; padding: 0 2px; }
+
+/* ---------- Empty state ---------- */
+.empty-state svg {
+    width: 64px;
+    height: 64px;
+    padding: 16px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-1);
+}
+.empty-clear-btn { height: 28px; padding: 0 16px; border-radius: 99px; }
+
+/* ---------- Banners: floating cards instead of full-bleed strips ---------- */
+.update-banner,
+.error-banner {
+    margin: 8px 12px 0;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+}
+.update-banner { padding: 7px 8px 7px 10px; border: 1px solid rgba(var(--accent-rgb), 0.5); }
+.error-banner { padding: 7px 6px 7px 10px; border: 1px solid rgba(239, 83, 80, 0.55); }
+.update-btn { border-radius: 99px; padding: 3px 12px; }
+
+/* ---------- Footer ---------- */
+.panel-footer { padding: 7px 12px; }
+.status-indicator {
+    flex: 0 1 auto;
+    max-width: 70%;
+    padding: 2px 10px 2px 8px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 99px;
+}
+.donate-link { border-radius: 99px; padding: 3px 9px; }
+
+/* ---------- Embedded tool view ---------- */
+.embedded-header { box-shadow: var(--shadow-1); position: relative; z-index: 1; }
+.embedded-back-btn { border-radius: 8px; }
+.embedded-dialog-btn { border-radius: 99px; padding: 3px 9px; border-color: var(--border-color); }
+.embedded-content { padding: 12px 12px 16px; gap: 12px; }
+
+.embed-card {
+    border-radius: var(--radius-md);
+    padding: 12px;
+    gap: 9px;
+    background-image: var(--sheen);
+    box-shadow: var(--shadow-1);
+}
+.embed-card-header { font-size: 11px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.02em; }
+.embed-doc-bar { border-radius: 8px; padding: 6px 9px; }
+.embed-tag { border-radius: 99px; padding: 1px 6px; }
+
+.embed-segmented { border-radius: var(--radius-md); padding: 3px; }
+.embed-seg-btn { border-radius: 8px; padding: 6px 8px; }
+.embed-seg-btn.active { box-shadow: 0 1px 4px rgba(var(--accent-rgb), 0.45); }
+
+.embed-shape-btn,
+.embed-pf-btn,
+.embed-format-card,
+.embed-naming-preview { border-radius: 8px; }
+.embed-pf-btn { border-radius: var(--radius-md); }
+
+.embed-input,
+.embed-select {
+    border-radius: 8px;
+    padding: 6px 9px;
+    min-height: 28px;
+    border-color: var(--border-color);
+}
+.embed-input:focus,
+.embed-select:focus { border-color: var(--accent); box-shadow: var(--ring); }
+.embed-textarea { border-radius: 8px; border-color: var(--border-color); padding: 8px 10px; }
+.embed-textarea:focus { box-shadow: var(--ring); }
+.embed-btn-browse { border-radius: 8px; border-color: var(--border-color); }
+.embed-chip { padding: 3px 9px; }
+.icon-cat-chip { padding: 4px 10px; }
+.script-item { border-radius: var(--radius-md); }
+.script-run-btn { border-radius: 99px; padding: 4px 12px; }
+
+.embed-action-wrap {
+    padding-top: 14px;
+    background: linear-gradient(to top, var(--bg-main) 65%, rgba(0, 0, 0, 0));
+}
+.btn-action-primary {
+    height: 38px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(180deg, var(--accent-hover), var(--accent));
+    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.35);
+}
+.btn-action-primary:hover {
+    background: linear-gradient(180deg, var(--accent-hover), var(--accent-hover));
+    box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.45);
+}
+.btn-action-primary:active { background: var(--accent-active); box-shadow: none; }
+.btn-action-primary[disabled] { background: var(--accent); box-shadow: none; }
+.btn-action-secondary { height: 34px; border-radius: var(--radius-md); border-color: var(--border-color); }
+
+/* ---------- Preview panel ---------- */
+.preview-hero {
+    background:
+        linear-gradient(180deg, rgba(var(--accent-rgb), 0.10), rgba(var(--accent-rgb), 0) 75%),
+        var(--bg-surface);
+}
+.preview-icon-wrap { border-radius: 14px; box-shadow: var(--shadow-2); }
+.preview-illustration { border-radius: var(--radius-md); }
+.preview-open-btn,
+.preview-run-btn { border-radius: var(--radius-md); height: 36px; padding-top: 0; padding-bottom: 0; }
+.preview-open-btn { box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.35); }
+.preview-back-btn { border-radius: 8px; }
+
+/* ---------- Narrow dock: keep the polish, drop the extra air ---------- */
+@media (max-width: 260px) {
+    .search-container { padding: 10px 8px 8px; gap: 6px; }
+    .search-input { height: 32px; }
+    .view-toggle { width: 32px; height: 32px; }
+    .tabs-container { padding: 2px 8px 8px; gap: 2px; }
+    .tab-indicator { bottom: 8px; }
+    .tab-btn { padding: 5px 8px; }
+    .tool-list { padding: 2px 8px 12px; }
+    .update-banner, .error-banner { margin: 6px 8px 0; }
+    .embedded-content { padding: 10px; }
+}
+
+
+/* ==================================================================
+   v2.9 – layout refinements + custom checkboxes / radios
+   ================================================================== */
+
+/* ---------- Checkboxes & radios ---------- */
+input[type="checkbox"],
+input[type="radio"],
+.embed-check-row input[type="checkbox"],
+.embed-check-row input[type="radio"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    vertical-align: middle;
+    cursor: pointer;
+    background: var(--bg-main);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 5px;
+    transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+input[type="radio"],
+.embed-check-row input[type="radio"] { border-radius: 50%; }
+
+input[type="checkbox"]:hover,
+input[type="radio"]:hover { border-color: var(--accent-hover); }
+
+/* check mark */
+input[type="checkbox"]::after {
+    content: "";
+    width: 8px;
+    height: 4px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: translateY(-1px) rotate(-45deg) scale(0);
+    transition: transform 0.16s var(--ease-spring);
+}
+input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 1px 4px rgba(var(--accent-rgb), 0.4);
+}
+input[type="checkbox"]:checked::after { transform: translateY(-1px) rotate(-45deg) scale(1); }
+
+/* mixed state shows a dash */
+input[type="checkbox"]:indeterminate {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+input[type="checkbox"]:indeterminate::after {
+    width: 8px;
+    height: 0;
+    border-left: none;
+    border-bottom: 2px solid #fff;
+    transform: scale(1);
+}
+
+/* radio dot */
+input[type="radio"]::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: scale(0);
+    transition: transform 0.16s var(--ease-spring);
+}
+input[type="radio"]:checked {
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+}
+input[type="radio"]:checked::after { transform: scale(1); }
+
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Whole row is the hit target, with a soft hover plate */
+.embed-check-row {
+    gap: 8px;
+    padding: 4px 6px;
+    margin: 0 -6px;
+    border-radius: 6px;
+    transition: background-color 0.12s, color 0.12s;
+}
+.embed-check-row:hover { background: var(--bg-surface-hover); }
+.embed-format-label { gap: 8px; }
+.embed-format-card.active { background: var(--accent-subtle); }
+.embed-format-card { transition: border-color 0.15s, background-color 0.15s; }
+
+/* ---------- Tabs: counts become small badges ---------- */
+.tab-count.has-count {
+    padding: 0 6px;
+    line-height: 16px;
+    border-radius: 99px;
+    font-size: 10px;
+    background: var(--bg-surface-active);
+}
+.tab-btn.active .tab-count.has-count { background: var(--accent); color: var(--accent-text); }
+
+/* ---------- List rows: fuller descriptions ---------- */
+@media (min-width: 261px) {
+    .tool-list:not(.view-grid) .tool-desc {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .tool-list:not(.view-grid) .tool-card { min-height: 62px; }
+}
+
+/* ---------- Wider docks / floating panel: multi-column ---------- */
+@media (min-width: 480px) {
+    .tool-list:not(.view-grid) {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        align-content: start;
+    }
+    .tool-list.view-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+    .list-sep { grid-column: 1 / -1; }
+}
+
+/* Embedded tools: keep forms a readable width on very wide panels */
+@media (min-width: 700px) {
+    .embedded-content { align-items: center; }
+    .embedded-content > * { width: 100%; max-width: 640px; }
+}
+
+/* ---------- Chrome alignment ---------- */
+.search-container,
+.tabs-container { background-color: var(--bg-main); }
+.panel-footer { box-shadow: 0 -1px 0 var(--border-color); border-top: none; }
+
+
+/* ==================================================================
+   v3.0 – form controls, scroll polish, small details
+   ================================================================== */
+
+/* Selection colour matches the accent */
+::selection { background: rgba(var(--accent-rgb), 0.35); }
+
+/* ---------- Select: custom chevron ---------- */
+.embed-select,
+select {
+    -webkit-appearance: none;
+    appearance: none;
+    padding-right: 26px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a8a8a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+}
+
+/* ---------- Range slider ---------- */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--border-strong);
+    outline: none;
+    cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg-surface);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    transition: transform 0.12s var(--ease-out), box-shadow 0.12s;
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: var(--ring); }
+
+/* Number fields: spinners only on hover/focus */
+input[type="number"]::-webkit-inner-spin-button { opacity: 0; transition: opacity 0.12s; }
+input[type="number"]:hover::-webkit-inner-spin-button,
+input[type="number"]:focus::-webkit-inner-spin-button { opacity: 0.6; }
+
+/* ---------- Scroll polish: content fades under the header/footer edges ---------- */
+.tool-list {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 8px, #000 calc(100% - 14px), transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 8px, #000 calc(100% - 14px), transparent 100%);
+}
+
+/* ---------- Details ---------- */
+.embed-card-header {
+    padding-left: 8px;
+    border-left: 3px solid var(--accent);
+    line-height: 1.3;
+}
+.status-dot { box-shadow: 0 0 0 3px rgba(52, 201, 139, 0.18); }
+.status-dot.error { box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.2); }
+.tool-card:hover .tool-name { color: var(--accent-hover); }
+body.theme-light .tool-card:hover .tool-name,
+body.theme-medium-light .tool-card:hover .tool-name { color: var(--accent); }
+.fav-btn.active svg { filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.45)); }
+
+
+/* ==================================================================
+   v3.1 – ready-made styles for toggle switches and list section headers
+   Apply with: <input type="checkbox" class="switch">  and  <div class="list-heading">
+   ================================================================== */
+
+/* ---------- Toggle switch ---------- */
+input[type="checkbox"].switch,
+.embed-check-row input[type="checkbox"].switch {
+    width: 30px;
+    height: 18px;
+    border-radius: 99px;
+    border: none;
+    background: var(--border-strong);
+    place-content: unset;
+    position: relative;
+    transition: background-color 0.18s;
+}
+input[type="checkbox"].switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transform: none;
+    transition: transform 0.2s var(--ease-spring);
+}
+input[type="checkbox"].switch:checked {
+    background: var(--accent);
+    box-shadow: none;
+}
+input[type="checkbox"].switch:checked::after { transform: translateX(12px); }
+input[type="checkbox"].switch:hover { background: var(--text-muted); }
+input[type="checkbox"].switch:checked:hover { background: var(--accent-hover); }
+
+/* ---------- List section headers (Favorites / Recent / categories) ---------- */
+.list-heading {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 8px 2px 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.list-heading:first-child { padding-top: 0; }
+.list-heading::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+.list-heading .count { font-weight: 600; color: var(--text-secondary); }
+
+
+/* ==================================================================
+   v3.2 – Live Job Ticket Preview (flat)
+   Solid card, hairline border, accent edge. No gradients, glows or dividers.
+   ================================================================== */
+
+.print-job-ticket-card {
+    background: #111418;
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    gap: 4px;
+    margin-top: 6px;
+    box-shadow: none;
+}
+.print-job-ticket-card:hover { border-color: var(--accent); }
+
+.ticket-line-date { font-size: 10px; letter-spacing: 0.08em; }
+.ticket-line-mat { font-size: 14px; }
+.ticket-line-dim { font-family: "Cascadia Code", "Consolas", monospace; font-size: 12px; }
+.ticket-line-note { font-size: 11px; }
+
+.live-badge { border-radius: 99px; padding: 2px 8px; }
+
+.ticket-summary-box { gap: 6px; }
+.ticket-chip { border-radius: 99px; padding: 2px 8px; }
+
+.feature-ticket-card { border-radius: var(--radius-md); padding: 10px 12px; }
+
+/* Copy button: the old hover referenced an undefined --bg-hover token */
+.btn-copy-ticket { border-radius: 99px; padding: 3px 10px; }
+.btn-copy-ticket:hover { background: var(--bg-surface-hover); color: var(--text-primary); border-color: var(--accent); }

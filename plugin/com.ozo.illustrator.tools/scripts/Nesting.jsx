@@ -7,6 +7,10 @@
     var unitLabels = [];
 
     if (app.documents.length === 0) {
+        if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            __ozoHeadlessResult = { success: false, message: "No Illustrator document is open." };
+            return;
+        }
         alert(OZO.tr("Open a document and select the artwork to nest."));
         return;
     }
@@ -15,6 +19,24 @@
     var selectionValue = doc.selection;
     if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 1) {
         if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
+            // "Last selected object" mode needs an explicit container. Falling
+            // back to the whole artboard would silently use the topmost item
+            // as the container and nest everything else into it.
+            var earlyHeadlessMode = 0;
+            try {
+                var earlyHeadlessParams = typeof __ozoHeadlessParams === "string" ?
+                    OZO.parseJson(__ozoHeadlessParams) : __ozoHeadlessParams;
+                if (earlyHeadlessParams && earlyHeadlessParams.mode !== undefined) {
+                    earlyHeadlessMode = Number(earlyHeadlessParams.mode);
+                }
+            } catch (ignoreEarlyParams) {}
+            if (earlyHeadlessMode === 2) {
+                __ozoHeadlessResult = {
+                    success: false,
+                    message: "Select the container object first; it must be the last selected object."
+                };
+                return;
+            }
             doc.selectObjectsOnActiveArtboard();
             selectionValue = doc.selection;
         } else if (confirm(OZO.isKhmer() ?
@@ -43,6 +65,38 @@
             return "Unknown error.";
         }
         return error.message ? error.message : String(error);
+    }
+
+    function headlessNumber(value, label, allowZero, fallback) {
+        var blank = value === undefined || value === null ||
+            String(value).replace(/^\s+|\s+$/g, "") === "";
+        if (blank) {
+            if (typeof fallback === "number" && isFinite(fallback)) {
+                return fallback;
+            }
+            throw new Error(label + " is required.");
+        }
+        var number = OZO.parseNumber(value, NaN);
+        if (!isFinite(number) || number < 0 || (!allowZero && number === 0)) {
+            throw new Error(label + " must be " +
+                (allowZero ? "zero or greater." : "greater than zero."));
+        }
+        return number;
+    }
+
+    function headlessInteger(value, label, minimum, maximum, fallback) {
+        var blank = value === undefined || value === null ||
+            String(value).replace(/^\s+|\s+$/g, "") === "";
+        if (blank) {
+            return fallback;
+        }
+        var number = OZO.parseNumber(value, NaN);
+        if (!isFinite(number) || Math.floor(number) !== number ||
+                number < minimum || number > maximum) {
+            throw new Error(label + " must be a whole number between " +
+                minimum + " and " + maximum + ".");
+        }
+        return number;
     }
 
     function numberValue(input, label, allowZero) {
@@ -114,13 +168,17 @@
             first.b - gap >= second.t - eps || second.b - gap >= first.t - eps);
     }
 
-    function polygonArea(points) {
+    function signedPolygonArea(points) {
         var sum = 0;
         for (var i = 0; i < points.length; i++) {
             var next = points[(i + 1) % points.length];
             sum += points[i][0] * next[1] - next[0] * points[i][1];
         }
-        return Math.abs(sum / 2);
+        return sum / 2;
+    }
+
+    function polygonArea(points) {
+        return Math.abs(signedPolygonArea(points));
     }
 
     function cubicPoint(first, firstHandle, secondHandle, second, amount) {
@@ -362,6 +420,65 @@
             }
         }
         return all;
+    }
+
+    function geometryBounds(geometry) {
+        if (!geometry || geometry.length === 0) {
+            return null;
+        }
+        var left = Infinity, top = -Infinity, right = -Infinity, bottom = Infinity;
+        var found = false;
+        for (var c = 0; c < geometry.length; c++) {
+            if (!geometry[c] || !geometry[c].contours) continue;
+            for (var p = 0; p < geometry[c].contours.length; p++) {
+                var contour = geometry[c].contours[p];
+                for (var i = 0; i < contour.length; i++) {
+                    var point = contour[i];
+                    if (!point) continue;
+                    if (point[0] < left) left = point[0];
+                    if (point[0] > right) right = point[0];
+                    if (point[1] > top) top = point[1];
+                    if (point[1] < bottom) bottom = point[1];
+                    found = true;
+                }
+            }
+        }
+        return found ? [left, top, right, bottom] : null;
+    }
+
+    function cloneGeometry(geometry) {
+        if (!geometry) {
+            return null;
+        }
+        var result = [];
+        for (var c = 0; c < geometry.length; c++) {
+            var contours = [];
+            for (var p = 0; p < geometry[c].contours.length; p++) {
+                var source = geometry[c].contours[p];
+                var points = [];
+                for (var i = 0; i < source.length; i++) {
+                    points.push([source[i][0], source[i][1]]);
+                }
+                contours.push(points);
+            }
+            result.push({contours: contours});
+        }
+        return result;
+    }
+
+    function translateGeometry(geometry, offsetX, offsetY) {
+        if (!geometry || (!offsetX && !offsetY)) {
+            return;
+        }
+        for (var c = 0; c < geometry.length; c++) {
+            for (var p = 0; p < geometry[c].contours.length; p++) {
+                var contour = geometry[c].contours[p];
+                for (var i = 0; i < contour.length; i++) {
+                    contour[i][0] += offsetX;
+                    contour[i][1] += offsetY;
+                }
+            }
+        }
     }
 
     function isEffectivelyHidden(item) {
@@ -633,16 +750,20 @@
                 if (state.appliedAngle !== 0) {
                     state.item.rotate(-state.appliedAngle);
                 }
+            } catch (ignoreRotationRestore) {}
+            try {
                 state.item.position = [state.originalPosition[0], state.originalPosition[1]];
-                state.appliedAngle = 0;
-            } catch (ignore) {}
+            } catch (ignorePositionRestore) {}
+            state.appliedAngle = 0;
         }
         try {
             doc.selection = null;
-            for (var selectionIndex = 0; selectionIndex < initialSelection.length; selectionIndex++) {
+        } catch (ignoreSelectionClear) {}
+        for (var selectionIndex = 0; selectionIndex < initialSelection.length; selectionIndex++) {
+            try {
                 initialSelection[selectionIndex].selected = true;
-            }
-        } catch (ignoreSelectionError) {}
+            } catch (ignoreSelectionRestore) {}
+        }
         app.redraw();
     }
 
@@ -701,13 +822,56 @@
             }
         }
 
+        var outerPolygon = polygons[largestIndex];
+        if (!outerPolygon) {
+            return holes;
+        }
+        var outerWinding = signedPolygonArea(outerPolygon);
+        var evenOdd = false;
+        try {
+            evenOdd = item.evenodd === true;
+            if (!evenOdd && item.pathItems[largestIndex]) {
+                evenOdd = item.pathItems[largestIndex].evenodd === true;
+            }
+        } catch (ignoreEvenOdd) {}
+
         for (i = 0; i < pathBounds.length; i++) {
             var hole = pathBounds[i];
-            if (i === largestIndex || !hole || !polygons[i] || !containsBounds(outerBounds, hole)) {
+            var holePolygon = polygons[i];
+            if (i === largestIndex || !hole || !holePolygon || !containsBounds(outerBounds, hole)) {
+                continue;
+            }
+            // A compound path can contain separate filled islands as well as
+            // holes. Only contours actually inside the outer contour (and, for
+            // the non-zero winding rule, wound in the opposite direction) are
+            // pockets safe to nest into.
+            if (!pointInPolygon(holePolygon[0], outerPolygon)) {
+                continue;
+            }
+            if (!evenOdd && outerWinding !== 0) {
+                var holeWinding = signedPolygonArea(holePolygon);
+                if (holeWinding !== 0 && (holeWinding > 0) === (outerWinding > 0)) {
+                    continue;
+                }
+            }
+            // Only use the pocket when it is completely empty. A hole can
+            // contain another filled island (for example a bullseye), and
+            // nesting there would overlap that island.
+            var emptyPocket = true;
+            for (var otherIndex = 0; otherIndex < polygons.length; otherIndex++) {
+                if (otherIndex === i || otherIndex === largestIndex || !polygons[otherIndex]) {
+                    continue;
+                }
+                if (pointInPolygon(polygons[otherIndex][0], holePolygon)) {
+                    emptyPocket = false;
+                    break;
+                }
+            }
+            if (!emptyPocket) {
                 continue;
             }
             holes.push({
-                contour: polygons[i]
+                contour: holePolygon
             });
         }
         return holes;
@@ -1070,7 +1234,17 @@
             var candidateContours = [];
             if (rect.geometry) {
                 for (var componentIndex = 0; componentIndex < rect.geometry.length; componentIndex++) {
-                    candidateContours.push(rect.geometry[componentIndex].contours[0]);
+                    var candidateComponent = rect.geometry[componentIndex];
+                    if (!candidateComponent || !candidateComponent.contours) {
+                        continue;
+                    }
+                    // Check every contour. A compound path may contain several
+                    // disjoint filled islands, not just one outer contour.
+                    for (var candidateContourIndex = 0;
+                            candidateContourIndex < candidateComponent.contours.length;
+                            candidateContourIndex++) {
+                        candidateContours.push(candidateComponent.contours[candidateContourIndex]);
+                    }
                 }
             } else {
                 candidateContours.push([[rect.l, rect.t], [rect.r, rect.t],
@@ -1126,14 +1300,24 @@
                 var paired = [];
                 var sampleLimit = settings.quality === 1 ? 18 : 10;
                 var localPoints = descriptorSamplePoints(descriptor, angles[a], sampleLimit);
+                // Rotate the true shape once per angle. Candidates then only
+                // need to translate it, so the predicted contour matches the
+                // exact position applyPlan() will use (top-left aligned).
+                var rotatedGeometry = transformGeometry(descriptor.geometry, 0, 0, angles[a]);
+                var rotatedGeometryBounds = geometryBounds(rotatedGeometry);
+                // Candidate alignment must use the same top-left convention as
+                // considerCandidate(); otherwise asymmetric shapes drift away
+                // from the obstacle contact points.
+                var geometryLeft = rotatedGeometryBounds ? rotatedGeometryBounds[0] : -size.width / 2;
+                var geometryTop = rotatedGeometryBounds ? rotatedGeometryBounds[1] : size.height / 2;
                 for (p = 0; p < bin.placed.length && localPoints.length; p++) {
                     var obstaclePoints = placedSamplePoints(bin.placed[p], sampleLimit);
                     for (var obstacleIndex = 0; obstacleIndex < obstaclePoints.length; obstacleIndex++) {
                         for (var localIndex = 0; localIndex < localPoints.length; localIndex++) {
                             var alignedX = obstaclePoints[obstacleIndex][0] -
-                                localPoints[localIndex][0] - size.width / 2;
+                                localPoints[localIndex][0] + geometryLeft;
                             var alignedY = obstaclePoints[obstacleIndex][1] -
-                                localPoints[localIndex][1] + size.height / 2;
+                                localPoints[localIndex][1] + geometryTop;
                             xs.push(alignedX + settings.spacing);
                             xs.push(alignedX - settings.spacing);
                             ys.push(alignedY + settings.spacing);
@@ -1162,12 +1346,22 @@
                         b: candidateTop - size.height,
                         id: descriptor.id
                     };
-                    rect.geometry = transformGeometry(descriptor.geometry,
-                        (rect.l + rect.r) / 2, (rect.t + rect.b) / 2, angles[a]);
+                    var geometryOffset = null;
+                    if (rotatedGeometry && rotatedGeometryBounds) {
+                        geometryOffset = [
+                            candidateLeft - rotatedGeometryBounds[0],
+                            candidateTop - rotatedGeometryBounds[1]
+                        ];
+                        rect.geometry = cloneGeometry(rotatedGeometry);
+                        translateGeometry(rect.geometry, geometryOffset[0], geometryOffset[1]);
+                    } else {
+                        rect.geometry = null;
+                    }
                     if (!fitsCandidate(rect, bin, settings.spacing)) {
                         return;
                     }
-                    best = {score: score, rect: rect, angle: angles[a], bin: bin};
+                    best = {score: score, rect: rect, angle: angles[a], bin: bin,
+                        geometryOffset: geometryOffset};
                 }
 
                 var pairedLimit = Math.floor(candidateLimit * 0.65);
@@ -1197,12 +1391,20 @@
         }
         var centerX = (placement.rect.l + placement.rect.r) / 2;
         var centerY = (placement.rect.t + placement.rect.b) / 2;
+        var offsetX = placement.geometryOffset ? placement.geometryOffset[0] : centerX;
+        var offsetY = placement.geometryOffset ? placement.geometryOffset[1] : centerY;
 
         for (var i = 0; i < descriptor.holes.length; i++) {
             var hole = descriptor.holes[i];
             var transformed = transformGeometry(
-                [{contours: [hole.contour]}], centerX, centerY, placement.angle
+                [{contours: [hole.contour]}], 0, 0, placement.angle
             )[0].contours[0];
+            // Hole contours share the item's own coordinate space, so they
+            // must receive the exact same translation as the item geometry.
+            for (var pointIndex = 0; pointIndex < transformed.length; pointIndex++) {
+                transformed[pointIndex][0] += offsetX;
+                transformed[pointIndex][1] += offsetY;
+            }
             var holeBounds = contourBounds(transformed);
             var left = holeBounds[0] + settings.edge;
             var top = holeBounds[1] - settings.edge;
@@ -1313,6 +1515,13 @@
             combined.plan = combined.plan.concat(groupResult.plan);
             combined.unplaced = combined.unplaced.concat(groupResult.unplaced);
             combined.score += groupResult.score;
+            // packSequence appends hole pockets to the per-group list. Keep
+            // them on the combined result so leftover retries can use them,
+            // but tag them with their group so they cannot cross sheets.
+            for (var holeIndex = 1; holeIndex < groupBins.length; holeIndex++) {
+                groupBins[holeIndex].groupKey = groupNames[g];
+                combined.bins.push(groupBins[holeIndex]);
+            }
         }
         return combined;
     }
@@ -1395,10 +1604,11 @@
                     sheetsAdded++;
                     var newBin = best.bins[best.bins.length - 1];
                     newBin.groupKey = queueKey;
+                    var newBinList = [newBin];
                     var stillNeeded = [];
                     var placedOnSheet = 0;
                     for (u = 0; u < remaining.length; u++) {
-                        placement = placeOne(remaining[u], [newBin], settings);
+                        placement = placeOne(remaining[u], newBinList, settings);
                         if (!placement) {
                             stillNeeded.push(remaining[u]);
                             continue;
@@ -1406,7 +1616,7 @@
                         placement.descriptor = remaining[u];
                         best.plan.push(placement);
                         best.score += placement.score;
-                        addHoleBins(remaining[u], placement, [newBin], settings);
+                        addHoleBins(remaining[u], placement, newBinList, settings);
                         placedOnSheet++;
                     }
                     remaining = stillNeeded;
@@ -1428,6 +1638,9 @@
         // Drop generated sheets that received nothing (for example a divide
         // group whose objects were all unplaceable) so they neither become
         // empty artboards nor inflate the reported sheet count.
+        if (!best) {
+            return {plan: [], unplaced: sources.slice(0), score: 0, bins: bins};
+        }
         var usedBins = [];
         for (var binIndex = 0; binIndex < best.bins.length; binIndex++) {
             var usedBin = best.bins[binIndex];
@@ -1577,6 +1790,11 @@
 
             for (i = 0; i < previewModel.bins.length; i++) {
                 var bin = previewModel.bins[i];
+                // Interior hole pockets share their owner sheet and its placed
+                // list; drawing them would duplicate every rectangle.
+                if (bin.ownerId) {
+                    continue;
+                }
                 drawBounds(bin.base, sheetBrush, outlinePen);
                 drawBounds([bin.l, bin.t, bin.r, bin.b], null, usablePen);
                 for (var f = 0; f < bin.placed.length; f++) {
@@ -1689,33 +1907,52 @@
             return;
         }
 
-        var uFactor = OZO.toPoints(1, hp.unit || "mm");
-        var activeIndex = doc.artboards.getActiveArtboardIndex();
-        var activeBounds = doc.artboards[activeIndex].artboardRect;
-        var custom = hp.custom === true;
-        var sheetW = custom && hp.width ? Number(hp.width) * uFactor : widthOf(activeBounds);
-        var sheetH = custom && hp.height ? Number(hp.height) * uFactor : heightOf(activeBounds);
+        if (!hp || typeof hp !== "object") {
+            __ozoHeadlessResult = { success: false, message: "Invalid Nesting parameters." };
+            return;
+        }
 
-        var headlessSettings = {
-            mode: hp.mode !== undefined ? Number(hp.mode) : 0,
-            custom: custom,
-            width: sheetW,
-            height: sheetH,
-            resizeArtboard: hp.resizeArtboard === true,
-            left: (hp.left !== undefined ? Number(hp.left) : 0) * uFactor,
-            right: (hp.right !== undefined ? Number(hp.right) : 0) * uFactor,
-            top: (hp.top !== undefined ? Number(hp.top) : 0) * uFactor,
-            bottom: (hp.bottom !== undefined ? Number(hp.bottom) : 0) * uFactor,
-            spacing: (hp.spacing !== undefined ? Number(hp.spacing) : 2) * uFactor,
-            edge: (hp.edge !== undefined ? Number(hp.edge) : 2) * uFactor,
-            allowInside: hp.allowInside !== false,
-            fixed: hp.fixed !== false,
-            divide: hp.divide !== undefined ? Number(hp.divide) : 0,
-            quality: hp.quality !== undefined ? Number(hp.quality) : 0,
-            rotation: hp.rotation !== undefined ? Number(hp.rotation) : 1,
-            best: hp.best !== false,
-            autoMultiSheet: hp.autoMultiSheet !== false
-        };
+        var headlessSettings = null;
+        try {
+            var requestedUnit = String(hp.unit || "mm").toLowerCase();
+            if (requestedUnit !== "mm" && requestedUnit !== "cm" &&
+                    requestedUnit !== "m" && requestedUnit !== "in" &&
+                    requestedUnit !== "pt") {
+                throw new Error("Unsupported unit: " + hp.unit + ".");
+            }
+            var uFactor = OZO.toPoints(1, requestedUnit);
+            var activeIndex = doc.artboards.getActiveArtboardIndex();
+            var activeBounds = doc.artboards[activeIndex].artboardRect;
+            var custom = hp.custom === true;
+            var sheetW = custom ? headlessNumber(hp.width, "Sheet width", false) * uFactor :
+                widthOf(activeBounds);
+            var sheetH = custom ? headlessNumber(hp.height, "Sheet height", false) * uFactor :
+                heightOf(activeBounds);
+
+            headlessSettings = {
+                mode: headlessInteger(hp.mode, "Target", 0, 2, 0),
+                custom: custom,
+                width: sheetW,
+                height: sheetH,
+                resizeArtboard: hp.resizeArtboard === true,
+                left: headlessNumber(hp.left, "Left margin", true, 0) * uFactor,
+                right: headlessNumber(hp.right, "Right margin", true, 0) * uFactor,
+                top: headlessNumber(hp.top, "Top margin", true, 0) * uFactor,
+                bottom: headlessNumber(hp.bottom, "Bottom margin", true, 0) * uFactor,
+                spacing: headlessNumber(hp.spacing, "Minimal distance", true, 2) * uFactor,
+                edge: headlessNumber(hp.edge, "Edge padding", true, 2) * uFactor,
+                allowInside: hp.allowInside !== false,
+                fixed: hp.fixed !== false,
+                divide: headlessInteger(hp.divide, "Divide mode", 0, 4, 0),
+                quality: headlessInteger(hp.quality, "Approximation quality", 0, 3, 0),
+                rotation: headlessInteger(hp.rotation, "Rotation", 0, 3, 1),
+                best: hp.best !== false,
+                autoMultiSheet: hp.autoMultiSheet !== false
+            };
+        } catch (paramError) {
+            __ozoHeadlessResult = { success: false, message: errorMessage(paramError) };
+            return;
+        }
 
         try {
             var finalResult = performNesting(true, headlessSettings);

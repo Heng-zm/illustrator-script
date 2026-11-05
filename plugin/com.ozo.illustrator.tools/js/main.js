@@ -4555,27 +4555,65 @@
         var nestStatSheets = document.getElementById("nestStatSheets");
         var nestStatFixed = document.getElementById("nestStatFixed");
 
-        chkNestCustom.addEventListener("change", function () {
-            var show = chkNestCustom.checked;
+        var NEST_UNIT_MM = {mm: 1, cm: 10, m: 1000};
+        var lastNestUnit = nestUnitSelect.value;
+
+        function nestNumber(input, fallback) {
+            var value = parseFloat(input.value);
+            return isFinite(value) ? value : fallback;
+        }
+
+        function formatNestNumber(value) {
+            return String(Math.round(value * 10000) / 10000);
+        }
+
+        function convertNestUnits(oldUnit, newUnit) {
+            var oldFactor = NEST_UNIT_MM[oldUnit] || 1;
+            var newFactor = NEST_UNIT_MM[newUnit] || 1;
+            if (oldFactor === newFactor) return;
+            [numNestWidth, numNestHeight, numNestSpacing, numNestEdge,
+                numNestTop, numNestLeft, numNestBottom, numNestRight].forEach(function (input) {
+                var value = parseFloat(input.value);
+                if (isFinite(value)) {
+                    input.value = formatNestNumber(value * oldFactor / newFactor);
+                }
+            });
+        }
+
+        function updateNestTargetControls() {
+            var customAllowed = parseInt(nestTargetSelect.value, 10) === 0;
+            chkNestCustom.disabled = !customAllowed;
+            var show = customAllowed && chkNestCustom.checked;
             nestCustomSizeRow.style.display = show ? "grid" : "none";
             nestResizeRow.style.display = show ? "block" : "none";
+        }
+
+        chkNestCustom.addEventListener("change", function () {
+            updateNestTargetControls();
             saveNestingState();
         });
+        nestTargetSelect.addEventListener("change", updateNestTargetControls);
 
         function saveNestingState() {
+            var selectedUnit = nestUnitSelect.value;
+            if (selectedUnit !== lastNestUnit) {
+                convertNestUnits(lastNestUnit, selectedUnit);
+                lastNestUnit = selectedUnit;
+            }
+            var customAllowed = parseInt(nestTargetSelect.value, 10) === 0;
             var s = {
                 mode: parseInt(nestTargetSelect.value, 10),
-                unit: nestUnitSelect.value,
-                custom: chkNestCustom.checked,
-                width: parseFloat(numNestWidth.value) || 600,
-                height: parseFloat(numNestHeight.value) || 400,
+                unit: selectedUnit,
+                custom: chkNestCustom.checked && customAllowed,
+                width: Math.max(1, nestNumber(numNestWidth, 600)),
+                height: Math.max(1, nestNumber(numNestHeight, 400)),
                 resizeArtboard: chkNestResize.checked,
-                spacing: parseFloat(numNestSpacing.value) || 2,
-                edge: parseFloat(numNestEdge.value) || 2,
-                top: parseFloat(numNestTop.value) || 0,
-                left: parseFloat(numNestLeft.value) || 0,
-                bottom: parseFloat(numNestBottom.value) || 0,
-                right: parseFloat(numNestRight.value) || 0,
+                spacing: Math.max(0, nestNumber(numNestSpacing, 2)),
+                edge: Math.max(0, nestNumber(numNestEdge, 2)),
+                top: Math.max(0, nestNumber(numNestTop, 0)),
+                left: Math.max(0, nestNumber(numNestLeft, 0)),
+                bottom: Math.max(0, nestNumber(numNestBottom, 0)),
+                right: Math.max(0, nestNumber(numNestRight, 0)),
                 rotation: parseInt(nestRotSelect.value, 10),
                 divide: parseInt(nestDivSelect.value, 10),
                 allowInside: chkNestHoles.checked,
@@ -4591,21 +4629,28 @@
             var box = $("nestLiveTicket");
             if (!box) return;
             var cur = curr || {
+                mode: parseInt(nestTargetSelect.value, 10),
                 custom: chkNestCustom.checked,
-                width: parseFloat(numNestWidth.value) || 600,
-                height: parseFloat(numNestHeight.value) || 400,
+                width: Math.max(1, nestNumber(numNestWidth, 600)),
+                height: Math.max(1, nestNumber(numNestHeight, 400)),
                 unit: nestUnitSelect.value,
-                spacing: parseFloat(numNestSpacing.value) || 2,
-                edge: parseFloat(numNestEdge.value) || 2,
-                rotation: parseInt(nestRotSelect.value, 10) || 1,
+                spacing: Math.max(0, nestNumber(numNestSpacing, 2)),
+                edge: Math.max(0, nestNumber(numNestEdge, 2)),
+                rotation: parseInt(nestRotSelect.value, 10),
                 resizeArtboard: chkNestResize.checked,
                 best: chkNestBest.checked,
                 allowInside: chkNestHoles.checked
             };
-            var sheet = cur.custom ? ("Sheet: " + cur.width + " \u00d7 " + cur.height + " " + cur.unit) : (isKhmer() ? "សន្លឹក៖ ទំហំ Artboard សកម្ម" : "Sheet: Active Artboard Size");
+            var customSheet = cur.custom && Number(cur.mode) === 0;
+            var sheet = customSheet ? ("Sheet: " + cur.width + " \u00d7 " + cur.height + " " + cur.unit) : (isKhmer() ? "សន្លឹក៖ ទំហំ Artboard សកម្ម" : "Sheet: Active Artboard Size");
 
-            var rotNames = ["0\u00b0 (No Rotation)", "90\u00b0 Rotation", "45\u00b0 Rotation", "Free Rotation"];
-            var rotText = rotNames[cur.rotation] || "90\u00b0 Rotation";
+            var rotNames = [
+                "Free Rotation (15\u00b0 Steps)",
+                "90\u00b0 Steps",
+                "180\u00b0 Steps",
+                "No Rotation"
+            ];
+            var rotText = rotNames[cur.rotation] || "90\u00b0 Steps";
             var dimText = "Part Gap: " + cur.spacing + cur.unit + " \u2022 Edge: " + cur.edge + cur.unit + " \u2022 " + rotText;
 
             var noteParts = [];
@@ -4623,6 +4668,7 @@
         }
 
         var inputsToSave = [nestTargetSelect, nestUnitSelect, numNestWidth, numNestHeight, chkNestResize, numNestSpacing, numNestEdge, numNestTop, numNestLeft, numNestBottom, numNestRight, nestRotSelect, nestDivSelect, chkNestHoles, chkNestFixed, chkNestBest, chkNestAutoSheets];
+        updateNestTargetControls();
         updateNestTicket();
         inputsToSave.forEach(function (inp) {
             inp.addEventListener("change", saveNestingState);
@@ -4642,16 +4688,16 @@
             var params = {
                 mode: parseInt(nestTargetSelect.value, 10),
                 unit: nestUnitSelect.value,
-                custom: chkNestCustom.checked,
-                width: parseFloat(numNestWidth.value) || 600,
-                height: parseFloat(numNestHeight.value) || 400,
+                custom: chkNestCustom.checked && parseInt(nestTargetSelect.value, 10) === 0,
+                width: Math.max(1, nestNumber(numNestWidth, 600)),
+                height: Math.max(1, nestNumber(numNestHeight, 400)),
                 resizeArtboard: chkNestResize.checked,
-                spacing: parseFloat(numNestSpacing.value) || 2,
-                edge: parseFloat(numNestEdge.value) || 2,
-                top: parseFloat(numNestTop.value) || 0,
-                left: parseFloat(numNestLeft.value) || 0,
-                bottom: parseFloat(numNestBottom.value) || 0,
-                right: parseFloat(numNestRight.value) || 0,
+                spacing: Math.max(0, nestNumber(numNestSpacing, 2)),
+                edge: Math.max(0, nestNumber(numNestEdge, 2)),
+                top: Math.max(0, nestNumber(numNestTop, 0)),
+                left: Math.max(0, nestNumber(numNestLeft, 0)),
+                bottom: Math.max(0, nestNumber(numNestBottom, 0)),
+                right: Math.max(0, nestNumber(numNestRight, 0)),
                 rotation: parseInt(nestRotSelect.value, 10),
                 divide: parseInt(nestDivSelect.value, 10),
                 quality: 0,
