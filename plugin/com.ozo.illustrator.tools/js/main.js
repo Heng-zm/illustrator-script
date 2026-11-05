@@ -34,7 +34,7 @@
             "folder": "Open Scripts Directory",
             "refresh": "Refresh Panel",
             "search.placeholder": "Search {n} tools (e.g. QR, Export, Cut)...",
-            "search.hint": "Press / to search",
+            "search.hint": "Press / or Ctrl+K to search",
             "search.clear": "Clear search",
             "donate.text": "Donate",
             "donate.title": "Support developer via ABA Pay",
@@ -106,7 +106,7 @@
             "folder": "បើកថតផ្ទុកស្គ្រីប (Open Scripts Directory)",
             "refresh": "ផ្ទុកផ្ទាំងឡើងវិញ (Refresh Panel)",
             "search.placeholder": "ស្វែងរកឧបករណ៍ទាំង {n} (QR, កាត់, Export)...",
-            "search.hint": "ចុច / ដើម្បីស្វែងរក",
+            "search.hint": "ចុច / ឬ Ctrl+K ដើម្បីស្វែងរក",
             "search.clear": "សម្អាតការស្វែងរក",
             "donate.text": "ឧបត្ថម្ភ",
             "donate.title": "ឧបត្ថម្ភអ្នកអភិវឌ្ឍន៍ (Support developer via ABA Pay)",
@@ -237,7 +237,8 @@
             icon: svgIcon('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="7" y="7" width="1" height="1"/><rect x="18" y="7" width="1" height="1"/><rect x="7" y="18" width="1" height="1"/>'),
             featuresEn: ["100% offline — no internet required","Standard QR & Telegram 2026 deep-link style","Pure vector SVG output — infinitely scalable","Configurable size, margin & module color"],
             featuresKm: ["ដំណើរការគ្មានអ៊ីនធឺណិត 100%","ម៉ូដស្តង់ដារ QR និង Telegram 2026","លទ្ធផលជា Vector SVG អាចពង្រីកតាមចិត្ត","កំណត់ទំហំ គែម និងពណ៌តាមតម្រូវការ"],
-            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"5\" y=\"5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"16\" y=\"5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"5\" y=\"16\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>"
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"5\" y=\"5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"16\" y=\"5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"5\" y=\"16\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
+            keywords: "qrcode barcode 2d matrix link url web scan phone camera telegram bot channel me contact vcard vector offline"
 
         },
         {
@@ -248,7 +249,8 @@
             icon: svgIcon('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>'),
             featuresEn: ["Automated die-cut path generation","Configurable bleed offset per side","Spot color registration for RIP compatibility","Works on any selected artwork or group"],
             featuresKm: ["បង្កើតខ្សែបន្ទាត់កាត់ Die-cut ស្វ័យប្រវត្តិ","កំណត់កម្រិត Bleed offset លើគ្រប់ជ្រុង","Spot Color ស្តង់ដារត្រូវជាមួយប្រព័ន្ធ RIP","ដំណើរការលើរូបរាង ឬក្រុមដែលបានជ្រើស"],
-            previewSvgInner: "<circle cx=\"6\" cy=\"6\" r=\"3\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><line x1=\"20\" y1=\"4\" x2=\"8.12\" y2=\"15.88\"/><line x1=\"14.47\" y1=\"14.48\" x2=\"20\" y2=\"20\"/><line x1=\"8.12\" y1=\"8.12\" x2=\"12\" y2=\"12\"/>"
+            previewSvgInner: "<circle cx=\"6\" cy=\"6\" r=\"3\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><line x1=\"20\" y1=\"4\" x2=\"8.12\" y2=\"15.88\"/><line x1=\"14.47\" y1=\"14.48\" x2=\"20\" y2=\"20\"/><line x1=\"8.12\" y1=\"8.12\" x2=\"12\" y2=\"12\"/>",
+            keywords: "die cut dieline kiss cut sticker label plotter roland mimaki cutter rip spot color offset bleed regmark knife path registration contour"
 
         },
         {
@@ -259,7 +261,8 @@
             icon: svgIcon('<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>'),
             featuresEn: ["Production metadata banner on artboard","Width × height with live unit conversion","Active ink separation color preview","Auto-expand artboard to fit banner"],
             featuresKm: ["បដាព័ត៌មានការងារបោះពុម្ពលើផ្ទាំងគំនូរ","បង្ហាញទំហំ ទទឹង × កម្ពស់ តាមខ្នាតជាក់ស្តែង","មើលពណ៌ Ink Separation មុនបោះពុម្ព","ពង្រីកផ្ទាំង Artboard ដោយស្វ័យប្រវត្តិ"],
-            previewSvgInner: "<polyline points=\"6 9 6 2 18 2 18 9\"/><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"/><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\"/>"
+            previewSvgInner: "<polyline points=\"6 9 6 2 18 2 18 9\"/><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"/><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\"/>",
+            keywords: "slug metadata header banner production proof approval dimensions sep separation cmyk ink info footer ticket colorbar press artboard size job"
 
         },
         {
@@ -270,7 +273,8 @@
             icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="5" height="5"/><rect x="13" y="6" width="5" height="8"/><rect x="6" y="13" width="5" height="5"/>'),
             featuresEn: ["Bin-packing algorithm minimizes sheet waste","Configurable sheet size, spacing & bleed","Supports mixed shapes and rotations","Real-time fill efficiency percentage"],
             featuresKm: ["តម្រៀបប្លង់កាត់សន្សំសំចៃផ្ទៃក្រដាស/សម្ភារៈ","កំណត់ទំហំសន្លឹក គម្លាត និង Bleed","គាំទ្ររូបរាងចម្រុះ និងការបង្វិលមុំ","បង្ហាញភាគរយផ្ទៃប្រើប្រាស់ភ្លាមៗ"],
-            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><rect x=\"6\" y=\"6\" width=\"5\" height=\"5\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.7\"/><rect x=\"13\" y=\"6\" width=\"5\" height=\"8\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.5\"/><rect x=\"6\" y=\"13\" width=\"5\" height=\"5\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.6\"/><rect x=\"13\" y=\"15\" width=\"5\" height=\"3\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.4\"/>"
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><rect x=\"6\" y=\"6\" width=\"5\" height=\"5\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.7\"/><rect x=\"13\" y=\"6\" width=\"5\" height=\"8\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.5\"/><rect x=\"6\" y=\"13\" width=\"5\" height=\"5\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.6\"/><rect x=\"13\" y=\"15\" width=\"5\" height=\"3\" fill=\"currentColor\" stroke=\"none\" opacity=\"0.4\"/>",
+            keywords: "bin pack sheet gang ganging layout waste optimization roll cut arrange fit nesting area material yield efficiency sheetpacking rotate"
 
         },
         {
@@ -281,7 +285,8 @@
             icon: svgIcon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
             featuresEn: ["Batch export to PDF, TIFF, PNG & JPEG","Multi-page or separate PDF per artboard","Dynamic filename tokens: [doc] [ab] [num] [date]","Custom output folder with one-click open"],
             featuresKm: ["នាំចេញជា PDF, TIFF, PNG និង JPEG ជាកញ្ចប់","ជម្រើស PDF ច្រើនទំព័រ ឬបំបែកតាម Artboard","កំណត់ឈ្មោះឯកសារស្វ័យប្រវត្តិតាម Token","ជ្រើសរើសថតផ្ទុកឯកសារ និងបើកបានភ្លាមៗ"],
-            previewSvgInner: "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/>"
+            previewSvgInner: "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/>",
+            keywords: "batch export artboard pdf tiff png jpeg cmyk rgb print token folder output save separate multi-page resolution dpi bulk packaging"
 
         },
         {
@@ -292,7 +297,8 @@
             icon: svgIcon('<line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="5" x2="2" y2="19"/><line x1="22" y1="5" x2="22" y2="19"/><polyline points="5 9 2 12 5 15"/><polyline points="19 9 22 12 19 15"/>'),
             featuresEn: ["Linear, radial & bounding-box dimension types","Auto-detects object shape for best annotation","Smart leader text placement avoids overlaps","Non-destructive annotation layer"],
             featuresKm: ["វាស់ប្រវែង រង្វាស់កាំ និងប្រអប់វិមាត្រ","ស្វែងរកទម្រង់វត្ថុស្វ័យប្រវត្តិសម្រាប់ដាក់ខ្នាត","រៀបចំអក្សរវិមាត្រមិនឱ្យជាន់គ្នា","បង្កើតលើ Layer ដាច់ដោយឡែកមិនខូចគំនូរ"],
-            previewSvgInner: "<line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"/><line x1=\"2\" y1=\"5\" x2=\"2\" y2=\"19\"/><line x1=\"22\" y1=\"5\" x2=\"22\" y2=\"19\"/><polyline points=\"5 9 2 12 5 15\"/><polyline points=\"19 9 22 12 19 15\"/>"
+            previewSvgInner: "<line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"/><line x1=\"2\" y1=\"5\" x2=\"2\" y2=\"19\"/><line x1=\"22\" y1=\"5\" x2=\"22\" y2=\"19\"/><polyline points=\"5 9 2 12 5 15\"/><polyline points=\"19 9 22 12 19 15\"/>",
+            keywords: "measure ruler smart dimension size width height radius diameter bounding box annotation leader cad blueprint millimeters inches points technical"
 
         },
         {
@@ -303,7 +309,8 @@
             icon: svgIcon('<circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/>'),
             featuresEn: ["Unite, Minus Front/Back, Intersect, Exclude","Divide, Trim, Merge, Crop, Outline","Shape tools: Round Rect, compound paths","One-click boolean with live preview"],
             featuresKm: ["Unite, Minus Front/Back, Intersect, Exclude","Divide, Trim, Merge, Crop, Outline","ឧបករណ៍កែប្រែជ្រុងមូល និង Compound Paths","ដំណើរការ Boolean រហ័សដោយចុចតែម្តង"],
-            previewSvgInner: "<circle cx=\"9\" cy=\"12\" r=\"6\"/><circle cx=\"15\" cy=\"12\" r=\"6\"/>"
+            previewSvgInner: "<circle cx=\"9\" cy=\"12\" r=\"6\"/><circle cx=\"15\" cy=\"12\" r=\"6\"/>",
+            keywords: "boolean unite minus front back intersect exclude divide trim merge crop outline compound shape vector cleanup simplify join subtract"
 
         },
         {
@@ -314,7 +321,8 @@
             icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>'),
             featuresEn: ["Column & row grids with configurable gutters","Precise margin control on all four sides","Apply to active artboard or all artboards","Option to clear existing guides first"],
             featuresKm: ["បង្កើតបន្ទាត់ Grid ជួរឈរ និងជួរដេក","កំណត់គម្លាត Margin ទាំង ៤ ជ្រុងច្បាស់លាស់","អនុវត្តលើ Artboard សកម្ម ឬគ្រប់ Artboards","ជម្រើសលុបបន្ទាត់ Guide ចាស់ៗជាមុន"],
-            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"3\" y1=\"9\" x2=\"21\" y2=\"9\"/><line x1=\"3\" y1=\"15\" x2=\"21\" y2=\"15\"/><line x1=\"9\" y1=\"3\" x2=\"9\" y2=\"21\"/><line x1=\"15\" y1=\"3\" x2=\"15\" y2=\"21\"/>"
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"3\" y1=\"9\" x2=\"21\" y2=\"9\"/><line x1=\"3\" y1=\"15\" x2=\"21\" y2=\"15\"/><line x1=\"9\" y1=\"3\" x2=\"9\" y2=\"21\"/><line x1=\"15\" y1=\"3\" x2=\"15\" y2=\"21\"/>",
+            keywords: "grid guide layout margin column row gutter ruler align structure artboard baseline modular guides safe zone printing columns rows"
 
         },
         {
@@ -325,7 +333,8 @@
             icon: svgIcon('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>'),
             featuresEn: ["Grid array with configurable rows & columns","Radial/circular arrangement with rotation","Fit-to-Artboard mode for perfect spacing","Offset & step options for alternating rows"],
             featuresKm: ["ចម្លងវត្ថុជាក្រឡាចត្រង្គ ជួរឈរ និងជួរដេក","ចម្លងជារង្វង់មូលជាមួយការបង្វិលមុំ","មុខងារ Fit-to-Artboard រៀបចំស្មើផ្ទាំងគំនូរ","កំណត់គម្លាត Offset និងលំនាំចន្លោះជួរ"],
-            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/>"
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/>",
+            keywords: "array grid step repeat step-and-repeat radial circle rotate duplicate pattern tile distribute spacing matrix clone multiply offset"
 
         },
         {
@@ -336,7 +345,8 @@
             icon: svgIcon('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'),
             featuresEn: ["Search 200,000+ SVG icons (Iconify library)","Place crisp vector icons at any size","Filter by icon set (Material, Feather, etc.)","Copy SVG markup or place in document"],
             featuresKm: ["ស្វែងរក Icon ជាង ២០០,០០០ (បណ្ណាល័យ Iconify)","ដាក់រូប Icon វ៉ិចទ័រច្បាស់លើឯកសារភ្លាមៗ","ច្រោះតាមក្រុម Icon (Material, Feather...)","ចម្លងកូដ SVG ឬទាញទម្លាក់ចូលគំនូរផ្ទាល់"],
-            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\"/><polyline points=\"21 15 16 10 5 21\"/>"
+            previewSvgInner: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\"/><polyline points=\"21 15 16 10 5 21\"/>",
+            keywords: "iconify svg symbol vector icon glyph search download insert library logo web brand ui feather material fontawesome icons"
 
         },
         {
@@ -347,7 +357,8 @@
             icon: svgIcon('<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>'),
             featuresEn: ["Serial numbering for labels & tickets","Configurable start number, step & padding","Grid layout or across-artboard placement","Barcode-ready sequential text preparation"],
             featuresKm: ["វាយលេខរៀងស្វ័យប្រវត្តិនៃស្លាក និងសំបុត្រ","កំណត់លេខចាប់ផ្តើម ចន្លោះរាប់ និងចំនួនខ្ទង់","រៀបចំជា Grid ឬតាមផ្ទាំង Artboard នីមួយៗ","ត្រៀមទិន្នន័យអក្សរសម្រាប់បារកូដបានងាយស្រួល"],
-            previewSvgInner: "<line x1=\"4\" y1=\"9\" x2=\"20\" y2=\"9\"/><line x1=\"4\" y1=\"15\" x2=\"20\" y2=\"15\"/><line x1=\"10\" y1=\"3\" x2=\"8\" y2=\"21\"/><line x1=\"16\" y1=\"3\" x2=\"14\" y2=\"21\"/>"
+            previewSvgInner: "<line x1=\"4\" y1=\"9\" x2=\"20\" y2=\"9\"/><line x1=\"4\" y1=\"15\" x2=\"20\" y2=\"15\"/><line x1=\"10\" y1=\"3\" x2=\"8\" y2=\"21\"/><line x1=\"16\" y1=\"3\" x2=\"14\" y2=\"21\"/>",
+            keywords: "serial sequence sequential number ticket numbering counter barcode prefix suffix padding consecutive stamp raffle invoice lot numeric"
 
         },
         {
@@ -358,7 +369,8 @@
             icon: svgIcon('<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>'),
             featuresEn: ["Total item count by object type","Selection statistics (selected vs. total)","Per-layer breakdown dashboard","Auto-refreshes when selection changes"],
             featuresKm: ["រាប់ចំនួនវត្ថុសរុបបែងចែកតាមប្រភេទ","ស្ថិតិវត្ថុដែលបានជ្រើសរើស ធៀបនឹងចំនួនសរុប","តារាងបង្ហាញទិន្នន័យលម្អិតតាម Layer","ធ្វើបច្ចុប្បន្នភាពស្វ័យប្រវត្តិតាមការជ្រើសរើស"],
-            previewSvgInner: "<line x1=\"18\" y1=\"20\" x2=\"18\" y2=\"10\"/><line x1=\"12\" y1=\"20\" x2=\"12\" y2=\"4\"/><line x1=\"6\" y1=\"20\" x2=\"6\" y2=\"14\"/>"
+            previewSvgInner: "<line x1=\"18\" y1=\"20\" x2=\"18\" y2=\"10\"/><line x1=\"12\" y1=\"20\" x2=\"12\" y2=\"4\"/><line x1=\"6\" y1=\"20\" x2=\"6\" y2=\"14\"/>",
+            keywords: "statistics count tally object inspect layer path text compound group shape selection calculate audit elements inventory objects"
 
         },
         {
@@ -369,7 +381,8 @@
             icon: svgIcon('<polygon points="5 3 19 12 5 21 5 3"/>'),
             featuresEn: ["Floating modeless palette stays on top","Browse any folder for .jsx/.js scripts","Pin favorite scripts for one-click access","Custom folder bookmarks across sessions"],
             featuresKm: ["ផ្ទាំងបញ្ជាអណ្តែតពីលើមិនរំខានការងារ","ស្វែងរក និងដំណើរការស្គ្រីប .jsx/.js ពីគ្រប់ថត","ចំណាំស្គ្រីបសំណព្វដើម្បីបើកបានរហ័ស","ចងចាំថតឯកសារដែលបាន Bookmark ទុក"],
-            previewSvgInner: "<polygon points=\"5 3 19 12 5 21 5 3\"/>"
+            previewSvgInner: "<polygon points=\"5 3 19 12 5 21 5 3\"/>",
+            keywords: "script launcher runner palette window floating jsx js browse favorite pin bookmark tools manager dockable modeless scripts"
         },
         {
             id: "richblack", file: "Rich Black Optimizer.jsx", category: "prepress",
@@ -379,7 +392,8 @@
             icon: svgIcon('<circle cx="12" cy="12" r="9" fill="currentColor"/><circle cx="12" cy="12" r="4" fill="var(--bg-main)"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>'),
             featuresEn: ["Standard, Cool, Warm & Backlit Prepress profiles","Total Ink Coverage (TIC) gauge with press safety","Small text protection (preserves K:100% to avoid blur)","Auto-enables Overprint on pure black text"],
             featuresKm: ["ទម្រង់កម្រិតពណ៌ខ្មៅដិតស្តង់ដាររោងពុម្ព (TIC 160-250%)","វាស់ស្ទង់កម្រិតទឹកថ្នាំ (TIC Gauge) សុវត្ថិភាពម៉ាស៊ីន","ការពារអក្សរតូចៗមិនឲ្យបែកព្រាល (រក្សា K:100%)","កំណត់ Overprint ស្វ័យប្រវត្តិកុំឲ្យលេចចន្លោះស"],
-            previewSvgInner: "<circle cx=\"12\" cy=\"12\" r=\"9\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"4\" fill=\"var(--bg-main)\"/>"
+            previewSvgInner: "<circle cx=\"12\" cy=\"12\" r=\"9\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"4\" fill=\"var(--bg-main)\"/>",
+            keywords: "cmyk rich black deep dark k100 overprint tic total ink coverage press prepress registration offset offsetprint pure black trap density"
         },
         {
             id: "khqr", file: "ABA KHQR Generator.jsx", category: "utilities",
@@ -389,7 +403,8 @@
             icon: svgIcon('<rect x="4" y="3" width="16" height="18" rx="2"/><rect x="8" y="7" width="8" height="8"/><path d="M4 8h16"/><circle cx="12" cy="18" r="1"/>'),
             featuresEn: ["Official EMVCo Bakong KHQR standard with CRC-16","Table Standee Card templates (Bakong Red & ABA Navy)","Dynamic amount, currency (USD/KHR) & bill numbering","Crisp vector output with official center Bakong icon"],
             featuresKm: ["ស្តង់ដារផ្លូវការ Bakong EMVCo ត្រឹមត្រូវ 100%","ទម្រង់កាតបញ្ឈរលើតុ (Bakong Red & ABA Navy Standee)","កំណត់ចំនួនទឹកប្រាក់ (USD/KHR) និងលេខវិក្កយបត្រ","លទ្ធផលជា Vector ម៉ត់ច្បាស់ជាមួយ Logo បាគងកណ្តាល"],
-            previewSvgInner: "<rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><rect x=\"8\" y=\"7\" width=\"8\" height=\"8\" fill=\"currentColor\"/><path d=\"M4 8h16\"/>"
+            previewSvgInner: "<rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><rect x=\"8\" y=\"7\" width=\"8\" height=\"8\" fill=\"currentColor\"/><path d=\"M4 8h16\"/>",
+            keywords: "bakong khqr aba bank cambodia riel usd khr emvco qr standee card payment table promptpay standard bill invoice cashier pay merchant"
         }
     ];
 
@@ -403,8 +418,12 @@
             var tool = TOOLS[i];
             toolById[tool.id] = tool;
             tool.haystack = [
+                tool.id,
                 tool.nameEn, tool.nameKm, tool.descEn, tool.descKm, tool.file,
-                I18N.en["cat." + tool.category], I18N.km["cat." + tool.category]
+                I18N.en["cat." + tool.category], I18N.km["cat." + tool.category],
+                (tool.featuresEn || []).join(" "),
+                (tool.featuresKm || []).join(" "),
+                tool.keywords || ""
             ].join(" ").toLowerCase();
         }
     })();
@@ -560,7 +579,7 @@
     }
 
     // e.key is missing on very old Chromium builds, so fall back to keyCode.
-    var KEYCODES = { 13: "Enter", 27: "Escape", 32: " ", 35: "End", 36: "Home", 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 70: "f", 191: "/" };
+    var KEYCODES = { 13: "Enter", 27: "Escape", 32: " ", 35: "End", 36: "Home", 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 70: "f", 75: "k", 191: "/" };
     function keyOf(e) {
         return e.key || KEYCODES[e.keyCode] || "";
     }
@@ -1120,9 +1139,11 @@
     // ------------------------------------------------------------------
     // In-Dock Embedded Views
     // ------------------------------------------------------------------
+    var lastOpenedToolId = null;
     function openEmbeddedView(toolId) {
         var tool = toolById[toolId];
         if (!tool) return;
+        lastOpenedToolId = tool.id;
         activeEmbeddedTool = tool;
         hideError();
         viewCatalog.style.display = "none";
@@ -1165,6 +1186,23 @@
             renderEmbeddedGeneric(tool);
         }
 
+        // Add shortcut title tooltip to primary action button
+        var primaryBtn = embeddedContent.querySelector(".btn-action-primary");
+        if (primaryBtn && !primaryBtn.hasAttribute("title")) {
+            primaryBtn.setAttribute("title", isKhmer() ? "ដំណើរការ (Ctrl+Enter)" : "Run (Ctrl+Enter)");
+        }
+
+        // Auto-focus first interactive input for fast keyboard workflows
+        setTimeout(function () {
+            if (!activeEmbeddedTool) return;
+            var firstInput = embeddedContent.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select");
+            if (firstInput && typeof firstInput.focus === "function") {
+                firstInput.focus();
+                if (typeof firstInput.select === "function" && firstInput.type === "text") {
+                    firstInput.select();
+                }
+            }
+        }, 50);
     }
 
 
@@ -1258,6 +1296,7 @@
     }
 
     function closeEmbeddedView() {
+        var prevId = lastOpenedToolId;
         activeEmbeddedTool = null;
         viewEmbedded.style.display = "none";
         viewCatalog.style.display = "flex";
@@ -1265,6 +1304,10 @@
         playEnter();
         renderTools();
         moveTabIndicator();
+        if (prevId) {
+            var card = toolList.querySelector('.tool-card[data-id="' + prevId + '"]');
+            if (card && typeof card.focus === "function") card.focus();
+        }
     }
 
     function buildPreviewSample(template, docName, ab, formatExt, unit, isCombined) {
@@ -5732,16 +5775,41 @@
         var active = document.activeElement;
         var editing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable);
 
-        if (key === "/" && !editing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Submit form in embedded view with Ctrl+Enter or Cmd+Enter
+        if ((e.ctrlKey || e.metaKey) && (key === "Enter" || key === "Return")) {
+            if (activeEmbeddedTool && embeddedContent) {
+                var primaryBtn = embeddedContent.querySelector(".btn-action-primary") ||
+                                 embeddedContent.querySelector("#btnGenericRun");
+                if (primaryBtn && !primaryBtn.disabled && primaryBtn.offsetParent !== null) {
+                    e.preventDefault();
+                    primaryBtn.click();
+                    return;
+                }
+            }
+        }
+
+        // Quick focus search: / (when not editing) or Ctrl+K / Ctrl+F (anywhere)
+        var isSearchShortcut = (!editing && key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) ||
+                               ((e.ctrlKey || e.metaKey) && (key === "k" || key === "K" || key === "f" || key === "F"));
+
+        if (isSearchShortcut) {
             e.preventDefault();
             if (activeEmbeddedTool) closeEmbeddedView();
             searchInput.focus();
             searchInput.select();
         } else if (key === "Escape") {
+            if (errorBanner && !errorBanner.hidden) {
+                hideError();
+                return;
+            }
             if (activePreviewTool) {
                 closePreviewPanel();
-            } else if (activeEmbeddedTool && !editing) {
-                closeEmbeddedView();
+            } else if (activeEmbeddedTool) {
+                if (editing) {
+                    active.blur();
+                } else {
+                    closeEmbeddedView();
+                }
             } else if (searchInput.value) {
                 clearSearch(false);
                 if (active === searchInput) searchInput.blur();
