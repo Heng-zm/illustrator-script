@@ -4806,3 +4806,164 @@ select:focus-visible,
     from { opacity: 0; transform: scale(0.92); }
     to { opacity: 1; transform: scale(1); }
 }
+
+
+/* ==================================================================
+   Script Launcher & Advanced Script Tool UI / UX Layer
+   Elevated interactive script cards, star pinning, extension pills,
+   reveal actions, and responsive layout.
+   ================================================================== */
+
+.script-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 2px;
+}
+.script-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: all 0.16s ease;
+    user-select: none;
+    position: relative;
+}
+.script-item:hover {
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+.script-item.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.25);
+    background: var(--bg-surface-hover);
+}
+.script-item.script-fav-active {
+    border-left: 3px solid #f59e0b;
+}
+
+/* Star Favorite Pin Button */
+.script-fav-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: all 0.15s ease;
+    border-radius: 4px;
+}
+.script-fav-btn:hover {
+    color: #f59e0b;
+    transform: scale(1.15);
+}
+.script-fav-btn.active {
+    color: #f59e0b;
+    text-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+/* Script Info & Typography */
+.script-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+.script-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+}
+.script-meta {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.script-ext-badge {
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+}
+.script-ext-jsx {
+    background: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent);
+}
+.script-ext-js {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+/* Script Actions (Reveal & Run) */
+.script-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+.script-reveal-btn {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-muted);
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+.script-reveal-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+}
+.script-run-btn {
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 99px;
+    font-size: 10.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.3);
+    transition: all 0.14s ease;
+    white-space: nowrap;
+}
+.script-run-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(var(--accent-rgb), 0.45);
+}
+.script-run-btn:active {
+    transform: scale(0.96);
+}
+.script-run-btn:disabled {
+    opacity: 0.8;
+    cursor: wait;
+}
+
+/* Rotation Spin Animation */
+.btn-spinning svg {
+    animation: ozoSpin 0.6s infinite linear;
+}

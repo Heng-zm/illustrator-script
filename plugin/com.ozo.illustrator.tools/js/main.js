@@ -5743,78 +5743,162 @@
     // -------------------------------------------------------------
     function renderEmbeddedLauncher() {
         var html = [];
+        var favs = {};
+        try { favs = JSON.parse(store.get("ozo_launcher_favorites", "{}")); } catch (e) {}
+        var recents = [];
+        try { recents = JSON.parse(store.get("ozo_launcher_recents", "[]")); } catch (e) {}
+        var currentFilter = "all"; // "all" | "favorites" | "recent"
 
+        // 1. Search & Filter Bar Card
         html.push('<div class="embed-card">');
-        html.push('  <div class="embed-row-2col">');
-        html.push('    <input type="text" id="launcherSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "ស្វែងរកស្គ្រីប..." : "Search scripts...") + '" style="width:100%;">');
-        html.push('    <button type="button" id="btnLauncherRefresh" class="btn-action-secondary" style="padding:4px 8px;">' + uiIcon("refresh", 12) + (isKhmer() ? "ផ្ទុកឡើងវិញ" : "Refresh") + '</button>');
+        html.push('  <div style="display:flex;gap:6px;align-items:center;">');
+        html.push('    <div style="position:relative;flex:1;">');
+        html.push('      <input type="text" id="launcherSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "ស្វែងរកស្គ្រីប... (/)" : "Search scripts... (/ or Enter)") + '" style="width:100%;padding-right:26px;">');
+        html.push('      <button type="button" id="launcherSearchClear" class="embed-input-clear" style="position:absolute;right:5px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;display:none;font-size:14px;line-height:1;" title="Clear search">&times;</button>');
+        html.push('    </div>');
+        html.push('    <button type="button" id="btnLauncherRefresh" class="btn-action-secondary" style="padding:4px 8px;font-size:11px;" title="Rescan Scripts">' + uiIcon("refresh", 12) + ' <span class="hide-mobile">' + (isKhmer() ? "ផ្ទុកឡើងវិញ" : "Rescan") + '</span></button>');
         html.push('  </div>');
-        html.push('  <div class="script-folder-bar" style="margin-top:8px;">');
-        html.push('    <span class="script-folder-path" id="launcherFolderPath">Scanning scripts...</span>');
-        html.push('    <button type="button" id="btnLauncherBrowse" class="btn-action-secondary" style="padding:2px 8px;font-size:10px;white-space:nowrap;">' + uiIcon("folder", 12) + (isKhmer() ? "ជ្រើស Folder" : "Browse...") + '</button>');
+        html.push('  <div class="embed-segmented" id="launcherFilterSegmented" style="margin-top:6px;">');
+        html.push('    <button type="button" class="embed-seg-btn active" data-filter="all">' + (isKhmer() ? "ទាំងអស់" : "All Scripts") + ' (<span id="countAll">0</span>)</button>');
+        html.push('    <button type="button" class="embed-seg-btn" data-filter="favorites">★ ' + (isKhmer() ? "សំណព្វ" : "Favorites") + ' (<span id="countFavs">0</span>)</button>');
+        html.push('    <button type="button" class="embed-seg-btn" data-filter="recent">🕒 ' + (isKhmer() ? "ថ្មីៗ" : "Recent") + '</button>');
+        html.push('  </div>');
+        html.push('  <div class="script-folder-bar" style="margin-top:6px;display:flex;align-items:center;gap:6px;padding:4px 6px;background:var(--bg-main);border-radius:var(--radius-sm);border:1px solid var(--border-color);">');
+        html.push('    <span class="script-folder-icon" style="color:var(--accent);font-size:12px;">📁</span>');
+        html.push('    <span class="script-folder-path" id="launcherFolderPath" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--text-muted);" title="Scripts Directory">Scanning scripts...</span>');
+        html.push('    <button type="button" id="btnLauncherOpenFolder" class="btn-action-secondary" style="padding:1px 6px;font-size:9.5px;white-space:nowrap;" title="Open folder in File Explorer">📂 ' + (isKhmer() ? "បើក" : "Open") + '</button>');
+        html.push('    <button type="button" id="btnLauncherBrowse" class="btn-action-secondary" style="padding:1px 7px;font-size:9.5px;white-space:nowrap;" title="Change scripts folder">' + (isKhmer() ? "ផ្លាស់ប្តូរ..." : "Change...") + '</button>');
         html.push('  </div>');
         html.push('</div>');
 
-        html.push('<div class="embed-card">');
-        html.push('  <div class="embed-card-header"><span id="launcherCountHeader">' + (isKhmer() ? "បញ្ជីស្គ្រីប (Scripts List)" : "Available Scripts") + '</span></div>');
-        html.push('  <div class="script-list" id="launcherScriptList">');
-        html.push('    <div style="padding:16px;text-align:center;color:var(--text-muted);font-size:11px;">' + (isKhmer() ? "កំពុងស្កេនស្គ្រីប..." : "Scanning scripts...") + '</div>');
+        // 2. Scripts List Card
+        html.push('<div class="embed-card" style="flex:1;display:flex;flex-direction:column;min-height:0;">');
+        html.push('  <div class="embed-card-header" style="justify-content:space-between;">');
+        html.push('    <span id="launcherCountHeader">' + (isKhmer() ? "បញ្ជីស្គ្រីប" : "Available Scripts") + '</span>');
+        html.push('    <span class="embed-badge-soft" id="launcherActiveFilterBadge" style="font-size:9.5px;text-transform:uppercase;">ALL</span>');
+        html.push('  </div>');
+        html.push('  <div class="script-list" id="launcherScriptList" style="flex:1;max-height:360px;overflow-y:auto;">');
+        html.push('    <div style="padding:24px 16px;text-align:center;color:var(--text-muted);font-size:11px;">' + uiIcon("refresh", 14) + ' ' + (isKhmer() ? "កំពុងស្កេនស្គ្រីប..." : "Scanning scripts...") + '</div>');
         html.push('  </div>');
         html.push('</div>');
 
         embeddedContent.innerHTML = html.join("\n");
 
-        var launcherSearchInput = document.getElementById("launcherSearchInput");
-        var btnLauncherRefresh = document.getElementById("btnLauncherRefresh");
-        var launcherFolderPath = document.getElementById("launcherFolderPath");
-        var btnLauncherBrowse = document.getElementById("btnLauncherBrowse");
-        var launcherCountHeader = document.getElementById("launcherCountHeader");
-        var launcherScriptList = document.getElementById("launcherScriptList");
+        var launcherSearchInput = $("launcherSearchInput");
+        var launcherSearchClear = $("launcherSearchClear");
+        var btnLauncherRefresh = $("btnLauncherRefresh");
+        var launcherFolderPath = $("launcherFolderPath");
+        var btnLauncherOpenFolder = $("btnLauncherOpenFolder");
+        var btnLauncherBrowse = $("btnLauncherBrowse");
+        var launcherCountHeader = $("launcherCountHeader");
+        var launcherActiveFilterBadge = $("launcherActiveFilterBadge");
+        var launcherScriptList = $("launcherScriptList");
+        var countAll = $("countAll");
+        var countFavs = $("countFavs");
+        var filterBtns = embeddedContent.querySelectorAll("#launcherFilterSegmented .embed-seg-btn");
 
         var allScripts = [];
+        var currentResolvedFolder = "";
+        var selectedIndex = -1;
 
         function renderScriptList() {
-            var q = launcherSearchInput.value.trim().toLowerCase();
-            var filtered = allScripts.filter(function (s) {
+            if (!launcherScriptList) return;
+            var q = launcherSearchInput ? launcherSearchInput.value.trim().toLowerCase() : "";
+            if (launcherSearchClear) launcherSearchClear.style.display = q ? "block" : "none";
+
+            // Filter by search query
+            var list = allScripts.filter(function (s) {
                 return !q || s.name.toLowerCase().indexOf(q) !== -1 || s.fileName.toLowerCase().indexOf(q) !== -1;
             });
 
-            launcherCountHeader.textContent = (isKhmer() ? "បញ្ជីស្គ្រីប (" + filtered.length + ")" : "Available Scripts (" + filtered.length + ")");
+            // Count stats
+            var favCount = 0;
+            allScripts.forEach(function (s) { if (favs[s.path]) favCount++; });
+            if (countAll) countAll.textContent = allScripts.length;
+            if (countFavs) countFavs.textContent = favCount;
 
-            if (filtered.length === 0) {
-                launcherScriptList.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:11px;">' + (isKhmer() ? "រកមិនឃើញស្គ្រីបទេ" : "No scripts found matching search") + '</div>';
+            // Filter by tab
+            if (currentFilter === "favorites") {
+                list = list.filter(function (s) { return !!favs[s.path]; });
+                if (launcherActiveFilterBadge) launcherActiveFilterBadge.textContent = isKhmer() ? "សំណព្វ" : "FAVORITES";
+            } else if (currentFilter === "recent") {
+                var recentMap = {};
+                recents.forEach(function (p, idx) { recentMap[p] = idx; });
+                list = list.filter(function (s) { return recentMap[s.path] !== undefined; });
+                list.sort(function (a, b) { return (recentMap[a.path] || 0) - (recentMap[b.path] || 0); });
+                if (launcherActiveFilterBadge) launcherActiveFilterBadge.textContent = isKhmer() ? "ថ្មីៗ" : "RECENT";
+            } else {
+                // Sort favorites first, then alphabetical
+                list.sort(function (a, b) {
+                    var aFav = favs[a.path] ? 1 : 0;
+                    var bFav = favs[b.path] ? 1 : 0;
+                    if (aFav !== bFav) return bFav - aFav;
+                    return a.name.localeCompare(b.name);
+                });
+                if (launcherActiveFilterBadge) launcherActiveFilterBadge.textContent = isKhmer() ? "ទាំងអស់" : "ALL";
+            }
+
+            if (launcherCountHeader) {
+                launcherCountHeader.textContent = (isKhmer() ? "បញ្ជីស្គ្រីប (" + list.length + ")" : "Available Scripts (" + list.length + ")");
+            }
+
+            if (list.length === 0) {
+                var emptyMsg = isKhmer() ? "រកមិនឃើញស្គ្រីបទេ" : "No scripts found";
+                if (currentFilter === "favorites") {
+                    emptyMsg = isKhmer() ? "មិនទាន់មានស្គ្រីបសំណព្វទេ (ចុចលើផ្កាយ ★ ដើម្បីចងចាំ)" : "No favorite scripts yet. Click the star ★ icon to pin your top scripts!";
+                } else if (currentFilter === "recent") {
+                    emptyMsg = isKhmer() ? "មិនទាន់មានស្គ្រីបបានរត់ទេ" : "No recently executed scripts yet.";
+                } else if (q) {
+                    emptyMsg = (isKhmer() ? "រកមិនឃើញស្គ្រីបដែលត្រូវនឹង \"" : "No scripts match \"") + escapeHtml(q) + "\"";
+                }
+                launcherScriptList.innerHTML = '<div style="padding:28px 16px;text-align:center;color:var(--text-muted);font-size:11px;line-height:1.5;">' + emptyMsg + '</div>';
+                selectedIndex = -1;
                 return;
             }
 
             var sHtml = [];
-            filtered.forEach(function (script) {
+            list.forEach(function (script, idx) {
                 var kb = Math.round((script.size || 0) / 1024);
-                sHtml.push('<div class="script-item">');
+                var isFav = !!favs[script.path];
+                var isSel = (idx === selectedIndex);
+                var ext = (script.fileName.match(/\.[^.]+$/) || [".jsx"])[0].toLowerCase();
+                var extClass = (ext === ".js") ? "script-ext-js" : "script-ext-jsx";
+
+                sHtml.push('<div class="script-item' + (isSel ? " selected" : "") + (isFav ? " script-fav-active" : "") + '" data-idx="' + idx + '" data-path="' + escapeHtml(script.path) + '">');
+                sHtml.push('  <button type="button" class="script-fav-btn' + (isFav ? " active" : "") + '" data-path="' + escapeHtml(script.path) + '" title="' + (isFav ? (isKhmer() ? "ដកចេញពីសំណព្វ" : "Remove from favorites") : (isKhmer() ? "ដាក់ជាសំណព្វ" : "Pin to favorites")) + '">' + (isFav ? "★" : "☆") + '</button>');
                 sHtml.push('  <div class="script-info">');
-                sHtml.push('    <div class="script-name" title="' + escapeHtml(script.path) + '">' + uiIcon("file", 12) + escapeHtml(script.name) + '</div>');
-                sHtml.push('    <div class="script-meta"><span>' + kb + ' KB</span><span>•</span><span>' + escapeHtml(script.fileName) + '</span></div>');
+                sHtml.push('    <div class="script-name" title="' + escapeHtml(script.path) + '">' + escapeHtml(script.name) + '</div>');
+                sHtml.push('    <div class="script-meta">');
+                sHtml.push('      <span class="script-ext-badge ' + extClass + '">' + ext.toUpperCase().replace(".", "") + '</span>');
+                sHtml.push('      <span>' + (kb > 0 ? kb + " KB" : "< 1 KB") + '</span>');
+                sHtml.push('    </div>');
                 sHtml.push('  </div>');
-                sHtml.push('  <button type="button" class="script-run-btn" data-path="' + escapeHtml(script.path) + '">' + uiIcon("play", 10) + (isKhmer() ? "រត់" : "Run") + '</button>');
+                sHtml.push('  <div class="script-actions">');
+                sHtml.push('    <button type="button" class="script-reveal-btn" data-path="' + escapeHtml(script.path) + '" title="' + (isKhmer() ? "បង្ហាញទីតាំងក្នុង Explorer" : "Reveal in Explorer") + '">' + uiIcon("folder", 11) + '</button>');
+                sHtml.push('    <button type="button" class="script-run-btn" data-path="' + escapeHtml(script.path) + '">' + uiIcon("play", 10) + ' <span>' + (isKhmer() ? "រត់" : "Run") + '</span></button>');
+                sHtml.push('  </div>');
                 sHtml.push('</div>');
             });
             launcherScriptList.innerHTML = sHtml.join("");
         }
 
         function loadScripts(customFolder) {
-            launcherScriptList.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:11px;">' + (isKhmer() ? "កំពុងស្កេនស្គ្រីប..." : "Scanning scripts...") + '</div>';
+            launcherScriptList.innerHTML = '<div style="padding:24px 16px;text-align:center;color:var(--text-muted);font-size:11px;">' + uiIcon("refresh", 14) + ' ' + (isKhmer() ? "កំពុងស្កេនស្គ្រីប..." : "Scanning scripts...") + '</div>';
 
             if (!csInterface) {
                 setTimeout(function () {
-                    launcherFolderPath.textContent = "D:/git/script/scripts";
+                    currentResolvedFolder = "D:/git/script/scripts";
+                    launcherFolderPath.textContent = currentResolvedFolder;
                     allScripts = [
                         { name: "Batch Production Exporter", fileName: "Batch Production Exporter.jsx", path: "D:/git/script/scripts/Batch Production Exporter.jsx", size: 45000 },
                         { name: "CutContour Generator", fileName: "CutContour Generator.jsx", path: "D:/git/script/scripts/CutContour Generator.jsx", size: 32000 },
                         { name: "Generate QR Code", fileName: "Generate QR Code.jsx", path: "D:/git/script/scripts/Generate QR Code.jsx", size: 18000 },
-                        { name: "Nesting", fileName: "Nesting.jsx", path: "D:/git/script/scripts/Nesting.jsx", size: 68000 },
-                        { name: "Smart Dimension", fileName: "Smart Dimension.jsx", path: "D:/git/script/scripts/Smart Dimension.jsx", size: 28000 }
+                        { name: "Nesting Optimizer", fileName: "Nesting.jsx", path: "D:/git/script/scripts/Nesting.jsx", size: 68000 },
+                        { name: "Smart Dimension", fileName: "Smart Dimension.jsx", path: "D:/git/script/scripts/Smart Dimension.jsx", size: 28000 },
+                        { name: "Rich Black Optimizer", fileName: "Rich Black Optimizer.jsx", path: "D:/git/script/scripts/Rich Black Optimizer.jsx", size: 24000 }
                     ];
                     renderScriptList();
-                }, 500);
+                }, 350);
                 return;
             }
 
@@ -5824,24 +5908,74 @@
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
 
                 if (res && res.status === "ok") {
-                    launcherFolderPath.textContent = res.folder || "Scripts Folder";
+                    currentResolvedFolder = res.folder || "Scripts Folder";
+                    launcherFolderPath.textContent = currentResolvedFolder;
+                    launcherFolderPath.title = currentResolvedFolder;
                     allScripts = res.scripts || [];
                     renderScriptList();
                 } else {
                     var errMsg = (res && res.message) || String(raw || "Failed to scan scripts");
-                    launcherScriptList.innerHTML = '<div style="padding:16px;text-align:center;color:var(--color-error);font-size:11px;">Error: ' + escapeHtml(errMsg) + '</div>';
+                    launcherScriptList.innerHTML = '<div style="padding:20px 16px;text-align:center;color:var(--danger);font-size:11px;">Error: ' + escapeHtml(errMsg) + '</div>';
                 }
             });
         }
 
-        launcherSearchInput.addEventListener("input", renderScriptList);
-        launcherSearchInput.addEventListener("keydown", function (e) {
-            if (e.key === "Enter") {
-                var firstBtn = launcherScriptList.querySelector(".script-run-btn");
-                if (firstBtn) firstBtn.click();
-            }
+        // Filter Segmented Buttons click
+        for (var f = 0; f < filterBtns.length; f++) {
+            filterBtns[f].addEventListener("click", function () {
+                for (var b = 0; b < filterBtns.length; b++) filterBtns[b].classList.remove("active");
+                this.classList.add("active");
+                currentFilter = this.getAttribute("data-filter") || "all";
+                selectedIndex = -1;
+                renderScriptList();
+            });
+        }
+
+        // Search Input listeners
+        if (launcherSearchInput) {
+            launcherSearchInput.addEventListener("input", function () {
+                selectedIndex = -1;
+                renderScriptList();
+            });
+            launcherSearchInput.addEventListener("keydown", function (e) {
+                var items = launcherScriptList.querySelectorAll(".script-item");
+                if (items.length === 0) return;
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex + 1) % items.length;
+                    renderScriptList();
+                    var activeItem = launcherScriptList.querySelector(".script-item.selected");
+                    if (activeItem) activeItem.scrollIntoView({ block: "nearest" });
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                    renderScriptList();
+                    var activeItem = launcherScriptList.querySelector(".script-item.selected");
+                    if (activeItem) activeItem.scrollIntoView({ block: "nearest" });
+                } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    var targetItem = launcherScriptList.querySelector(".script-item.selected") || items[0];
+                    if (targetItem) {
+                        var btn = targetItem.querySelector(".script-run-btn");
+                        if (btn) btn.click();
+                    }
+                }
+            });
+        }
+
+        if (launcherSearchClear) {
+            launcherSearchClear.addEventListener("click", function () {
+                launcherSearchInput.value = "";
+                launcherSearchInput.focus();
+                renderScriptList();
+            });
+        }
+
+        btnLauncherRefresh.addEventListener("click", function () {
+            btnLauncherRefresh.classList.add("btn-spinning");
+            loadScripts(currentResolvedFolder || null);
+            setTimeout(function () { btnLauncherRefresh.classList.remove("btn-spinning"); }, 700);
         });
-        btnLauncherRefresh.addEventListener("click", function () { loadScripts(); });
 
         btnLauncherBrowse.addEventListener("click", function () {
             if (!csInterface) {
@@ -5856,46 +5990,101 @@
             });
         });
 
+        if (btnLauncherOpenFolder) {
+            btnLauncherOpenFolder.addEventListener("click", function () {
+                var target = currentResolvedFolder;
+                if (!target) return;
+                if (!csInterface) {
+                    showToast("Open folder (simulation): " + target, "info", 1800);
+                    return;
+                }
+                csInterface.evalScript('(function(){ var f = new Folder(' + JSON.stringify(target) + '); if (f.exists) f.execute(); })()');
+            });
+        }
+
+        // Script List Click Delegation (Run, Favorite, Reveal)
         launcherScriptList.addEventListener("click", function (e) {
-            var btn = closest(e.target, ".script-run-btn", launcherScriptList);
-            if (!btn) return;
-            var scriptPath = btn.getAttribute("data-path");
-            if (!scriptPath) return;
-
-            hideError();
-            btn.disabled = true;
-            btn.innerHTML = uiIcon("refresh", 10);
-            setStatus(isKhmer() ? "កំពុងដំណើរការស្គ្រីប..." : "Executing script...", "running");
-
-            if (!csInterface) {
-                setTimeout(function () {
-                    btn.disabled = false;
-                    btn.innerHTML = uiIcon("play", 10) + (isKhmer() ? "រត់" : "Run");
-                    setStatus("Simulated Script Executed: " + scriptPath, "success", 3000);
-                }, 800);
+            // 1. Favorite toggle
+            var favBtn = closest(e.target, ".script-fav-btn", launcherScriptList);
+            if (favBtn) {
+                e.stopPropagation();
+                var p = favBtn.getAttribute("data-path");
+                if (!p) return;
+                if (favs[p]) {
+                    delete favs[p];
+                    showToast(isKhmer() ? "បានដកចេញពីសំណព្វ" : "Removed from favorites", "info", 1200);
+                } else {
+                    favs[p] = true;
+                    showToast(isKhmer() ? "បានដាក់ជាស្គ្រីបសំណព្វ ★" : "Pinned to favorites ★", "success", 1200);
+                }
+                store.set("ozo_launcher_favorites", JSON.stringify(favs));
+                renderScriptList();
                 return;
             }
 
-            csInterface.evalScript("ozoRunLauncherScript(" + JSON.stringify(scriptPath) + ")", function (raw) {
-                btn.disabled = false;
-                btn.innerHTML = uiIcon("play", 10) + (isKhmer() ? "រត់" : "Run");
-                var res = null;
-                try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
-
-                if (res && res.status === "ok") {
-                    setStatus(isKhmer() ? "បានបញ្ចប់ស្គ្រីប " + res.file + " ដោយជោគជ័យ" : "Executed " + res.file + " successfully", "success", 4000);
-                } else {
-                    var errMsg = (res && res.message) || String(raw || "Script execution failed");
-                    showError(isKhmer() ? "ការរត់ស្គ្រីបបរាជ័យ" : "Script Failed", errMsg);
-                    setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+            // 2. Reveal in Explorer
+            var revealBtn = closest(e.target, ".script-reveal-btn", launcherScriptList);
+            if (revealBtn) {
+                e.stopPropagation();
+                var rPath = revealBtn.getAttribute("data-path");
+                if (!rPath) return;
+                if (!csInterface) {
+                    showToast("Reveal: " + rPath, "info", 1500);
+                    return;
                 }
-            });
+                csInterface.evalScript('(function(){ var f = new File(' + JSON.stringify(rPath) + '); if (f.parent && f.parent.exists) f.parent.execute(); })()');
+                return;
+            }
+
+            // 3. Run Script
+            var runBtn = closest(e.target, ".script-run-btn", launcherScriptList);
+            if (runBtn) {
+                var scriptPath = runBtn.getAttribute("data-path");
+                if (!scriptPath) return;
+
+                hideError();
+                runBtn.disabled = true;
+                runBtn.innerHTML = uiIcon("refresh", 10) + ' <span>' + (isKhmer() ? "កំពុងរត់..." : "Running...") + '</span>';
+                setStatus(isKhmer() ? "កំពុងដំណើរការស្គ្រីប..." : "Executing script...", "running");
+
+                // Record recent
+                recents = recents.filter(function (rp) { return rp !== scriptPath; });
+                recents.unshift(scriptPath);
+                if (recents.length > 20) recents = recents.slice(0, 20);
+                store.set("ozo_launcher_recents", JSON.stringify(recents));
+
+                if (!csInterface) {
+                    setTimeout(function () {
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = uiIcon("play", 10) + ' <span>' + (isKhmer() ? "រត់" : "Run") + '</span>';
+                        setStatus("Simulated Script Executed: " + scriptPath, "success", 3000);
+                        showToast("Executed script (simulated)", "success", 2000);
+                    }, 800);
+                    return;
+                }
+
+                csInterface.evalScript("ozoRunLauncherScript(" + JSON.stringify(scriptPath) + ")", function (raw) {
+                    runBtn.disabled = false;
+                    runBtn.innerHTML = uiIcon("play", 10) + ' <span>' + (isKhmer() ? "រត់" : "Run") + '</span>';
+                    var res = null;
+                    try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
+
+                    if (res && res.status === "ok") {
+                        setStatus(isKhmer() ? "បានបញ្ចប់ស្គ្រីប " + res.file + " ដោយជោគជ័យ" : "Executed " + res.file + " successfully", "success", 4000);
+                        showToast((isKhmer() ? "បានរត់ជោគជ័យ៖ " : "Executed: ") + res.file, "success", 2500);
+                    } else {
+                        var errMsg = (res && res.message) || String(raw || "Script execution failed");
+                        showError(isKhmer() ? "ការរត់ស្គ្រីបបរាជ័យ" : "Script Failed", errMsg);
+                        setStatus(isKhmer() ? "បញ្ហា៖ " + errMsg : "Error: " + errMsg, "error", 6000);
+                    }
+                });
+                return;
+            }
         });
 
         loadScripts();
     }
 
-    // -------------------------------------------------------------
     // In-Dock Rich Black Optimizer View
     // -------------------------------------------------------------
     function renderEmbeddedRichBlack() {
