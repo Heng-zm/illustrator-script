@@ -686,6 +686,11 @@
     var embeddedSelRibbon = $("embeddedSelRibbon");
     var embeddedSelIcon = $("embeddedSelIcon");
     var embeddedSelText = $("embeddedSelText");
+    var embeddedPrevBtn = $("embeddedPrevBtn");
+    var embeddedNextBtn = $("embeddedNextBtn");
+    var embedPresetsWrap = $("embedPresetsWrap");
+    var embedPresetsList = $("embedPresetsList");
+    var emptySuggestion = $("emptySuggestion");
     var docPopover = $("docPopover");
     var docPopoverClose = $("docPopoverClose");
     var docPopoverStats = $("docPopoverStats");
@@ -875,6 +880,112 @@
             info.artboardsCount || 0,
             info.selectedCount || 0
         ].join("|");
+    }
+
+    // Quick Presets for Embedded Tools
+    var TOOL_PRESETS = {
+        cutcontour: [
+            { labelEn: "Standard Bleed (2mm)", labelKm: "Bleed ស្តង់ដារ (2mm)", bleed: 2, spot: "CutContour", stroke: 0.5 },
+            { labelEn: "Sticker DieCut (1.5mm)", labelKm: "ស្ទីគ័រ Sticker (1.5mm)", bleed: 1.5, spot: "CutContour", stroke: 0.5 },
+            { labelEn: "Box Packaging (3mm)", labelKm: "ប្រអប់វេចខ្ចប់ (3mm)", bleed: 3, spot: "CutContour", stroke: 0.75 },
+            { labelEn: "Tight Cut (0.5mm)", labelKm: "កាត់គែមជិត (0.5mm)", bleed: 0.5, spot: "CutContour", stroke: 0.25 }
+        ],
+        qr: [
+            { labelEn: "Card (25mm)", labelKm: "នាមប័ណ្ណ (25mm)", size: 25, unit: "mm", correction: "M" },
+            { labelEn: "Table Standee (45mm)", labelKm: "ស្លាកលើតុ (45mm)", size: 45, unit: "mm", correction: "Q" },
+            { labelEn: "Poster / Banner (80mm)", labelKm: "ផ្ទាំងធំ (80mm)", size: 80, unit: "mm", correction: "H" }
+        ],
+        khqr: [
+            { labelEn: "Standee (USD)", labelKm: "ស្លាកលើតុ (USD)", style: "Standee Card (Table)", cur: "USD", w: 100 },
+            { labelEn: "Standee (KHR)", labelKm: "ស្លាកលើតុ (KHR)", style: "Standee Card (Table)", cur: "KHR", w: 100 },
+            { labelEn: "Vector QR (40mm)", labelKm: "QR សុទ្ធ (40mm)", style: "Vector QR Only", cur: "USD", w: 40 }
+        ],
+        richblack: [
+            { labelEn: "Standard (60/40/40/100)", labelKm: "ស្តង់ដារ (60/40/40/100)", c: 60, m: 40, y: 40, k: 100 },
+            { labelEn: "Cool Black (60/0/0/100)", labelKm: "ខ្មៅត្រជាក់ (60/0/0/100)", c: 60, m: 0, y: 0, k: 100 },
+            { labelEn: "Warm Black (30/40/30/100)", labelKm: "ខ្មៅកក់ក្តៅ (30/40/30/100)", c: 30, m: 40, y: 30, k: 100 }
+        ]
+    };
+
+    function renderEmbeddedPresets() {
+        if (!embedPresetsWrap || !embedPresetsList) return;
+        if (!activeEmbeddedTool) {
+            embedPresetsWrap.hidden = true;
+            return;
+        }
+        var presets = TOOL_PRESETS[activeEmbeddedTool.id];
+        if (!presets || presets.length === 0) {
+            embedPresetsWrap.hidden = true;
+            return;
+        }
+        var html = [];
+        for (var p = 0; p < presets.length; p++) {
+            var item = presets[p];
+            var label = isKhmer() ? item.labelKm : item.labelEn;
+            html.push('<button type="button" class="embed-preset-chip" data-preset-idx="' + p + '">' + escapeHtml(label) + '</button>');
+        }
+        embedPresetsList.innerHTML = html.join("");
+        embedPresetsWrap.hidden = false;
+    }
+
+    function applyToolPreset(idx) {
+        if (!activeEmbeddedTool) return;
+        var presets = TOOL_PRESETS[activeEmbeddedTool.id];
+        if (!presets || !presets[idx]) return;
+        var p = presets[idx];
+        var id = activeEmbeddedTool.id;
+
+        if (id === "cutcontour") {
+            var bleedInp = $("ccBleedInput");
+            var spotInp = $("ccSpotColorInput");
+            var strokeInp = $("ccStrokeWeightInput");
+            if (bleedInp && p.bleed !== undefined) { bleedInp.value = p.bleed; bleedInp.dispatchEvent(new Event("input")); }
+            if (spotInp && p.spot !== undefined) { spotInp.value = p.spot; spotInp.dispatchEvent(new Event("input")); }
+            if (strokeInp && p.stroke !== undefined) { strokeInp.value = p.stroke; strokeInp.dispatchEvent(new Event("input")); }
+        } else if (id === "qr") {
+            var sizeInp = $("qrSizeInput");
+            var unitSel = $("qrUnitSelect");
+            var corSel = $("qrCorrectionSelect");
+            if (sizeInp && p.size !== undefined) { sizeInp.value = p.size; sizeInp.dispatchEvent(new Event("input")); }
+            if (unitSel && p.unit !== undefined) { unitSel.value = p.unit; unitSel.dispatchEvent(new Event("change")); }
+            if (corSel && p.correction !== undefined) { corSel.value = p.correction; corSel.dispatchEvent(new Event("change")); }
+        } else if (id === "khqr") {
+            var curSel = $("khqrCurSelect");
+            var wInp = $("khqrWidthInput");
+            if (curSel && p.cur !== undefined) { curSel.value = p.cur; curSel.dispatchEvent(new Event("change")); }
+            if (wInp && p.w !== undefined) { wInp.value = p.w; wInp.dispatchEvent(new Event("input")); }
+            if (p.style) {
+                var styleBtns = embeddedContent.querySelectorAll("#khqrStyleSegmented .embed-seg-btn");
+                for (var b = 0; b < styleBtns.length; b++) {
+                    if (styleBtns[b].getAttribute("data-val") === p.style) styleBtns[b].click();
+                }
+            }
+        } else if (id === "richblack") {
+            var cIn = $("rbCyanInput");
+            var mIn = $("rbMagentaInput");
+            var yIn = $("rbYellowInput");
+            var kIn = $("rbBlackInput");
+            if (cIn && p.c !== undefined) { cIn.value = p.c; cIn.dispatchEvent(new Event("input")); }
+            if (mIn && p.m !== undefined) { mIn.value = p.m; mIn.dispatchEvent(new Event("input")); }
+            if (yIn && p.y !== undefined) { yIn.value = p.y; yIn.dispatchEvent(new Event("input")); }
+            if (kIn && p.k !== undefined) { kIn.value = p.k; kIn.dispatchEvent(new Event("input")); }
+        }
+
+        var label = isKhmer() ? p.labelKm : p.labelEn;
+        showToast((isKhmer() ? "បានជ្រើសគំរូ៖ " : "Applied preset: ") + label, "success", 1800);
+    }
+
+    function switchEmbeddedTool(delta) {
+        if (!activeEmbeddedTool) return;
+        var curIdx = -1;
+        for (var i = 0; i < TOOLS.length; i++) {
+            if (TOOLS[i].id === activeEmbeddedTool.id) { curIdx = i; break; }
+        }
+        if (curIdx === -1) return;
+        var nextIdx = curIdx + delta;
+        if (nextIdx < 0) nextIdx = TOOLS.length - 1;
+        if (nextIdx >= TOOLS.length) nextIdx = 0;
+        openEmbeddedView(TOOLS[nextIdx].id);
     }
 
     function updateEmbeddedSelRibbon(info) {
@@ -1164,7 +1275,25 @@
         return count;
     }
 
+    function findFuzzyMatch(q) {
+        if (!q || q.length < 2) return null;
+        var query = q.toLowerCase();
+        for (var i = 0; i < TOOLS.length; i++) {
+            var tool = TOOLS[i];
+            var haystack = (tool.nameEn + " " + tool.keywords).toLowerCase();
+            var tokens = haystack.split(/\s+/);
+            for (var k = 0; k < tokens.length; k++) {
+                var tok = tokens[k];
+                if (tok.length >= 3 && (tok.indexOf(query) !== -1 || query.indexOf(tok) !== -1)) {
+                    return tool;
+                }
+            }
+        }
+        return null;
+    }
+
     function updateEmptyState() {
+        if (emptySuggestion) emptySuggestion.hidden = true;
         var noFavsYet = currentCategory === "favorites" && !searchQuery;
         if (noFavsYet) {
             emptyText.textContent = t("empty.favorites");
@@ -1187,6 +1316,26 @@
             emptyClearBtn.textContent = t("empty.clear");
             emptyClearBtn.title = t("empty.clearTitle");
             emptyClearBtn.hidden = !searchQuery;
+        }
+
+        // Fuzzy "Did you mean?" suggestion
+        if (emptySuggestion && searchQuery && searchQuery.trim().length >= 2) {
+            var fuzzy = findFuzzyMatch(searchQuery.trim());
+            if (fuzzy) {
+                var sName = toolName(fuzzy);
+                emptySuggestion.innerHTML = '<span>' + (isKhmer() ? "តើអ្នកចង់ស្វែងរក៖ " : "Did you mean: ") + '</span>' +
+                    '<button type="button" class="suggestion-chip" id="btnSuggestionChip">' + escapeHtml(sName) + '</button>';
+                emptySuggestion.hidden = false;
+                var sugBtn = emptySuggestion.querySelector("#btnSuggestionChip");
+                if (sugBtn) {
+                    sugBtn.onclick = function () {
+                        searchInput.value = fuzzy.nameEn;
+                        setSearch(fuzzy.nameEn);
+                        renderTools();
+                        searchInput.focus();
+                    };
+                }
+            }
         }
     }
 
@@ -1507,6 +1656,7 @@
         }
 
         updateEmbeddedSelRibbon();
+        renderEmbeddedPresets();
 
         // Auto-focus first interactive input for fast keyboard workflows
         setTimeout(function () {
@@ -6543,6 +6693,21 @@
                 });
             }
             showToast(cmd === "fitin" ? "Fit Artboard (Ctrl+0)" : (cmd === "fitall" ? "Fit All (Ctrl+Alt+0)" : "100% Zoom"), "info", 1400);
+        });
+    }
+
+    if (embeddedPrevBtn) {
+        embeddedPrevBtn.addEventListener("click", function () { switchEmbeddedTool(-1); });
+    }
+    if (embeddedNextBtn) {
+        embeddedNextBtn.addEventListener("click", function () { switchEmbeddedTool(1); });
+    }
+    if (embedPresetsList) {
+        embedPresetsList.addEventListener("click", function (e) {
+            var chip = closest(e.target, ".embed-preset-chip", embedPresetsList);
+            if (!chip) return;
+            var idx = parseInt(chip.getAttribute("data-preset-idx"), 10);
+            if (!isNaN(idx)) applyToolPreset(idx);
         });
     }
 

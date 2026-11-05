@@ -169,6 +169,7 @@
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <p id="emptyText"></p>
+            <div id="emptySuggestion" class="empty-suggestion" hidden></div>
             <button type="button" id="emptyClearBtn" class="empty-clear-btn" data-i18n="empty.clear" data-i18n-title="empty.clearTitle">Clear search</button>
         </div>
     </div>
@@ -176,13 +177,17 @@
     <!-- Embedded Tool View (controls directly inside the dock panel) -->
     <div id="viewEmbedded" class="view-embedded" style="display: none;">
         <div class="embedded-header">
-            <button type="button" id="embeddedBackBtn" class="embedded-back-btn" data-i18n-title="back.title" title="Back to Tools (Esc)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                <span data-i18n="back.tools">Tools</span>
-            </button>
+            <div class="embedded-nav-group">
+                <button type="button" id="embeddedBackBtn" class="embedded-back-btn" data-i18n-title="back.title" title="Back to Tools (Esc)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span data-i18n="back.tools">Tools</span>
+                </button>
+                <button type="button" id="embeddedPrevBtn" class="embedded-nav-arrow" title="Previous Tool (Ctrl+[)">‹</button>
+                <button type="button" id="embeddedNextBtn" class="embedded-nav-arrow" title="Next Tool (Ctrl+])">›</button>
+            </div>
             <div class="embedded-title-wrap">
                 <span id="embeddedToolIcon" class="embedded-tool-icon" aria-hidden="true"></span>
                 <span id="embeddedToolTitle" class="embedded-tool-title"></span>
@@ -219,6 +224,12 @@
             <button type="button" class="sel-ribbon-btn" data-canvas-cmd="fitin" title="Fit Active Artboard (Ctrl+0)">Fit Artboard</button>
         </div>
 
+        <!-- Tool Presets Strip -->
+        <div id="embedPresetsWrap" class="embed-presets-wrap" hidden>
+            <span class="embed-presets-label">⚡ Presets:</span>
+            <div id="embedPresetsList" class="embed-presets-list"></div>
+        </div>
+
         <div id="embeddedContent" class="embedded-content"></div>
     </div>
 
@@ -253,6 +264,10 @@
                 <button type="button" class="doc-action-btn" data-canvas-cmd="deselectall" title="Deselect All Artwork (Ctrl+Shift+A)">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     <span>Deselect</span>
+                </button>
+                <button type="button" class="doc-action-btn" data-canvas-cmd="inverse" title="Invert Selection (Ctrl+Shift+I)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                    <span>Invert</span>
                 </button>
             </div>
         </div>

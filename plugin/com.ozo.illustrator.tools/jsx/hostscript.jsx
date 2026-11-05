@@ -368,6 +368,7 @@ function ozoExecuteCanvasCommand(cmd) {
         var valid = {
             selectall: true,
             deselectall: true,
+            inverse: true,
             fitin: true,
             fitall: true,
             actualsize: true

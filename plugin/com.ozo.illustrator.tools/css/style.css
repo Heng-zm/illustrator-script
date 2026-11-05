@@ -4095,3 +4095,109 @@ select:focus-visible,
     color: var(--accent);
     background: var(--bg-surface-hover);
 }
+
+/* Embedded Tool Presets Strip */
+.embed-presets-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    scrollbar-width: none;
+    animation: bannerIn 0.16s ease-out;
+}
+.embed-presets-wrap::-webkit-scrollbar { display: none; }
+.embed-presets-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+.embed-presets-list {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.embed-preset-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+    transition: all 0.15s ease;
+}
+.embed-preset-chip:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+    transform: translateY(-1px);
+}
+.embed-preset-chip:active {
+    transform: scale(0.96);
+}
+
+/* Embedded Tool Carousel Navigation */
+.embedded-nav-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+.embedded-nav-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.embedded-nav-arrow:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+}
+
+/* Empty State Did You Mean Suggestion */
+.empty-suggestion {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 8px 0;
+}
+.suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    background: var(--bg-surface);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.suggestion-chip:hover {
+    background: var(--accent);
+    color: #fff;
+    transform: translateY(-1px);
+}
