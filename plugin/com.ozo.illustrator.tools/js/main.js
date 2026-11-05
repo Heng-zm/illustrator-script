@@ -733,6 +733,18 @@
     // ------------------------------------------------------------------
     // Status bar
     // ------------------------------------------------------------------
+    function flashButtonSuccess(btn, customText) {
+        if (!btn || btn.classList.contains("btn-success")) return;
+        var prevHtml = btn.innerHTML;
+        btn.classList.add("btn-success");
+        var text = customText || (isKhmer() ? "ជោគជ័យ!" : "Done!");
+        btn.innerHTML = uiIcon("check", 14) + " " + text;
+        setTimeout(function () {
+            btn.classList.remove("btn-success");
+            btn.innerHTML = prevHtml;
+        }, 1500);
+    }
+
     function setStatus(msg, type, duration) {
         if (statusTimer) {
             clearTimeout(statusTimer);
@@ -742,6 +754,12 @@
         statusMessage.title = msg;
         statusDot.className = "status-dot" + (type === "running" || type === "error" || type === "success" ? " " + type : "");
         statusDot.title = "";
+
+        if (type === "success" && activeEmbeddedTool && embeddedContent) {
+            var primaryBtn = embeddedContent.querySelector(".btn-action-primary") ||
+                             embeddedContent.querySelector("#btnGenericRun");
+            if (primaryBtn) flashButtonSuccess(primaryBtn);
+        }
 
         if (duration > 0) {
             statusTimer = setTimeout(function () {
@@ -850,6 +868,9 @@
         errorTitle.textContent = title;
         errorMessage.textContent = message;
         errorBanner.hidden = false;
+        errorBanner.classList.remove("error-shake");
+        void errorBanner.offsetWidth;
+        errorBanner.classList.add("error-shake");
     }
 
     function hideError() {
@@ -1292,7 +1313,14 @@
                     '</svg><span>' + escapeHtml(t('preview.close')) + '</span>' +
                 '</button>' +
                 '<span class="preview-header-title">' + escapeHtml(t('preview.title')) + '</span>' +
-                '<span style="width:56px"></span>' +
+                '<div class="preview-nav-arrows">' +
+                    '<button type="button" class="preview-arrow-btn" id="previewPrevBtn" title="' + (isKhmer() ? "ឧបករណ៍មុន (Left Arrow)" : "Previous Tool (Left Arrow)") + '">' +
+                        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>' +
+                    '</button>' +
+                    '<button type="button" class="preview-arrow-btn" id="previewNextBtn" title="' + (isKhmer() ? "ឧបករណ៍បន្ទាប់ (Right Arrow)" : "Next Tool (Right Arrow)") + '">' +
+                        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+                    '</button>' +
+                '</div>' +
             '</div>' +
             '<div class="preview-body">' +
                 '<div class="preview-hero">' +
@@ -1324,6 +1352,24 @@
         if (backBtn) backBtn.onclick = closePreviewPanel;
         if (openBtn) openBtn.onclick = function () { closePreviewPanel(); openEmbeddedView(tool.id); };
         if (runBtn)  runBtn.onclick  = function () { closePreviewPanel(); runScript(tool); };
+
+        var prevBtn = document.getElementById('previewPrevBtn');
+        var nextBtn = document.getElementById('previewNextBtn');
+        function stepPreview(dir) {
+            var visibleList = getVisibleTools();
+            var curIdx = -1;
+            for (var v = 0; v < visibleList.length; v++) {
+                if (visibleList[v].id === tool.id) { curIdx = v; break; }
+            }
+            if (curIdx !== -1) {
+                var nextIndex = dir > 0 ?
+                    (curIdx + 1) % visibleList.length :
+                    (curIdx - 1 + visibleList.length) % visibleList.length;
+                openPreviewPanel(visibleList[nextIndex].id);
+            }
+        }
+        if (prevBtn) prevBtn.onclick = function () { stepPreview(-1); };
+        if (nextBtn) nextBtn.onclick = function () { stepPreview(1); };
     }
 
     function closePreviewPanel() {
@@ -5754,6 +5800,17 @@
         if (!card) return;
         var tool = toolById[card.getAttribute("data-id")];
         if (!tool) return;
+
+        // Clicking category badge filters directly to that category
+        var badge = closest(e.target, ".tool-badge", card);
+        if (badge) {
+            var targetBtn = tabsContainer.querySelector('.tab-btn[data-category="' + tool.category + '"]');
+            if (targetBtn) {
+                setCategory(targetBtn);
+                return;
+            }
+        }
+
         if (closest(e.target, ".preview-card-btn", card)) { openPreviewPanel(card.getAttribute("data-id")); return; }
         if (closest(e.target, ".fav-btn", card)) toggleFavorite(tool.id);
         else openEmbeddedView(tool.id);
@@ -5773,6 +5830,9 @@
         } else if (key === "f" || key === "F") {
             e.preventDefault();
             if (tool) toggleFavorite(tool.id);
+        } else if (key === "p" || key === "P") {
+            e.preventDefault();
+            if (tool) openPreviewPanel(tool.id);
         } else if (key === "ArrowDown" || key === "ArrowRight") {
             e.preventDefault();
             target = card.nextElementSibling;
@@ -5871,14 +5931,41 @@
             if (activeEmbeddedTool) closeEmbeddedView();
             searchInput.focus();
             searchInput.select();
+        } else if (activePreviewTool) {
+            if (key === "Escape") {
+                closePreviewPanel();
+                return;
+            } else if (key === "Enter") {
+                e.preventDefault();
+                var openBtn = document.getElementById("previewOpenBtn");
+                if (openBtn) openBtn.click();
+                return;
+            } else if (key === "r" || key === "R") {
+                e.preventDefault();
+                var runBtn = document.getElementById("previewRunBtn");
+                if (runBtn) runBtn.click();
+                return;
+            } else if (key === "ArrowRight" || key === "ArrowLeft") {
+                e.preventDefault();
+                var visibleList = getVisibleTools();
+                var curIdx = -1;
+                for (var v = 0; v < visibleList.length; v++) {
+                    if (visibleList[v].id === activePreviewTool.id) { curIdx = v; break; }
+                }
+                if (curIdx !== -1) {
+                    var nextIndex = key === "ArrowRight" ?
+                        (curIdx + 1) % visibleList.length :
+                        (curIdx - 1 + visibleList.length) % visibleList.length;
+                    openPreviewPanel(visibleList[nextIndex].id);
+                }
+                return;
+            }
         } else if (key === "Escape") {
             if (errorBanner && !errorBanner.hidden) {
                 hideError();
                 return;
             }
-            if (activePreviewTool) {
-                closePreviewPanel();
-            } else if (activeEmbeddedTool) {
+            if (activeEmbeddedTool) {
                 if (editing) {
                     active.blur();
                 } else {

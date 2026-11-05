@@ -3253,3 +3253,61 @@ input[type="checkbox"].switch:checked:hover { background: var(--accent-hover); }
 .btn-action-primary:active {
     transform: translateY(1px) scale(0.985);
 }
+
+/* Action button instant success state */
+.btn-action-primary.btn-success {
+    background: linear-gradient(180deg, #34c98b, #27a873) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(40, 180, 120, 0.45) !important;
+    transform: scale(1.015);
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+/* Error banner gentle shake to draw attention */
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+.error-banner.error-shake {
+    animation: errorShake 0.35s ease-in-out;
+}
+
+/* Clickable category badge on tool card */
+.tool-badge {
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s, opacity 0.15s;
+}
+.tool-badge:hover {
+    transform: scale(1.06);
+    opacity: 0.85;
+}
+
+/* Tool preview carousel arrows */
+.preview-nav-arrows {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.preview-arrow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-main);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.preview-arrow-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+}
+.preview-arrow-btn:active {
+    transform: scale(0.94);
+}
