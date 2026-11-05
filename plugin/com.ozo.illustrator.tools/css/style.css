@@ -5173,70 +5173,242 @@ body .panel-footer { padding: 6px 12px; box-shadow: none; }
 }
 
 
-/* ---------- v3.0 fixes: row width budget ---------- */
-/* Category is already encoded by the left rail + tile tint, so the label is dropped from rows */
-body .tool-card .tool-badge { display: none; }
+/* ==================================================================
+   Clean, Modern & Unified UI Polish
+   - Seamless list & grid row actions (no overlapping elements)
+   - Refined category indicator rails & smooth hover transitions
+   - Crisp typography, balanced white space & consistent contrast
+   ================================================================== */
 
-/* Rail: straight 3px bar instead of a curved border */
-body .tool-card.cat-prepress,
-body .tool-card.cat-layout,
-body .tool-card.cat-utilities { border-left: 1px solid transparent !important; position: relative; }
-body .tool-card.cat-prepress:hover,
-body .tool-card.cat-layout:hover,
-body .tool-card.cat-utilities:hover { border-left-color: var(--border-color) !important; }
+/* Tool Cards: Clean grounded rows with subtle hairline borders */
+body .tool-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    padding: 7px 10px 7px 12px;
+    min-height: 52px;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+body .tool-card:hover {
+    background-color: var(--bg-surface-hover);
+    border-color: var(--border-strong);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+body .tool-card:active {
+    background-color: var(--bg-surface-active);
+}
+body .tool-card:focus-visible {
+    border-color: var(--accent);
+    box-shadow: var(--ring);
+}
+body .tool-card.is-running {
+    background-color: var(--accent-subtle);
+    border-color: rgba(var(--accent-rgb), 0.45);
+}
+
+/* Category Accent Rail: Smooth 3px line on the inside left edge */
 .tool-card::before {
     content: "";
     position: absolute;
-    left: 0; top: 12px; bottom: 12px;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
     width: 3px;
     border-radius: 0 3px 3px 0;
     background: var(--rail, transparent);
-    opacity: 0.9;
+    opacity: 0.85;
+    transition: opacity 0.15s ease, top 0.15s ease, bottom 0.15s ease;
+}
+body .tool-card:hover::before {
+    opacity: 1;
+    top: 7px;
+    bottom: 7px;
 }
 .cat-prepress  { --rail: rgb(var(--prepress-rgb)); }
 .cat-layout    { --rail: rgb(var(--layout-rgb)); }
 .cat-utilities { --rail: rgb(var(--util-rgb)); }
 .view-grid .tool-card::before { display: none; }
 
-/* Star stays in the row (dim until hover); the preview eye floats over the text only on hover */
-body .tool-actions { position: relative; gap: 2px; }
-body .fav-btn { opacity: 0.45; }
-body .fav-btn.active { opacity: 1; }
-body .tool-card:hover .fav-btn, body .tool-card:focus-visible .fav-btn { opacity: 1; }
-body .tool-card .preview-card-btn {
-    position: absolute;
-    right: calc(100% + 28px);
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--bg-surface-hover);
-    border: 1px solid var(--border-color);
+body .tool-card .tool-badge { display: none; }
+
+/* Tool Actions: Clean inline flow on the right (No text overlap!) */
+body .tool-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    position: static;
+}
+
+/* Favorite Star Button */
+body .fav-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
     pointer-events: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+body .fav-btn.active {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    color: var(--star-active);
+}
+body .tool-card:hover .fav-btn,
+body .tool-card:focus-visible .fav-btn {
+    opacity: 0.65;
+    pointer-events: auto;
+}
+body .tool-card .fav-btn:hover {
+    opacity: 1;
+    color: var(--star-active);
+    transform: scale(1.12);
+}
+
+/* Preview Eye Button: Sits inline in actions bar; fades in on card hover */
+body .tool-card .preview-card-btn {
+    position: static;
+    transform: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 body .tool-card:hover .preview-card-btn,
-body .tool-card:focus-visible .preview-card-btn { pointer-events: auto; opacity: 1; }
-body .view-grid .tool-card .preview-card-btn { position: static; transform: none; }
-body .run-btn { padding: 0 10px; height: 24px; font-size: 11px; }
-body .tool-card { padding-right: 8px; }
+body .tool-card:focus-visible .preview-card-btn {
+    opacity: 0.75;
+    pointer-events: auto;
+}
+body .tool-card .preview-card-btn:hover {
+    opacity: 1;
+    background: var(--bg-surface-active);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
 
-/* Version badge now lives in the footer (header keeps identity + actions only) */
-.footer-links { display: flex; align-items: center; gap: 10px; }
-.footer-links .brand-badge { border: none; background: none; padding: 0; font-size: 10.5px; color: var(--text-muted); line-height: 1.4; }
-.footer-links .brand-badge:hover { color: var(--text-primary); }
+/* Run / Open Button */
+body .run-btn {
+    height: 26px;
+    padding: 0 11px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border: 1px solid var(--border-color);
+    background: var(--bg-main);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+body .tool-card:hover .run-btn,
+body .tool-card:focus-visible .run-btn {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 2px 5px rgba(var(--accent-rgb), 0.3);
+}
+body .tool-card .run-btn:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
 
-/* Grid view: rows size to their content instead of squeezing into the viewport height */
-body .tool-list.view-grid { grid-auto-rows: max-content; }
-body .view-grid .tool-card { min-height: 0; overflow: hidden; }
-body .view-grid .tool-name { min-height: 2.9em; }
-body .view-grid .tool-card .preview-card-btn { display: none; }
-body .view-grid .tool-card:hover .preview-card-btn { display: inline-flex; }
+/* Grid View: Clean, structured tiles */
+body .tool-list.view-grid {
+    grid-template-columns: repeat(auto-fill, minmax(98px, 1fr));
+    grid-auto-rows: max-content;
+    gap: 8px;
+}
+body .view-grid .tool-card {
+    padding: 14px 6px 10px;
+    border-radius: 10px;
+    min-height: 0;
+    overflow: hidden;
+    gap: 6px;
+}
+body .view-grid .tool-card .tool-actions {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+}
+body .view-grid .tool-card .preview-card-btn {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+}
+body .view-grid .tool-card:hover .preview-card-btn {
+    display: inline-flex;
+}
+body .view-grid .tool-name {
+    min-height: 2.8em;
+}
 
-body .embedded-title-wrap { justify-content: flex-start; text-align: left; }
+/* Clean Footer Links */
+.footer-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.footer-links .brand-badge {
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+.footer-links .brand-badge:hover {
+    color: var(--text-primary);
+}
+
+body .embedded-title-wrap {
+    justify-content: flex-start;
+    text-align: left;
+}
 
 /* Quick DPI and Exporter Tokens */
 .exp-dpi-quickbar {
     display: inline-flex;
     align-items: center;
     gap: 3px;
+}
+.exp-dpi-btn {
+    padding: 1px 7px;
+    font-size: 9.5px;
+    font-weight: 600;
+    border-radius: 5px;
+    background: var(--bg-surface-active);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 16px;
+    transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+}
+.exp-dpi-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
 }
 .exp-dpi-btn.active {
     background: var(--accent) !important;
@@ -5247,14 +5419,29 @@ body .embedded-title-wrap { justify-content: flex-start; text-align: left; }
     font-family: var(--font-mono, monospace);
     font-size: 9.5px;
     padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(var(--accent-rgb), 0.08);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    color: var(--accent);
+    cursor: pointer;
+    line-height: 15px;
+    transition: background-color 0.12s, border-color 0.12s, transform 0.08s;
+}
+.exp-token-btn:hover {
+    background: rgba(var(--accent-rgb), 0.18);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+.exp-token-btn:active {
+    transform: translateY(0);
 }
 
 /* Rich Black Visual Meter */
 .rb-meter-track {
     position: relative;
     width: 100%;
-    height: 8px;
-    background: var(--bg-surface-active);
+    height: 7px;
+    background: var(--bg-main);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     overflow: hidden;
@@ -5270,18 +5457,42 @@ body .embedded-title-wrap { justify-content: flex-start; text-align: left; }
     top: 0;
     bottom: 0;
     width: 2px;
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.45);
     pointer-events: none;
 }
 .rb-swatch-box {
+    border: 1px solid var(--border-color);
+    background: var(--bg-main);
+    border-radius: 6px;
+    padding: 8px;
     transition: border-color 0.15s ease;
 }
 .rb-swatch-box:hover {
-    border-color: var(--border-color-hover);
+    border-color: var(--border-strong);
 }
 .dim-offset-btn {
     font-size: 9.5px;
-    padding: 2px 7px;
+    padding: 1px 7px;
+    border-radius: 5px;
+    background: var(--bg-surface-active);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    line-height: 16px;
+    cursor: pointer;
+    transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+}
+.dim-offset-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+.embed-action-wrap {
+    margin-top: auto;
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(31, 31, 31, 0) 0%, var(--bg-main) 28%);
+    padding: 12px 0 2px 0;
+    z-index: 5;
 }
 
 /* ==================================================================
