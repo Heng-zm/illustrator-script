@@ -30,7 +30,7 @@ show_header() {
 
 enable_player_debug_mode() {
     echo -e "${YELLOW}[*] Configuring Adobe Extension Developer Mode (PlayerDebugMode)...${NC}"
-    for ver in {6..16}; do
+    for ver in {6..20}; do
         defaults write com.adobe.CSXS.$ver PlayerDebugMode 1 2>/dev/null || true
     done
     echo -e "${GREEN}    [OK] PlayerDebugMode enabled for CSXS 6 through 16${NC}"
@@ -53,6 +53,7 @@ sync_plugin_bundle() {
 
     cp -R "$SCRIPTS_SOURCE/"* "$CEP_SOURCE/scripts/" 2>/dev/null || true
     if [ -f "$LAUNCHER_SOURCE" ]; then
+        cp -f "$LAUNCHER_SOURCE" "$SCRIPTS_SOURCE/Script Launcher.jsx" 2>/dev/null || true
         cp -f "$LAUNCHER_SOURCE" "$CEP_SOURCE/scripts/Script Launcher.jsx" 2>/dev/null || true
     fi
 

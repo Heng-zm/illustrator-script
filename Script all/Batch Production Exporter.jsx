@@ -214,15 +214,21 @@
     function unlockAllForOutline(targetDoc) {
         try {
             var layers = targetDoc.layers;
-            for (var i = 0; i < layers.length; i++) {
+            for (var i = 0, lLen = layers.length; i < lLen; i++) {
                 try {
                     if (layers[i].locked) layers[i].locked = false;
                 } catch (eL) {}
             }
             var textFrames = targetDoc.textFrames;
-            for (var j = 0; j < textFrames.length; j++) {
+            for (var j = 0, tfLen = textFrames.length; j < tfLen; j++) {
                 try {
-                    if (textFrames[j].locked) textFrames[j].locked = false;
+                    var tf = textFrames[j];
+                    if (tf.locked) tf.locked = false;
+                    var parentNode = tf.parent;
+                    while (parentNode && parentNode.typename !== "Document") {
+                        if (parentNode.locked) parentNode.locked = false;
+                        parentNode = parentNode.parent;
+                    }
                 } catch (eTf) {}
             }
         } catch (eUnlock) {}
@@ -623,7 +629,17 @@
 
         // Open destination folder if requested
         if (cfg.openFolder && targetFolder && targetFolder.exists) {
-            try { targetFolder.execute(); } catch (eOpenF) {}
+            var opened = false;
+            try { opened = targetFolder.execute(); } catch (eOpenF) {}
+            if (!opened && typeof app.system === "function") {
+                try {
+                    if (Folder.fs === "Windows") {
+                        app.system('explorer.exe "' + targetFolder.fsName.replace(/\//g, "\\").replace(/"/g, '""') + '"');
+                    } else {
+                        app.system('open "' + targetFolder.fsName.replace(/"/g, '\\"') + '"');
+                    }
+                } catch (eSysOpen) {}
+            }
         }
 
         $.gc();

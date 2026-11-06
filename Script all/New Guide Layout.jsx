@@ -91,10 +91,18 @@
         } else if (targetMode === 2) {
             // Selected Artwork
             var sel = doc.selection;
-            if (sel && sel.length > 0) {
+            var selItems = [];
+            if (sel && sel.typename !== "TextRange") {
+                if (sel instanceof Array || sel.typename === "Array" || Object.prototype.toString.call(sel) === "[object Array]" || typeof sel.length === "number") {
+                    for (var si = 0; si < sel.length; si++) selItems.push(sel[si]);
+                } else {
+                    selItems.push(sel);
+                }
+            }
+            if (selItems.length > 0) {
                 var combined = null;
-                for (var s = 0; s < sel.length; s++) {
-                    var b = sel[s].geometricBounds;
+                for (var s = 0; s < selItems.length; s++) {
+                    var b = selItems[s].geometricBounds;
                     if (!b) continue;
                     if (!combined) {
                         combined = [b[0], b[1], b[2], b[3]];

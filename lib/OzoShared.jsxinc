@@ -770,12 +770,13 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                     f.writeln("[InternetShortcut]");
                     f.writeln("URL=" + url);
                     f.close();
-                    var ok = false;
-                    try { ok = f.execute(); } catch (eExec) {}
-                    if (!ok && typeof app.system === "function") {
-                        try { app.system('cmd.exe /c start "" "' + url + '"'); } catch (eSys1) {}
+                    if (typeof app.system === "function") {
+                        try {
+                            app.system('cmd.exe /c start "" "' + url + '"');
+                            return;
+                        } catch (eSys1) {}
                     }
-                    try { f.remove(); } catch (ignoreRem) {}
+                    try { f.execute(); } catch (eExec) {}
                 } else {
                     var okMac = false;
                     try {

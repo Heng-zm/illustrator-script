@@ -57,6 +57,7 @@ if (Test-Path $libSource) {
     Copy-Item -Path "$libSource\*" -Destination (Join-Path $pluginScripts "lib") -Recurse -Force
 }
 if (Test-Path $launcherSource) {
+    Copy-Item -Path $launcherSource -Destination (Join-Path $scriptsSource "Script Launcher.jsx") -Force
     Copy-Item -Path $launcherSource -Destination (Join-Path $pluginScripts "Script Launcher.jsx") -Force
 }
 

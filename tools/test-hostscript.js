@@ -52,15 +52,26 @@ var RulerUnits = {
     Meters: 6
 };
 
-function makeFile(filePath) {
+function FakeFile(filePath) {
     var normalized = String(filePath).replace(/\\/g, "/");
     var parts = normalized.split("/");
-    return {
-        fsName: normalized,
-        name: parts[parts.length - 1],
-        exists: false,
-        parent: { fsName: parts.slice(0, -1).join("/"), parent: { fsName: parts.slice(0, -2).join("/") } }
-    };
+    this.fsName = normalized;
+    this.name = parts[parts.length - 1];
+    this.exists = false;
+    this.length = 0;
+    this.modified = new Date();
+    this.parent = { fsName: parts.slice(0, -1).join("/"), parent: { fsName: parts.slice(0, -2).join("/") } };
+}
+function FakeFolder(folderPath) {
+    this.fsName = String(folderPath);
+    this.exists = false;
+    this.name = path.basename(String(folderPath));
+    this.current = "/tmp";
+    this.getFiles = function () { return []; };
+}
+
+function makeFile(filePath) {
+    return new FakeFile(filePath);
 }
 
 function makeContext(options) {
@@ -73,10 +84,8 @@ function makeContext(options) {
     var sandbox = {
         app: app,
         $: { fileName: "/tmp/plugin/jsx/hostscript.jsx" },
-        File: makeFile,
-        Folder: function (folderPath) {
-            return { fsName: String(folderPath), exists: false, current: "/tmp" };
-        },
+        File: FakeFile,
+        Folder: FakeFolder,
         RulerUnits: RulerUnits,
         DocumentColorSpace: { RGB: "DocumentColorSpace.RGB", CMYK: "DocumentColorSpace.CMYK" },
         alert: function () {},
@@ -509,6 +518,93 @@ if (process.platform === "win32") {
 // ------------------------------------------------------------------
 // Version Consistency Check
 // ------------------------------------------------------------------
+// -------------------------------------------------------------
+// Script Launcher File Extension & Dotfile Filtering
+// -------------------------------------------------------------
+test("ozoScanLauncherScripts rejects non-script files, dotfiles, and text files containing .js", function () {
+    var ctx = makeContext();
+    assert.strictEqual(typeof ctx.ozoScanLauncherScripts, "function");
+
+    var tempDir = path.join(os.tmpdir(), "ozo_launcher_test_" + Date.now());
+    fs.mkdirSync(tempDir, { recursive: true });
+    try {
+        fs.writeFileSync(path.join(tempDir, "ValidScript.jsx"), "// jsx");
+        fs.writeFileSync(path.join(tempDir, "AnotherScript.js"), "// js");
+        fs.writeFileSync(path.join(tempDir, "CompiledScript.jsxbin"), "// jsxbin");
+        fs.writeFileSync(path.join(tempDir, "readme.json"), "{}");
+        fs.writeFileSync(path.join(tempDir, "notes.js.txt"), "notes");
+        fs.writeFileSync(path.join(tempDir, "something.jsp"), "jsp");
+        fs.writeFileSync(path.join(tempDir, ".hidden.jsx"), "hidden");
+
+        var FakeFolder = ctx.Folder;
+        var FakeFile = ctx.File;
+
+        // Custom Folder getter for disk scan
+        var scanFolder = new FakeFolder(tempDir);
+        scanFolder.exists = true;
+        scanFolder.getFiles = function () {
+            var entries = fs.readdirSync(tempDir);
+            return entries.map(function (entry) {
+                var full = path.join(tempDir, entry);
+                var stat = fs.statSync(full);
+                if (stat.isDirectory()) {
+                    var sub = new FakeFolder(full);
+                    sub.exists = true;
+                    return sub;
+                }
+                var fl = new FakeFile(full);
+                fl.exists = true;
+                fl.length = stat.size;
+                fl.modified = stat.mtime;
+                return fl;
+            });
+        };
+
+        // Override Folder constructor in sandbox to return scanFolder when tempDir is accessed
+        var originalFolder = ctx.Folder;
+        ctx.Folder = function (dirPath) {
+            if (path.resolve(String(dirPath)) === path.resolve(tempDir)) {
+                return scanFolder;
+            }
+            return new originalFolder(dirPath);
+        };
+        ctx.Folder.prototype = originalFolder.prototype;
+
+        var raw = ctx.ozoScanLauncherScripts(tempDir);
+        var res = JSON.parse(raw);
+        assert.strictEqual(res.status, "ok");
+        var names = res.scripts.map(function (s) { return s.fileName; }).sort();
+        assert.deepStrictEqual(names, ["AnotherScript.js", "CompiledScript.jsxbin", "ValidScript.jsx"]);
+    } finally {
+        try {
+            var items = fs.readdirSync(tempDir);
+            items.forEach(function (it) { fs.unlinkSync(path.join(tempDir, it)); });
+            fs.rmdirSync(tempDir);
+        } catch (eClean) {}
+    }
+});
+
+// -------------------------------------------------------------
+// Document Signature Artboard Tracking
+// -------------------------------------------------------------
+test("main.js docSignature changes when activeArtboardIndex changes", function () {
+    var mainJs = fs.readFileSync(MAIN_JS, "utf8");
+    var startIdx = mainJs.indexOf("function docSignature(info)");
+    var endIdx = mainJs.indexOf("}", startIdx);
+    var docSigFnCode = mainJs.substring(startIdx, endIdx + 1);
+    var vmCtx = vm.createContext({});
+    new vm.Script(docSigFnCode + "\nthis.docSignature = docSignature;").runInContext(vmCtx);
+
+    var info1 = { hasDoc: true, name: "Test.ai", colorSpace: "CMYK", artboardsCount: 3, activeArtboardIndex: 0, selectedCount: 0 };
+    var info2 = { hasDoc: true, name: "Test.ai", colorSpace: "CMYK", artboardsCount: 3, activeArtboardIndex: 1, selectedCount: 0 };
+
+    var sig1 = vmCtx.docSignature(info1);
+    var sig2 = vmCtx.docSignature(info2);
+    assert.notStrictEqual(sig1, sig2, "Signatures must differ when active artboard changes");
+    assert.strictEqual(sig1, "Test.ai|CMYK|3|0|0");
+    assert.strictEqual(sig2, "Test.ai|CMYK|3|1|0");
+});
+
 // -------------------------------------------------------------
 // Rich Black & ABA KHQR Host Bridges & Payload Tests
 // -------------------------------------------------------------

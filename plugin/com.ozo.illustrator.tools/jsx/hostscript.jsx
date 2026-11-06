@@ -343,7 +343,7 @@ function ozoOpenScriptsFolder() {
                 try {
                     if (Folder.fs === "Windows") {
                         if (typeof app.system === "function") {
-                            app.system('explorer.exe "' + folder.fsName.replace(/"/g, '""') + '"');
+                            app.system('explorer.exe "' + folder.fsName.replace(/\//g, "\\").replace(/"/g, '""') + '"');
                             opened = true;
                         }
                     } else {
@@ -1738,8 +1738,33 @@ function ozoImportIconSvg(paramsJsonStr) {
         // Import SVG
         var wrapper = targetLayer.groupItems.add();
         wrapper.name = iconName;
-        var imported = doc.groupItems.createFromFile(tempFile);
-        imported.move(wrapper, ElementPlacement.PLACEATEND);
+        var imported = null;
+        var sourceDoc = null;
+        try {
+            imported = doc.groupItems.createFromFile(tempFile);
+            imported.move(wrapper, ElementPlacement.PLACEATEND);
+        } catch (directErr) {
+            try { if (imported) imported.remove(); } catch (eRemImp) {}
+            try { if (wrapper) wrapper.remove(); } catch (eRemWrap) {}
+            imported = null;
+            wrapper = targetLayer.groupItems.add();
+            wrapper.name = iconName;
+            sourceDoc = app.open(tempFile);
+            for (var si = 0; si < sourceDoc.pageItems.length; si++) {
+                var sItem = sourceDoc.pageItems[si];
+                if (sItem.parent && sItem.parent.typename === "Layer") {
+                    sItem.duplicate(wrapper, ElementPlacement.PLACEATEND);
+                }
+            }
+            if (!wrapper.pageItems.length) {
+                throw new Error("SVG contains no importable vector artwork.");
+            }
+        } finally {
+            if (sourceDoc) {
+                try { sourceDoc.close(SaveOptions.DONOTSAVECHANGES); } catch (eCloseSrc) {}
+                try { doc.activate(); } catch (eActDoc) {}
+            }
+        }
 
         // Resize proportionally to targetSizePt
         var maxDim = Math.max(wrapper.width, wrapper.height);
@@ -1805,10 +1830,9 @@ function ozoScanLauncherScripts(customFolderPath) {
                         scanDir(f, depth + 1);
                     }
                 } else if (f instanceof File) {
-                    var ext = f.name.toLowerCase();
-                    if (ext.indexOf(".jsx") !== -1 || ext.indexOf(".js") !== -1) {
+                    if (f.name.charAt(0) !== "." && /\.(?:jsx|jsxbin|js)$/i.test(f.name)) {
                         results.push({
-                            name: f.name.replace(/\.(jsx|js)$/i, ""),
+                            name: f.name.replace(/\.(?:jsx|jsxbin|js)$/i, ""),
                             fileName: f.name,
                             path: f.fsName,
                             size: f.length || 0,

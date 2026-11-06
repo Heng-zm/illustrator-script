@@ -16,8 +16,18 @@
     }
 
     var doc = app.activeDocument;
-    var currentSelection = doc.selection;
-    if (!currentSelection || currentSelection.length === 0) {
+    var rawSelection = doc.selection;
+    var currentSelection = [];
+    if (rawSelection) {
+        if (rawSelection.typename === "TextRange") {
+            currentSelection = [rawSelection];
+        } else if (rawSelection instanceof Array || rawSelection.typename === "Array" || Object.prototype.toString.call(rawSelection) === "[object Array]" || typeof rawSelection.length === "number") {
+            for (var csi = 0; csi < rawSelection.length; csi++) currentSelection.push(rawSelection[csi]);
+        } else {
+            currentSelection = [rawSelection];
+        }
+    }
+    if (currentSelection.length === 0) {
         if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
             __ozoHeadlessResult = { status: "error", message: "Please select one template text frame in Illustrator." };
             return;
@@ -45,13 +55,14 @@
     var template = null;
     var selectedFrames = [];
 
-    if (currentSelection.typename === "TextRange") {
+    if (currentSelection.length === 1 && currentSelection[0].typename === "TextRange") {
+        var trRange = currentSelection[0];
         try {
-            if (currentSelection.story && currentSelection.story.textFrames &&
-                    currentSelection.story.textFrames.length > 0) {
-                selectedFrames.push(currentSelection.story.textFrames[0]);
-            } else if (currentSelection.parent && currentSelection.parent.typename === "TextFrame") {
-                selectedFrames.push(currentSelection.parent);
+            if (trRange.story && trRange.story.textFrames &&
+                    trRange.story.textFrames.length > 0) {
+                selectedFrames.push(trRange.story.textFrames[0]);
+            } else if (trRange.parent && trRange.parent.typename === "TextFrame") {
+                selectedFrames.push(trRange.parent);
             }
         } catch (ignoreTextRange) {}
     } else {

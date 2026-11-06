@@ -1350,6 +1350,20 @@ body.theme-light {
    intrinsic width or the right-hand column overflows the card. */
 .embed-row-2col > * { min-width: 0; }
 
+.embed-row-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.embed-row-3col > * { min-width: 0; }
+
+.embed-row-4col {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+.embed-row-4col > * { min-width: 0; }
+
 /* Generic Tool View */
 .embed-generic-card {
     background: var(--bg-surface);
@@ -4350,23 +4364,110 @@ select:focus-visible,
     letter-spacing: 0.01em;
 }
 
-/* 5. Inputs, Selects, and Number Steppers */
-.embed-input,
-.embed-select {
+/* 5. Inputs, Number Steppers & Dropdowns */
+.embed-input {
     height: 27px;
     font-size: 11px;
     border-radius: 5px;
     padding: 0 8px;
     border: 1px solid var(--border-color);
-    background: var(--bg-main);
+    background-color: var(--bg-main);
     color: var(--text-primary);
+    -webkit-text-fill-color: var(--text-primary);
+    box-sizing: border-box;
     transition: border-color 0.14s ease, box-shadow 0.14s ease;
 }
-.embed-input:focus,
-.embed-select:focus {
+.embed-input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.22);
     outline: none;
+}
+
+/* Dropdown Selects */
+.embed-select,
+select {
+    height: 27px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 25px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    -webkit-text-fill-color: var(--text-primary);
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0 24px 0 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a3a3a3' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 10px 6px;
+    cursor: pointer;
+    box-sizing: border-box;
+    outline: none;
+    vertical-align: middle;
+    transition: border-color 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease;
+}
+
+.embed-select:hover,
+select:hover {
+    border-color: var(--border-strong);
+    background-color: var(--bg-surface-hover);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.embed-select:focus,
+select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.22);
+    background-color: var(--bg-main);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2338bdf8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    outline: none;
+}
+
+.embed-select:disabled,
+select:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: var(--bg-main);
+}
+
+/* Dropdown Menu Options (Dark / Surface Theme) */
+.embed-select option,
+select option {
+    background-color: #242424;
+    color: #ececec;
+    font-size: 11px;
+    padding: 6px 10px;
+}
+
+.embed-select option:checked,
+select option:checked {
+    background-color: var(--accent);
+    color: #ffffff;
+}
+
+body.theme-light .embed-select,
+body.theme-light select,
+body.theme-medium-light .embed-select,
+body.theme-medium-light select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23464646' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+body.theme-light .embed-select:hover,
+body.theme-light select:hover,
+body.theme-medium-light .embed-select:hover,
+body.theme-medium-light select:hover {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+body.theme-light .embed-select option,
+body.theme-light select option,
+body.theme-medium-light .embed-select option,
+body.theme-medium-light select option {
+    background-color: #ffffff;
+    color: #1a1a1a;
 }
 .embed-input-mono {
     font-family: var(--font-mono);

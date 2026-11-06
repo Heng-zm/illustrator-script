@@ -938,6 +938,7 @@
             info.name || "",
             info.colorSpace || "",
             info.artboardsCount || 0,
+            info.activeArtboardIndex || 0,
             info.selectedCount || 0
         ].join("|");
     }
@@ -1532,7 +1533,7 @@
         var query = q.toLowerCase();
         for (var i = 0; i < TOOLS.length; i++) {
             var tool = TOOLS[i];
-            var haystack = (tool.nameEn + " " + tool.keywords).toLowerCase();
+            var haystack = (tool.nameEn + " " + (tool.nameKm || "") + " " + (tool.keywords || "")).toLowerCase();
             var tokens = haystack.split(/\s+/);
             for (var k = 0; k < tokens.length; k++) {
                 var tok = tokens[k];
@@ -3483,6 +3484,11 @@
             state.textSize = parseFloat(dimTextSizeInput.value) || 10;
             state.arrow = parseFloat(dimArrowInput.value) || 5;
             state.labelBackground = chkDimBg.checked;
+
+            for (var ob = 0; ob < offsetBtns.length; ob++) {
+                var offVal = offsetBtns[ob].getAttribute("data-offset");
+                offsetBtns[ob].textContent = offVal + state.unit;
+            }
 
             store.setDebounced("ozo_dimension_settings", JSON.stringify(state), 250);
             updateDimTicket();

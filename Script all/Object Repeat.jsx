@@ -24,8 +24,12 @@
     var originalSelection = [];
     var selectionValue = doc.selection;
     if (selectionValue && selectionValue.typename !== "TextRange") {
-        for (var originalIndex = 0; originalIndex < selectionValue.length; originalIndex++) {
-            originalSelection.push(selectionValue[originalIndex]);
+        if (selectionValue instanceof Array || selectionValue.typename === "Array" || Object.prototype.toString.call(selectionValue) === "[object Array]" || typeof selectionValue.length === "number") {
+            for (var originalIndex = 0; originalIndex < selectionValue.length; originalIndex++) {
+                originalSelection.push(selectionValue[originalIndex]);
+            }
+        } else {
+            originalSelection.push(selectionValue);
         }
     }
 
@@ -904,8 +908,12 @@
             if (originalSelection.length === 0) {
                 doc.selectObjectsOnActiveArtboard();
                 var freshSel = doc.selection;
-                if (freshSel && freshSel.length > 0) {
-                    for (var fi = 0; fi < freshSel.length; fi++) originalSelection.push(freshSel[fi]);
+                if (freshSel && freshSel.typename !== "TextRange") {
+                    if (freshSel instanceof Array || freshSel.typename === "Array" || Object.prototype.toString.call(freshSel) === "[object Array]" || typeof freshSel.length === "number") {
+                        for (var fi = 0; fi < freshSel.length; fi++) originalSelection.push(freshSel[fi]);
+                    } else {
+                        originalSelection.push(freshSel);
+                    }
                 }
             }
             if (originalSelection.length === 0) {

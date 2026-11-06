@@ -59,7 +59,7 @@ function Show-Header {
 function Enable-PlayerDebugMode {
     Write-Host "[*] Configuring Adobe Extension Developer Mode (PlayerDebugMode)..." -ForegroundColor Yellow
     $regBase = "HKCU:\Software\Adobe"
-    for ($ver = 6; $ver -le 16; $ver++) {
+    for ($ver = 6; $ver -le 20; $ver++) {
         $keyPath = "$regBase\CSXS.$ver"
         if (-not (Test-Path $keyPath)) {
             New-Item -Path $keyPath -Force | Out-Null
@@ -89,6 +89,7 @@ function Sync-PluginBundle {
     }
     Copy-Item -Path "$scriptsSource\*" -Destination $pluginScripts -Recurse -Force
     if (Test-Path $launcherSource) {
+        Copy-Item -Path $launcherSource -Destination (Join-Path $scriptsSource "Script Launcher.jsx") -Force
         Copy-Item -Path $launcherSource -Destination (Join-Path $pluginScripts "Script Launcher.jsx") -Force
     }
 

@@ -377,8 +377,12 @@
         if (!currentSelection || currentSelection.typename === "TextRange") {
             return items;
         }
-        for (var index = 0; index < currentSelection.length; index++) {
-            items.push(currentSelection[index]);
+        if (currentSelection instanceof Array || currentSelection.typename === "Array" || Object.prototype.toString.call(currentSelection) === "[object Array]" || typeof currentSelection.length === "number") {
+            for (var index = 0; index < currentSelection.length; index++) {
+                items.push(currentSelection[index]);
+            }
+        } else {
+            items.push(currentSelection);
         }
         return items;
     }
@@ -550,8 +554,15 @@
         previewSignature = null;
         closeProgress();
         var resultSelection = doc.selection;
-        return resultSelection && resultSelection.typename !== "TextRange" ?
-            resultSelection.length : 0;
+        var rCount = 0;
+        if (resultSelection && resultSelection.typename !== "TextRange") {
+            if (resultSelection instanceof Array || resultSelection.typename === "Array" || Object.prototype.toString.call(resultSelection) === "[object Array]" || typeof resultSelection.length === "number") {
+                rCount = resultSelection.length;
+            } else {
+                rCount = 1;
+            }
+        }
+        return rCount;
     }
 
     function iconRectangle(graphics, left, top, right, bottom, brush, pen) {

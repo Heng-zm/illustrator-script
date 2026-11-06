@@ -69,7 +69,7 @@
                 var bat = new File(Folder.temp.fsName + "/ozo_debug_mode.bat");
                 bat.open("w");
                 bat.writeln("@echo off");
-                bat.writeln('for /L %%v in (6,1,16) do reg add HKCU\\Software\\Adobe\\CSXS.%%v /v PlayerDebugMode /t REG_SZ /d 1 /f >nul 2>&1');
+                bat.writeln('for /L %%v in (6,1,20) do reg add HKCU\\Software\\Adobe\\CSXS.%%v /v PlayerDebugMode /t REG_SZ /d 1 /f >nul 2>&1');
                 bat.close();
                 bat.execute();
                 $.sleep(300);

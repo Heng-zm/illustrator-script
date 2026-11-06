@@ -113,12 +113,13 @@
         } else {
             // Collect top-level items across visible, unlocked layers to avoid duplicate multi-pass traversal
             items = [];
-            for (var li = 0; li < doc.layers.length; li++) {
+            for (var li = 0, numLayers = doc.layers.length; li < numLayers; li++) {
                 var layer = doc.layers[li];
                 try {
                     if (layer.locked || !layer.visible) continue;
-                    for (var lpi = 0; lpi < layer.pageItems.length; lpi++) {
-                        items.push(layer.pageItems[lpi]);
+                    var layerItems = layer.pageItems;
+                    for (var lpi = 0, numLpi = layerItems.length; lpi < numLpi; lpi++) {
+                        items.push(layerItems[lpi]);
                     }
                 } catch (eLayer) {}
             }
@@ -144,8 +145,9 @@
             // 1. Group recursion
             if (item.typename === "GroupItem") {
                 try {
-                    for (var gi = 0; gi < item.pageItems.length; gi++) {
-                        processItem(item.pageItems[gi]);
+                    var grpItems = item.pageItems;
+                    for (var gi = 0, gLen = grpItems.length; gi < gLen; gi++) {
+                        processItem(grpItems[gi]);
                     }
                 } catch (eGrp) {}
                 return;
@@ -154,8 +156,9 @@
             // 2. Compound path
             if (item.typename === "CompoundPathItem") {
                 try {
-                    for (var ci = 0; ci < item.pathItems.length; ci++) {
-                        processItem(item.pathItems[ci]);
+                    var compPaths = item.pathItems;
+                    for (var ci = 0, cLen = compPaths.length; ci < cLen; ci++) {
+                        processItem(compPaths[ci]);
                     }
                 } catch (eComp) {}
                 return;
@@ -174,8 +177,9 @@
                     } catch (eMultiSize) {
                         // Fallback: mixed font sizes, check paragraphs
                         try {
-                            for (var pi = 0; pi < item.paragraphs.length; pi++) {
-                                var ps = item.paragraphs[pi].characterAttributes.size;
+                            var paras = item.paragraphs;
+                            for (var pi = 0, pLen = paras.length; pi < pLen; pi++) {
+                                var ps = paras[pi].characterAttributes.size;
                                 if (ps > maxFontSize) maxFontSize = ps;
                             }
                         } catch (eP) {
@@ -206,8 +210,9 @@
                         } catch (eMultiColor) {
                             // Mixed colors: only convert words that are actually black
                             try {
-                                for (var wi = 0; wi < item.words.length; wi++) {
-                                    var wRange = item.words[wi];
+                                var words = item.words;
+                                for (var wi = 0, wLen = words.length; wi < wLen; wi++) {
+                                    var wRange = words[wi];
                                     if (isPureOrFlatBlack(wRange.characterAttributes.fillColor)) {
                                         wRange.characterAttributes.fillColor = richBlackColor;
                                         stats.convertedFills++;
@@ -244,7 +249,7 @@
             }
         }
 
-        for (var i = 0; i < items.length; i++) {
+        for (var i = 0, itemLen = items.length; i < itemLen; i++) {
             processItem(items[i]);
         }
         try { app.redraw(); } catch (eRedraw) {}
