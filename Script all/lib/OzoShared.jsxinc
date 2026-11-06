@@ -1226,7 +1226,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         }
 
         return {
-            version: "2.6.43",
+            version: "2.6.44",
             addLanguageSelector: addLanguageSelector,
             addDonateButton: addDonateButton,
             addDialogHeader: addDialogHeader,
