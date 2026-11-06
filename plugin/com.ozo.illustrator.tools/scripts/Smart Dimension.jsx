@@ -24,7 +24,7 @@
                 try {
                     var actLayer = doc.activeLayer;
                     if (actLayer && actLayer.pageItems && actLayer.pageItems.length > 0) {
-                        for (var pi = 0; pi < actLayer.pageItems.length; pi++) {
+                        for (var pi = 0, piLen = actLayer.pageItems.length; pi < piLen; pi++) {
                             try { actLayer.pageItems[pi].selected = true; } catch (eSel) {}
                         }
                         selectionValue = doc.selection;
@@ -49,7 +49,7 @@
     }
 
     var sourceItems = [];
-    for (var sourceIndex = 0; sourceIndex < selectionValue.length; sourceIndex++) {
+    for (var sourceIndex = 0, sourceIndexLen = selectionValue.length; sourceIndex < sourceIndexLen; sourceIndex++) {
         sourceItems.push(selectionValue[sourceIndex]);
     }
     var originalActiveLayer = doc.activeLayer;
@@ -95,7 +95,7 @@
             return selectionBoundsCache[propertyName].slice(0);
         }
         var combined = null;
-        for (var i = 0; i < sourceItems.length; i++) {
+        for (var i = 0, iLen = sourceItems.length; i < iLen; i++) {
             var bounds = cachedSourceItemBounds(i, propertyName);
             if (!bounds) continue;
             if (!combined) {
@@ -413,7 +413,7 @@
     function restoreSelection() {
         try {
             doc.selection = null;
-            for (var i = 0; i < sourceItems.length; i++) sourceItems[i].selected = true;
+            for (var i = 0, iLen = sourceItems.length; i < iLen; i++) sourceItems[i].selected = true;
         } catch (ignoreSelection) {}
     }
 
@@ -459,10 +459,10 @@
         var createdItems = [];
         var drawingTarget = recordingContainer(previewLayer, createdItems);
         try {
-            for (var i = 0; i < specs.horizontal.length; i++) {
+            for (var i = 0, iLen = specs.horizontal.length; i < iLen; i++) {
                 addHorizontalDimension(drawingTarget, specs.horizontal[i], settings);
             }
-            for (i = 0; i < specs.vertical.length; i++) {
+            for (var i = 0, iLen = specs.vertical.length; i < iLen; i++) {
                 addVerticalDimension(drawingTarget, specs.vertical[i], settings);
             }
             previewGroup = previewLayer.groupItems.add();
@@ -473,7 +473,7 @@
                 } catch (ignoreMove) {}
             }
             // Reassert text stacking after the staged items enter the group.
-            for (moveIndex = 0; moveIndex < createdItems.length; moveIndex++) {
+            for (var moveIndex = 0, moveIndexLen = createdItems.length; moveIndex < moveIndexLen; moveIndex++) {
                 if (createdItems[moveIndex].typename === "TextFrame") {
                     try {
                         createdItems[moveIndex].zOrder(ZOrderMethod.BRINGTOFRONT);

@@ -25,7 +25,7 @@
     var selectionValue = doc.selection;
     if (selectionValue && selectionValue.typename !== "TextRange") {
         if (selectionValue instanceof Array || selectionValue.typename === "Array" || Object.prototype.toString.call(selectionValue) === "[object Array]" || typeof selectionValue.length === "number") {
-            for (var originalIndex = 0; originalIndex < selectionValue.length; originalIndex++) {
+            for (var originalIndex = 0, originalIndexLen = selectionValue.length; originalIndex < originalIndexLen; originalIndex++) {
                 originalSelection.push(selectionValue[originalIndex]);
             }
         } else {
@@ -103,14 +103,14 @@
     function restoreSelection() {
         try {
             doc.selection = null;
-            for (var index = 0; index < originalSelection.length; index++) {
+            for (var index = 0, indexLen = originalSelection.length; index < indexLen; index++) {
                 try { originalSelection[index].selected = true; } catch (ignoreItem) {}
             }
         } catch (ignoreSelection) {}
     }
 
     function containsReference(items, target) {
-        for (var index = 0; index < items.length; index++) {
+        for (var index = 0, indexLen = items.length; index < indexLen; index++) {
             if (items[index] === target) return true;
         }
         return false;
@@ -118,7 +118,7 @@
 
     function topLevelSelection() {
         var result = [];
-        for (var index = 0; index < originalSelection.length; index++) {
+        for (var index = 0, indexLen = originalSelection.length; index < indexLen; index++) {
             var item = originalSelection[index];
             var parent = item.parent;
             var nested = false;
@@ -137,7 +137,7 @@
     function activeLayerItems() {
         var result = [];
         var items = originalLayer.pageItems;
-        for (var index = 0; index < items.length; index++) {
+        for (var index = 0, indexLen = items.length; index < indexLen; index++) {
             if (items[index].parent === originalLayer && !items[index].hidden &&
                     !items[index].locked) {
                 result.push(items[index]);
@@ -152,7 +152,7 @@
 
     function uniqueLayerName(baseName) {
         var used = {};
-        for (var index = 0; index < doc.layers.length; index++) {
+        for (var index = 0, indexLen = doc.layers.length; index < indexLen; index++) {
             used[doc.layers[index].name] = true;
         }
         if (!used[baseName]) return baseName;
@@ -464,7 +464,7 @@
         var newUnitIndex = getSelectionIndex(unitList, defaultUnitIdx);
         if (!restoringState && newUnitIndex !== currentUnitIndex) {
             var conversion = UNIT_FACTORS[currentUnitIndex] / UNIT_FACTORS[newUnitIndex];
-            for (var index = 0; index < dimensionControls.length; index++) {
+            for (var index = 0, indexLen = dimensionControls.length; index < indexLen; index++) {
                 var value = (typeof OZO !== "undefined" && OZO.parseNumber) ?
                     OZO.parseNumber(dimensionControls[index].text, NaN) :
                     Number(trim(String(dimensionControls[index].text || "").replace(/,/g, ".").replace(/[a-zA-Z%"']+\s*$/, "")));
@@ -647,7 +647,7 @@
 
             var template = outputGroup.groupItems.add();
             template.name = "Repeat Source";
-            for (var sIdx = 0; sIdx < sourceItems.length; sIdx++) {
+            for (var sIdx = 0, sIdxLen = sourceItems.length; sIdx < sIdxLen; sIdx++) {
                 sourceItems[sIdx].duplicate(template, ElementPlacement.PLACEATEND);
             }
             if (!template.pageItems.length) {
@@ -910,7 +910,7 @@
                 var freshSel = doc.selection;
                 if (freshSel && freshSel.typename !== "TextRange") {
                     if (freshSel instanceof Array || freshSel.typename === "Array" || Object.prototype.toString.call(freshSel) === "[object Array]" || typeof freshSel.length === "number") {
-                        for (var fi = 0; fi < freshSel.length; fi++) originalSelection.push(freshSel[fi]);
+                        for (var fi = 0, fiLen = freshSel.length; fi < fiLen; fi++) originalSelection.push(freshSel[fi]);
                     } else {
                         originalSelection.push(freshSel);
                     }

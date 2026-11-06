@@ -85,7 +85,7 @@
             rects.push(doc.artboards[abIdx].artboardRect);
         } else if (targetMode === 1) {
             // All Artboards
-            for (var a = 0; a < doc.artboards.length; a++) {
+            for (var a = 0, aLen = doc.artboards.length; a < aLen; a++) {
                 rects.push(doc.artboards[a].artboardRect);
             }
         } else if (targetMode === 2) {
@@ -94,14 +94,14 @@
             var selItems = [];
             if (sel && sel.typename !== "TextRange") {
                 if (sel instanceof Array || sel.typename === "Array" || Object.prototype.toString.call(sel) === "[object Array]" || typeof sel.length === "number") {
-                    for (var si = 0; si < sel.length; si++) selItems.push(sel[si]);
+                    for (var si = 0, siLen = sel.length; si < siLen; si++) selItems.push(sel[si]);
                 } else {
                     selItems.push(sel);
                 }
             }
             if (selItems.length > 0) {
                 var combined = null;
-                for (var s = 0; s < selItems.length; s++) {
+                for (var s = 0, sLen = selItems.length; s < sLen; s++) {
                     var b = selItems[s].geometricBounds;
                     if (!b) continue;
                     if (!combined) {
@@ -178,7 +178,7 @@
         var EPSILON = 0.005; // 0.005 pt = 1.76 microns exact precision
 
         function addVGuide(x) {
-            for (var i = 0; i < createdV.length; i++) {
+            for (var i = 0, iLen = createdV.length; i < iLen; i++) {
                 if (Math.abs(x - createdV[i]) < EPSILON) return;
             }
             createdV.push(x);
@@ -188,7 +188,7 @@
         }
 
         function addHGuide(y) {
-            for (var j = 0; j < createdH.length; j++) {
+            for (var j = 0, jLen = createdH.length; j < jLen; j++) {
                 if (Math.abs(y - createdH[j]) < EPSILON) return;
             }
             createdH.push(y);
@@ -308,7 +308,7 @@
                     var isVert = Math.abs(gb[0] - gb[2]) < 1;
                     var isHoriz = Math.abs(gb[1] - gb[3]) < 1;
 
-                    for (var r = 0; r < targetRects.length; r++) {
+                    for (var r = 0, rLen = targetRects.length; r < rLen; r++) {
                         var tr = targetRects[r];
                         var hit = false;
                         if (isVert) {
@@ -375,7 +375,7 @@
             }
 
             var targetRects = getTargetRects(settings.targetIndex);
-            for (var i = 0; i < targetRects.length; i++) {
+            for (var i = 0, iLen = targetRects.length; i < iLen; i++) {
                 generateGuidesForRect(previewLayer, targetRects[i], settings, false);
             }
             app.redraw();
@@ -483,7 +483,7 @@
     presetLbl.preferredSize.width = 55;
     var presetDropdown = presetRow.add("dropdownlist", undefined, []);
     presetDropdown.preferredSize.width = 240;
-    for (var p = 0; p < PRESETS.length; p++) {
+    for (var p = 0, pLen = PRESETS.length; p < pLen; p++) {
         presetDropdown.add("item", PRESETS[p].name);
     }
     presetDropdown.selection = 0;
@@ -529,7 +529,7 @@
     colorLbl.preferredSize.width = 45;
     var colorDropdown = colorPanel.add("dropdownlist", undefined, []);
     colorDropdown.preferredSize.width = 180;
-    for (var ci = 0; ci < COLOR_PRESETS.length; ci++) {
+    for (var ci = 0, ciLen = COLOR_PRESETS.length; ci < ciLen; ci++) {
         colorDropdown.add("item", COLOR_PRESETS[ci].name);
     }
     colorDropdown.selection = 0;
@@ -850,7 +850,7 @@
         var targetLayer = doc.activeLayer;
         if (!targetLayer || targetLayer.locked || !targetLayer.visible) {
             targetLayer = null;
-            for (var ly = 0; ly < doc.layers.length; ly++) {
+            for (var ly = 0, lyLen = doc.layers.length; ly < lyLen; ly++) {
                 if (!doc.layers[ly].locked && doc.layers[ly].visible) {
                     targetLayer = doc.layers[ly];
                     break;
@@ -863,7 +863,7 @@
         }
 
         var createdGuides = 0;
-        for (var t = 0; t < targets.length; t++) {
+        for (var t = 0, tLen = targets.length; t < tLen; t++) {
             createdGuides += generateGuidesForRect(targetLayer, targets[t], finalSettings, true);
         }
 

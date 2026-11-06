@@ -55,7 +55,7 @@
     // Illustrator's selection is a live host collection. Keep a stable snapshot
     // because previews clear and rebuild the document selection.
     var initialSelection = [];
-    for (var selectionIndex = 0; selectionIndex < selectionValue.length; selectionIndex++) {
+    for (var selectionIndex = 0, selectionIndexLen = selectionValue.length; selectionIndex < selectionIndexLen; selectionIndex++) {
         initialSelection.push(selectionValue[selectionIndex]);
     }
     var requestedContainerItem = initialSelection[initialSelection.length - 1];
@@ -170,7 +170,7 @@
 
     function signedPolygonArea(points) {
         var sum = 0;
-        for (var i = 0; i < points.length; i++) {
+        for (var i = 0, iLen = points.length; i < iLen; i++) {
             var next = points[(i + 1) % points.length];
             sum += points[i][0] * next[1] - next[0] * points[i][1];
         }
@@ -237,7 +237,7 @@
         } catch (ignoreEvenOdd) {}
         try {
             if (item.pathItems) {
-                for (var i = 0; i < item.pathItems.length; i++) {
+                for (var i = 0, iLen = item.pathItems.length; i < iLen; i++) {
                     if (item.pathItems[i].evenodd === true) {
                         return true;
                     }
@@ -263,7 +263,7 @@
                     }
                 } else if (current.typename === "CompoundPathItem") {
                     var contours = [];
-                    for (var p = 0; p < current.pathItems.length; p++) {
+                    for (var p = 0, pLen = current.pathItems.length; p < pLen; p++) {
                         var compoundPolygon = pathPolygon(current.pathItems[p], centerX, centerY);
                         if (compoundPolygon) {
                             contours.push(compoundPolygon);
@@ -281,7 +281,7 @@
                     if (current.pageItems.length === 0) {
                         complete = false;
                     }
-                    for (var c = 0; c < current.pageItems.length; c++) {
+                    for (var c = 0, cLen = current.pageItems.length; c < cLen; c++) {
                         collect(current.pageItems[c]);
                     }
                 } else {
@@ -303,12 +303,12 @@
         var cosine = Math.cos(radians);
         var sine = Math.sin(radians);
         var result = [];
-        for (var c = 0; c < geometry.length; c++) {
+        for (var c = 0, cLen = geometry.length; c < cLen; c++) {
             var contours = [];
             for (var p = 0; p < geometry[c].contours.length; p++) {
                 var source = geometry[c].contours[p];
                 var transformed = [];
-                for (var i = 0; i < source.length; i++) {
+                for (var i = 0, iLen = source.length; i < iLen; i++) {
                     transformed.push([centerX + source[i][0] * cosine - source[i][1] * sine,
                         centerY + source[i][0] * sine + source[i][1] * cosine]);
                 }
@@ -322,7 +322,7 @@
     function pointInPolygon(point, polygon) {
         if (!point || !polygon || polygon.length < 3) return false;
         var inside = false;
-        for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        for (var i = 0, iLen = polygon.length, j = iLen - 1; i < iLen; j = i++) {
             var first = polygon[i];
             var second = polygon[j];
             if (!first || !second) continue;
@@ -338,7 +338,7 @@
     function windingNumber(point, polygon) {
         if (!point || !polygon || polygon.length < 3) return 0;
         var winding = 0;
-        for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        for (var i = 0, iLen = polygon.length, j = iLen - 1; i < iLen; j = i++) {
             var first = polygon[j];
             var second = polygon[i];
             if (!first || !second) continue;
@@ -361,7 +361,7 @@
         // the packer will not try to nest into them.
         if (component.evenOdd) {
             var inside = false;
-            for (var i = 0; i < component.contours.length; i++) {
+            for (var i = 0, iLen = component.contours.length; i < iLen; i++) {
                 if (pointInPolygon(point, component.contours[i])) {
                     inside = !inside;
                 }
@@ -369,7 +369,7 @@
             return inside;
         }
         var winding = 0;
-        for (var contourIndex = 0; contourIndex < component.contours.length; contourIndex++) {
+        for (var contourIndex = 0, contourIndexLen = component.contours.length; contourIndex < contourIndexLen; contourIndex++) {
             winding += windingNumber(point, component.contours[contourIndex]);
         }
         return winding !== 0;
@@ -383,7 +383,7 @@
         if (!point || !component || !component.contours) return false;
         var depth = 0;
         var winding = 0;
-        for (var i = 0; i < component.contours.length; i++) {
+        for (var i = 0, iLen = component.contours.length; i < iLen; i++) {
             var contour = component.contours[i];
             if (pointInPolygon(point, contour)) {
                 depth++;
@@ -405,7 +405,7 @@
                 point[1] < placed.b || point[1] > placed.t) {
             return false;
         }
-        for (var c = 0; c < placed.geometry.length; c++) {
+        for (var c = 0, cLen = placed.geometry.length; c < cLen; c++) {
             if (pointInHole(point, placed.geometry[c])) {
                 return true;
             }
@@ -452,9 +452,9 @@
         // can land one floating-point step below it. Tolerate that rounding so
         // an exact-fit placement is not rejected as a collision.
         var limit = gap > 0 ? gap - 0.000001 : 0;
-        for (var i = 0; i < first.length; i++) {
+        for (var i = 0, iLen = first.length; i < iLen; i++) {
             var firstNext = first[(i + 1) % first.length];
-            for (var j = 0; j < second.length; j++) {
+            for (var j = 0, jLen = second.length; j < jLen; j++) {
                 var secondNext = second[(j + 1) % second.length];
                 if (segmentsCross(first[i], firstNext, second[j], secondNext) ||
                         (limit > 0 && (pointSegmentDistance(first[i], second[j], secondNext) < limit ||
@@ -472,15 +472,15 @@
         if (!first.geometry || !second.geometry) {
             return true;
         }
-        for (var a = 0; a < first.geometry.length; a++) {
-            for (var b = 0; b < second.geometry.length; b++) {
+        for (var a = 0, aLen = first.geometry.length; a < aLen; a++) {
+            for (var b = 0, bLen = second.geometry.length; b < bLen; b++) {
                 var firstComponent = first.geometry[a];
                 var secondComponent = second.geometry[b];
                 if (!firstComponent || !secondComponent || !firstComponent.contours || !secondComponent.contours) {
                     continue;
                 }
-                for (var p = 0; p < firstComponent.contours.length; p++) {
-                    for (var q = 0; q < secondComponent.contours.length; q++) {
+                for (var p = 0, pLen = firstComponent.contours.length; p < pLen; p++) {
+                    for (var q = 0, qLen = secondComponent.contours.length; q < qLen; q++) {
                         if (polygonEdgesNear(firstComponent.contours[p], secondComponent.contours[q], gap)) {
                             return true;
                         }
@@ -504,11 +504,11 @@
         if (!geometry) {
             return all;
         }
-        for (var c = 0; c < geometry.length; c++) {
+        for (var c = 0, cLen = geometry.length; c < cLen; c++) {
             for (var p = 0; p < geometry[c].contours.length; p++) {
                 var contour = geometry[c].contours[p];
                 var step = Math.max(1, Math.ceil(contour.length / maximum));
-                for (var i = 0; i < contour.length; i += step) {
+                for (var i = 0, iLen = contour.length; i < iLen; i += step) {
                     all.push(contour[i]);
                 }
             }
@@ -524,7 +524,7 @@
             return 0;
         }
         var total = 0;
-        for (var c = 0; c < geometry.length; c++) {
+        for (var c = 0, cLen = geometry.length; c < cLen; c++) {
             var component = geometry[c];
             if (!component || !component.contours || component.contours.length === 0) {
                 continue;
@@ -538,7 +538,7 @@
                 // Non-zero winding: nested contours wound the same way add up
                 // (filled island), opposite windings subtract (hole).
                 var signedTotal = 0;
-                for (var signedIndex = 0; signedIndex < contours.length; signedIndex++) {
+                for (var signedIndex = 0, signedIndexLen = contours.length; signedIndex < signedIndexLen; signedIndex++) {
                     signedTotal += signedPolygonArea(contours[signedIndex]);
                 }
                 total += Math.abs(signedTotal);
@@ -546,17 +546,17 @@
             }
             var areas = [];
             var boxes = [];
-            for (var i = 0; i < contours.length; i++) {
+            for (var i = 0, iLen = contours.length; i < iLen; i++) {
                 areas.push(polygonArea(contours[i]));
                 boxes.push(contourBounds(contours[i]));
             }
-            for (i = 0; i < contours.length; i++) {
+            for (var i = 0, iLen = contours.length; i < iLen; i++) {
                 if (!contours[i] || contours[i].length < 3) {
                     continue;
                 }
                 var probe = contours[i][0];
                 var depth = 0;
-                for (var j = 0; j < contours.length; j++) {
+                for (var j = 0, jLen = contours.length; j < jLen; j++) {
                     if (j === i || !contours[j] || contours[j].length < 3) {
                         continue;
                     }
@@ -583,11 +583,11 @@
         }
         var left = Infinity, top = -Infinity, right = -Infinity, bottom = Infinity;
         var found = false;
-        for (var c = 0; c < geometry.length; c++) {
+        for (var c = 0, cLen = geometry.length; c < cLen; c++) {
             if (!geometry[c] || !geometry[c].contours) continue;
             for (var p = 0; p < geometry[c].contours.length; p++) {
                 var contour = geometry[c].contours[p];
-                for (var i = 0; i < contour.length; i++) {
+                for (var i = 0, iLen = contour.length; i < iLen; i++) {
                     var point = contour[i];
                     if (!point) continue;
                     if (point[0] < left) left = point[0];
@@ -606,12 +606,12 @@
             return null;
         }
         var result = [];
-        for (var c = 0; c < geometry.length; c++) {
+        for (var c = 0, cLen = geometry.length; c < cLen; c++) {
             var contours = [];
             for (var p = 0; p < geometry[c].contours.length; p++) {
                 var source = geometry[c].contours[p];
                 var points = [];
-                for (var i = 0; i < source.length; i++) {
+                for (var i = 0, iLen = source.length; i < iLen; i++) {
                     points.push([source[i][0], source[i][1]]);
                 }
                 contours.push(points);
@@ -625,10 +625,10 @@
         if (!geometry || (!offsetX && !offsetY)) {
             return;
         }
-        for (var c = 0; c < geometry.length; c++) {
+        for (var c = 0, cLen = geometry.length; c < cLen; c++) {
             for (var p = 0; p < geometry[c].contours.length; p++) {
                 var contour = geometry[c].contours[p];
-                for (var i = 0; i < contour.length; i++) {
+                for (var i = 0, iLen = contour.length; i < iLen; i++) {
                     contour[i][0] += offsetX;
                     contour[i][1] += offsetY;
                 }
@@ -842,7 +842,7 @@
             unitList.selection.index : 0;
         var oldFactor = pointsPerUnit(previousUnitIndex);
         var newFactor = pointsPerUnit(newIndex);
-        for (var i = 0; i < unitInputs.length; i++) {
+        for (var i = 0, iLen = unitInputs.length; i < iLen; i++) {
             var normalized = String(unitInputs[i].text)
                 .replace(/,/g, ".")
                 .replace(/^\s+|\s+$/g, "");
@@ -863,14 +863,14 @@
     previousUnitIndex = (unitList.selection && typeof unitList.selection.index === "number") ?
         unitList.selection.index : 0;
     restoringState = false;
-    for (var restoredLabelIndex = 0; restoredLabelIndex < unitLabels.length; restoredLabelIndex++) {
+    for (var restoredLabelIndex = 0, restoredLabelIndexLen = unitLabels.length; restoredLabelIndex < restoredLabelIndexLen; restoredLabelIndex++) {
         unitLabels[restoredLabelIndex].text = unitAbbreviation(previousUnitIndex);
     }
     updateSheetControls();
     OZO.translateWindow(dialog, OZO.getLanguage());
 
     var itemStates = [];
-    for (var stateIndex = 0; stateIndex < initialSelection.length; stateIndex++) {
+    for (var stateIndex = 0, stateIndexLen = initialSelection.length; stateIndex < stateIndexLen; stateIndex++) {
         var stateItem = initialSelection[stateIndex];
         var stateBounds = getBounds(stateItem);
         if (!stateBounds || isEffectivelyHidden(stateItem) || isEffectivelyLocked(stateItem)) {
@@ -901,7 +901,7 @@
     }
 
     function restoreItems() {
-        for (var i = 0; i < itemStates.length; i++) {
+        for (var i = 0, iLen = itemStates.length; i < iLen; i++) {
             var state = itemStates[i];
             try {
                 if (state.appliedAngle !== 0) {
@@ -916,7 +916,7 @@
         try {
             doc.selection = null;
         } catch (ignoreSelectionClear) {}
-        for (var selectionIndex = 0; selectionIndex < initialSelection.length; selectionIndex++) {
+        for (var selectionIndex = 0, selectionIndexLen = initialSelection.length; selectionIndex < selectionIndexLen; selectionIndex++) {
             try {
                 initialSelection[selectionIndex].selected = true;
             } catch (ignoreSelectionRestore) {}
@@ -931,7 +931,7 @@
             }
             var values = [color.typename];
             var names = ["cyan", "magenta", "yellow", "black", "red", "green", "blue", "gray", "spot"];
-            for (var n = 0; n < names.length; n++) {
+            for (var n = 0, nLen = names.length; n < nLen; n++) {
                 try {
                     if (names[n] === "spot") {
                         values.push(color.spot.name);
@@ -969,7 +969,7 @@
         var polygons = [];
         var centerX = (outerBounds[0] + outerBounds[2]) / 2;
         var centerY = (outerBounds[1] + outerBounds[3]) / 2;
-        for (var i = 0; i < item.pathItems.length; i++) {
+        for (var i = 0, iLen = item.pathItems.length; i < iLen; i++) {
             var bounds = getBounds(item.pathItems[i]);
             pathBounds.push(bounds);
             polygons.push(pathPolygon(item.pathItems[i], centerX, centerY));
@@ -986,7 +986,7 @@
         var outerWinding = signedPolygonArea(outerPolygon);
         var evenOdd = isEvenOddCompound(item);
 
-        for (i = 0; i < pathBounds.length; i++) {
+        for (var i = 0, iLen = pathBounds.length; i < iLen; i++) {
             var hole = pathBounds[i];
             var holePolygon = polygons[i];
             if (i === largestIndex || !hole || !holePolygon || !containsBounds(outerBounds, hole)) {
@@ -1009,7 +1009,7 @@
             // contain another filled island (for example a bullseye), and
             // nesting there would overlap that island.
             var emptyPocket = true;
-            for (var otherIndex = 0; otherIndex < polygons.length; otherIndex++) {
+            for (var otherIndex = 0, otherIndexLen = polygons.length; otherIndex < otherIndexLen; otherIndex++) {
                 if (otherIndex === i || otherIndex === largestIndex || !polygons[otherIndex]) {
                     continue;
                 }
@@ -1028,7 +1028,7 @@
         return holes;
     }
 
-    for (stateIndex = 0; stateIndex < itemStates.length; stateIndex++) {
+    for (var stateIndex = 0, stateIndexLen = itemStates.length; stateIndex < stateIndexLen; stateIndex++) {
         itemStates[stateIndex].color = colorKey(itemStates[stateIndex].item);
         try {
             // Layer names are not unique in Illustrator, so include the
@@ -1038,7 +1038,7 @@
             // wrongly share a sheet in "Layer - separate sheets" mode.
             var itemLayer = itemStates[stateIndex].item.layer;
             var layerOrdinal = -1;
-            for (var layerIndex = 0; layerIndex < doc.layers.length; layerIndex++) {
+            for (var layerIndex = 0, layerIndexLen = doc.layers.length; layerIndex < layerIndexLen; layerIndex++) {
                 if (doc.layers[layerIndex] === itemLayer) {
                     layerOrdinal = layerIndex;
                     break;
@@ -1093,7 +1093,7 @@
         if (settings.mode !== 2) {
             return null;
         }
-        for (var i = 0; i < itemStates.length; i++) {
+        for (var i = 0, iLen = itemStates.length; i < iLen; i++) {
             if (sameItem(itemStates[i].item, requestedContainerItem)) {
                 return itemStates[i];
             }
@@ -1114,7 +1114,7 @@
             }
             raw.push(copyBounds(containerState.bounds));
         } else if (settings.mode === 1) {
-            for (i = 0; i < doc.artboards.length; i++) {
+            for (var i = 0, iLen = doc.artboards.length; i < iLen; i++) {
                 raw.push(copyBounds(doc.artboards[i].artboardRect));
             }
         } else if (settings.custom) {
@@ -1129,7 +1129,7 @@
         }
 
         var bins = [];
-        for (i = 0; i < raw.length; i++) {
+        for (var i = 0, iLen = raw.length; i < iLen; i++) {
             var bounds = raw[i];
             var left = bounds[0] + settings.left + settings.edge;
             var top = bounds[1] - settings.top - settings.edge;
@@ -1155,7 +1155,7 @@
     function sourceDescriptors(settings) {
         var containerState = selectedContainer(settings);
         var result = [];
-        for (var i = 0; i < itemStates.length; i++) {
+        for (var i = 0, iLen = itemStates.length; i < iLen; i++) {
             if (containerState && sameItem(itemStates[i].item, containerState.item)) {
                 continue;
             }
@@ -1185,7 +1185,7 @@
 
     function contourBounds(contour) {
         var bounds = [contour[0][0], contour[0][1], contour[0][0], contour[0][1]];
-        for (var i = 1; i < contour.length; i++) {
+        for (var i = 1, iLen = contour.length; i < iLen; i++) {
             bounds[0] = Math.min(bounds[0], contour[i][0]);
             bounds[1] = Math.max(bounds[1], contour[i][1]);
             bounds[2] = Math.max(bounds[2], contour[i][0]);
@@ -1195,7 +1195,7 @@
     }
 
     function pushUniqueObstacle(out, item) {
-        for (var index = 0; index < out.length; index++) {
+        for (var index = 0, indexLen = out.length; index < indexLen; index++) {
             if (sameItem(out[index], item)) return;
         }
         out.push(item);
@@ -1204,11 +1204,11 @@
     function collectLockedObstacles(container, sources, out, ancestorIsSource) {
         var items;
         try { items = container.pageItems; } catch (ignoreItems) { return; }
-        for (var i = 0; i < items.length; i++) {
+        for (var i = 0, iLen = items.length; i < iLen; i++) {
             var item = items[i];
             var isSource = ancestorIsSource;
             if (!isSource) {
-                for (var s = 0; s < sources.length; s++) {
+                for (var s = 0, sLen = sources.length; s < sLen; s++) {
                     if (sameItem(item, sources[s].state.item)) {
                         isSource = true;
                         break;
@@ -1234,7 +1234,7 @@
         var obstacles = [];
         collectLockedObstacles(doc, sources, obstacles, false);
         var count = 0;
-        for (var i = 0; i < obstacles.length; i++) {
+        for (var i = 0, iLen = obstacles.length; i < iLen; i++) {
             var item = obstacles[i];
             var bounds = getBounds(item);
             if (!bounds) {
@@ -1248,7 +1248,7 @@
                 0
             );
             var matched = false;
-            for (var b = 0; b < bins.length; b++) {
+            for (var b = 0, bLen = bins.length; b < bLen; b++) {
                 // A locked obstacle that straddles a sheet edge still blocks
                 // the part that lies inside the usable area, so accept any
                 // overlap instead of requiring full containment. It must be
@@ -1345,7 +1345,7 @@
 
     function cloneBins(source) {
         var result = [];
-        for (var i = 0; i < source.length; i++) {
+        for (var i = 0, iLen = source.length; i < iLen; i++) {
             var placed = [];
             for (var p = 0; p < source[i].placed.length; p++) {
                 var rect = source[i].placed[p];
@@ -1409,16 +1409,14 @@
         if (bin.boundary) {
             var candidateContours = [];
             if (rect.geometry) {
-                for (var componentIndex = 0; componentIndex < rect.geometry.length; componentIndex++) {
+                for (var componentIndex = 0, componentIndexLen = rect.geometry.length; componentIndex < componentIndexLen; componentIndex++) {
                     var candidateComponent = rect.geometry[componentIndex];
                     if (!candidateComponent || !candidateComponent.contours) {
                         continue;
                     }
                     // Check every contour. A compound path may contain several
                     // disjoint filled islands, not just one outer contour.
-                    for (var candidateContourIndex = 0;
-                            candidateContourIndex < candidateComponent.contours.length;
-                            candidateContourIndex++) {
+                    for (var candidateContourIndex = 0, candidateContourIndexLen = candidateComponent.contours.length; candidateContourIndex < candidateContourIndexLen; candidateContourIndex++) {
                         candidateContours.push(candidateComponent.contours[candidateContourIndex]);
                     }
                 }
@@ -1426,9 +1424,9 @@
                 candidateContours.push([[rect.l, rect.t], [rect.r, rect.t],
                     [rect.r, rect.b], [rect.l, rect.b]]);
             }
-            for (var contourIndex = 0; contourIndex < candidateContours.length; contourIndex++) {
+            for (var contourIndex = 0, contourIndexLen = candidateContours.length; contourIndex < contourIndexLen; contourIndex++) {
                 var contour = candidateContours[contourIndex];
-                for (var pointIndex = 0; pointIndex < contour.length; pointIndex++) {
+                for (var pointIndex = 0, pointIndexLen = contour.length; pointIndex < pointIndexLen; pointIndex++) {
                     if (!pointInPolygon(contour[pointIndex], bin.boundary)) {
                         return false;
                     }
@@ -1438,7 +1436,7 @@
                 }
             }
         }
-        for (var i = 0; i < bin.placed.length; i++) {
+        for (var i = 0, iLen = bin.placed.length; i < iLen; i++) {
             if (bin.ownerId && bin.placed[i].id === bin.ownerId) {
                 continue;
             }
@@ -1467,17 +1465,17 @@
         var candidateLimit = settings.quality === 1 ? 1200 :
             (settings.quality === 2 ? 500 : 220);
 
-        for (var b = 0; b < bins.length; b++) {
+        for (var b = 0, bLen = bins.length; b < bLen; b++) {
             var bin = bins[b];
             var binArea = (bin.r - bin.l) * (bin.t - bin.b);
             var baseXs = [bin.l];
             var baseYs = [bin.t];
-            for (var p = 0; p < bin.placed.length; p++) {
+            for (var p = 0, pLen = bin.placed.length; p < pLen; p++) {
                 baseXs.push(bin.placed[p].r + settings.spacing);
                 baseYs.push(bin.placed[p].b - settings.spacing);
             }
 
-            for (var a = 0; a < angles.length; a++) {
+            for (var a = 0, aLen = angles.length; a < aLen; a++) {
                 // Apply the quality limit to each angle. A shared counter caused
                 // dense jobs to exhaust the budget at 0 degrees and skip rotation.
                 var tested = 0;
@@ -1497,8 +1495,8 @@
                 var geometryTop = rotatedGeometryBounds ? rotatedGeometryBounds[1] : size.height / 2;
                 for (p = 0; p < bin.placed.length && localPoints.length; p++) {
                     var obstaclePoints = placedSamplePoints(bin.placed[p], sampleLimit);
-                    for (var obstacleIndex = 0; obstacleIndex < obstaclePoints.length; obstacleIndex++) {
-                        for (var localIndex = 0; localIndex < localPoints.length; localIndex++) {
+                    for (var obstacleIndex = 0, obstacleIndexLen = obstaclePoints.length; obstacleIndex < obstacleIndexLen; obstacleIndex++) {
+                        for (var localIndex = 0, localIndexLen = localPoints.length; localIndex < localIndexLen; localIndex++) {
                             var alignedX = obstaclePoints[obstacleIndex][0] -
                                 localPoints[localIndex][0] + geometryLeft;
                             var alignedY = obstaclePoints[obstacleIndex][1] -
@@ -1556,8 +1554,8 @@
                 // sheet still offers row/column starts. Using the (much larger)
                 // paired coordinate lists here used to burn the remaining
                 // budget on the first row and leave free rows unexplored.
-                for (var y = 0; y < baseYs.length && tested < candidateLimit; y++) {
-                    for (var x = 0; x < baseXs.length && tested < candidateLimit; x++) {
+                for (var y = 0, yLen = baseYs.length; y < yLen && tested < candidateLimit; y++) {
+                    for (var x = 0, xLen = baseXs.length; x < xLen && tested < candidateLimit; x++) {
                         tested++;
                         considerCandidate(baseXs[x], baseYs[y]);
                     }
@@ -1584,14 +1582,14 @@
         var offsetX = placement.geometryOffset ? placement.geometryOffset[0] : centerX;
         var offsetY = placement.geometryOffset ? placement.geometryOffset[1] : centerY;
 
-        for (var i = 0; i < descriptor.holes.length; i++) {
+        for (var i = 0, iLen = descriptor.holes.length; i < iLen; i++) {
             var hole = descriptor.holes[i];
             var transformed = transformGeometry(
                 [{contours: [hole.contour]}], 0, 0, placement.angle
             )[0].contours[0];
             // Hole contours share the item's own coordinate space, so they
             // must receive the exact same translation as the item geometry.
-            for (var pointIndex = 0; pointIndex < transformed.length; pointIndex++) {
+            for (var pointIndex = 0, pointIndexLen = transformed.length; pointIndex < pointIndexLen; pointIndex++) {
                 transformed[pointIndex][0] += offsetX;
                 transformed[pointIndex][1] += offsetY;
             }
@@ -1623,7 +1621,7 @@
         var unplaced = [];
         var totalScore = 0;
 
-        for (var i = 0; i < order.length; i++) {
+        for (var i = 0, iLen = order.length; i < iLen; i++) {
             var placement = placeOne(order[i], bins, settings);
             if (!placement) {
                 unplaced.push(order[i]);
@@ -1640,7 +1638,7 @@
     function addSeparatedSheet(bins, template, settings) {
         var sheetNumber = bins.length;
         var rightmost = template.base[2];
-        for (var existingIndex = 0; existingIndex < bins.length; existingIndex++) {
+        for (var existingIndex = 0, existingIndexLen = bins.length; existingIndex < existingIndexLen; existingIndex++) {
             if (!bins[existingIndex].ownerId) {
                 rightmost = Math.max(rightmost, bins[existingIndex].base[2]);
             }
@@ -1649,7 +1647,7 @@
         // artboards, a new sheet must clear those too or it would be created
         // on top of existing artwork.
         try {
-            for (var artboardIndex = 0; artboardIndex < doc.artboards.length; artboardIndex++) {
+            for (var artboardIndex = 0, artboardIndexLen = doc.artboards.length; artboardIndex < artboardIndexLen; artboardIndex++) {
                 rightmost = Math.max(rightmost, doc.artboards[artboardIndex].artboardRect[2]);
             }
         } catch (ignoreArtboards) {}
@@ -1682,10 +1680,10 @@
 
         var groups = [];
         var groupNames = [];
-        for (var i = 0; i < order.length; i++) {
+        for (var i = 0, iLen = order.length; i < iLen; i++) {
             var key = groupKey(order[i], settings.divide);
             var groupIndex = -1;
-            for (var g = 0; g < groupNames.length; g++) {
+            for (var g = 0, gLen = groupNames.length; g < gLen; g++) {
                 if (groupNames[g] === key) {
                     groupIndex = g;
                     break;
@@ -1704,7 +1702,7 @@
         }
 
         var combined = {plan: [], unplaced: [], score: 0, bins: bins};
-        for (g = 0; g < groups.length; g++) {
+        for (var g = 0, gLen = groups.length; g < gLen; g++) {
             // Remember which group owns this sheet so overflow objects never
             // land on another group's sheet.
             bins[g].groupKey = groupNames[g];
@@ -1752,11 +1750,11 @@
 
             // Partition leftovers by group, preserving first-seen order.
             var groupsLeft = [];
-            for (var leftoverIndex = 0; leftoverIndex < best.unplaced.length; leftoverIndex++) {
+            for (var leftoverIndex = 0, leftoverIndexLen = best.unplaced.length; leftoverIndex < leftoverIndexLen; leftoverIndex++) {
                 var leftover = best.unplaced[leftoverIndex];
                 var leftoverKey = separateSheets ? groupKey(leftover, settings.divide) : "";
                 var groupSlot = null;
-                for (var slotIndex = 0; slotIndex < groupsLeft.length; slotIndex++) {
+                for (var slotIndex = 0, slotIndexLen = groupsLeft.length; slotIndex < slotIndexLen; slotIndex++) {
                     if (groupsLeft[slotIndex].key === leftoverKey) {
                         groupSlot = groupsLeft[slotIndex];
                         break;
@@ -1770,7 +1768,7 @@
             }
 
             var unplacedFinal = [];
-            for (var groupIndex = 0; groupIndex < groupsLeft.length; groupIndex++) {
+            for (var groupIndex = 0, groupIndexLen = groupsLeft.length; groupIndex < groupIndexLen; groupIndex++) {
                 var queue = groupsLeft[groupIndex].items;
                 var queueKey = groupsLeft[groupIndex].key;
 
@@ -1779,7 +1777,7 @@
                 // Overflow sheets should copy the sheet that belongs to this
                 // group. "All artboards" can have differently sized boards,
                 // and using bins[0] would create a wrong-sized sheet.
-                for (var templateIndex = 0; templateIndex < best.bins.length; templateIndex++) {
+                for (var templateIndex = 0, templateIndexLen = best.bins.length; templateIndex < templateIndexLen; templateIndex++) {
                     var templateBin = best.bins[templateIndex];
                     if (!templateBin.ownerId && templateBin.groupKey === queueKey &&
                             !templateBin.generated) {
@@ -1788,7 +1786,7 @@
                     }
                 }
                 if (!groupTemplate) {
-                    for (templateIndex = 0; templateIndex < best.bins.length; templateIndex++) {
+                    for (var templateIndex = 0, templateIndexLen = best.bins.length; templateIndex < templateIndexLen; templateIndex++) {
                         templateBin = best.bins[templateIndex];
                         if (!templateBin.ownerId && templateBin.groupKey === queueKey) {
                             groupTemplate = templateBin;
@@ -1799,9 +1797,9 @@
                 if (!groupTemplate) {
                     groupTemplate = best.bins[0];
                 }
-                for (var u = 0; u < queue.length; u++) {
+                for (var u = 0, uLen = queue.length; u < uLen; u++) {
                     var allowed = [];
-                    for (var binIndex = 0; binIndex < best.bins.length; binIndex++) {
+                    for (var binIndex = 0, binIndexLen = best.bins.length; binIndex < binIndexLen; binIndex++) {
                         if (!separateSheets || best.bins[binIndex].groupKey === queueKey) {
                             allowed.push(best.bins[binIndex]);
                         }
@@ -1829,7 +1827,7 @@
                     var newBinList = [newBin];
                     var stillNeeded = [];
                     var placedOnSheet = 0;
-                    for (u = 0; u < remaining.length; u++) {
+                    for (var u = 0, uLen = remaining.length; u < uLen; u++) {
                         placement = placeOne(remaining[u], newBinList, settings);
                         if (!placement) {
                             stillNeeded.push(remaining[u]);
@@ -1858,7 +1856,7 @@
                     }
                 }
 
-                for (u = 0; u < remaining.length; u++) {
+                for (var u = 0, uLen = remaining.length; u < uLen; u++) {
                     unplacedFinal.push(remaining[u]);
                 }
             }
@@ -1872,7 +1870,7 @@
             return {plan: [], unplaced: sources.slice(0), score: 0, bins: bins};
         }
         var usedBins = [];
-        for (var binIndex = 0; binIndex < best.bins.length; binIndex++) {
+        for (var binIndex = 0, binIndexLen = best.bins.length; binIndex < binIndexLen; binIndex++) {
             var usedBin = best.bins[binIndex];
             if (usedBin.generated && !usedBin.ownerId && usedBin.placed.length === 0) {
                 continue;
@@ -1886,7 +1884,7 @@
 
     function applyPlan(plan) {
         doc.selection = null;
-        for (var i = 0; i < plan.length; i++) {
+        for (var i = 0, iLen = plan.length; i < iLen; i++) {
             var placement = plan[i];
             var state = placement.descriptor.state;
             if (placement.angle !== 0) {
@@ -2018,7 +2016,7 @@
                 1
             );
 
-            for (i = 0; i < previewModel.bins.length; i++) {
+            for (var i = 0, iLen = previewModel.bins.length; i < iLen; i++) {
                 var bin = previewModel.bins[i];
                 // Interior hole pockets share their owner sheet and its placed
                 // list; drawing them would duplicate every rectangle.
@@ -2027,7 +2025,7 @@
                 }
                 drawBounds(bin.base, sheetBrush, outlinePen);
                 drawBounds([bin.l, bin.t, bin.r, bin.b], null, usablePen);
-                for (var f = 0; f < bin.placed.length; f++) {
+                for (var f = 0, fLen = bin.placed.length; f < fLen; f++) {
                     var fixed = bin.placed[f];
                     // Positive ids are packed parts and are drawn from
                     // previewModel.plan below. Only draw fixed obstacles here.
@@ -2038,7 +2036,7 @@
                 }
             }
 
-            for (i = 0; i < previewModel.plan.length; i++) {
+            for (var i = 0, iLen = previewModel.plan.length; i < iLen; i++) {
                 var rect = previewModel.plan[i].rect;
                 drawBounds([rect.l, rect.t, rect.r, rect.b], placedBrush, placedPen);
             }
@@ -2059,7 +2057,7 @@
         if (!bin || !bin.placed) {
             return false;
         }
-        for (var i = 0; i < bin.placed.length; i++) {
+        for (var i = 0, iLen = bin.placed.length; i < iLen; i++) {
             // Fixed obstacles use negative ids; sheets are "used" only when at
             // least one of the user's objects was actually placed on them.
             if (bin.placed[i] && bin.placed[i].id > 0) {
@@ -2078,7 +2076,7 @@
         // artboards (for example in "All artboards" mode) are not used
         // sheets either.
         var count = 0;
-        for (var i = 0; i < bins.length; i++) {
+        for (var i = 0, iLen = bins.length; i < iLen; i++) {
             if (!bins[i].ownerId && binHasItems(bins[i])) {
                 count++;
             }
@@ -2107,7 +2105,7 @@
                     originalArtboardBounds = copyBounds(doc.artboards[resizedIndex].artboardRect);
                     doc.artboards[resizedIndex].artboardRect = copyBounds(bins[0].base);
                 }
-                for (var generatedIndex = 0; generatedIndex < resultBins.length; generatedIndex++) {
+                for (var generatedIndex = 0, generatedIndexLen = resultBins.length; generatedIndex < generatedIndexLen; generatedIndex++) {
                     if (resultBins[generatedIndex].generated && !resultBins[generatedIndex].ownerId) {
                         createdArtboards.push(
                             doc.artboards.add(copyBounds(resultBins[generatedIndex].base))
@@ -2128,11 +2126,11 @@
         }
 
         var sourceArea = 0;
-        for (var i = 0; i < result.plan.length; i++) {
+        for (var i = 0, iLen = result.plan.length; i < iLen; i++) {
             sourceArea += result.plan[i].descriptor.area;
         }
         var sheetArea = 0;
-        for (i = 0; i < resultBins.length; i++) {
+        for (var i = 0, iLen = resultBins.length; i < iLen; i++) {
             if (!resultBins[i].ownerId && binHasItems(resultBins[i])) {
                 sheetArea += (resultBins[i].r - resultBins[i].l) *
                     (resultBins[i].t - resultBins[i].b);

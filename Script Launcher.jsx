@@ -74,7 +74,7 @@ try {
 
 var __ozoSharedFile = null;
 if (typeof OZO === "undefined" || !OZO || !OZO.version) {
-    for (var __cIdx = 0; __cIdx < __ozoSharedCandidates.length; __cIdx++) {
+    for (var __cIdx = 0, __cIdxLen = __ozoSharedCandidates.length; __cIdx < __cIdxLen; __cIdx++) {
         if (__ozoSharedCandidates[__cIdx]) {
             var __cand = new File(__ozoSharedCandidates[__cIdx]);
             if (__cand.exists) {
@@ -93,7 +93,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                     __promptFolder.fsName + "/Script all/lib/OzoShared.jsxinc",
                     __promptFolder.fsName + "/OzoShared.jsxinc"
                 ];
-                for (var __pIdx = 0; __pIdx < __promptCandidates.length; __pIdx++) {
+                for (var __pIdx = 0, __pIdxLen = __promptCandidates.length; __pIdx < __pIdxLen; __pIdx++) {
                     var __pCand = new File(__promptCandidates[__pIdx]);
                     if (__pCand.exists) {
                         __ozoSharedFile = __pCand;
@@ -298,7 +298,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
     recentPaths = cleanPathList(recentPaths, 20);
 
     function listHasPath(values, value) {
-        for (var index = 0; index < values.length; index++) {
+        for (var index = 0, indexLen = values.length; index < indexLen; index++) {
             if (pathKey(values[index]) === pathKey(value)) return true;
         }
         return false;
@@ -312,7 +312,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
     function rememberRecent(file) {
         var value = relativeName(file);
         var updated = [value];
-        for (var index = 0; index < recentPaths.length; index++) {
+        for (var index = 0, indexLen = recentPaths.length; index < indexLen; index++) {
             if (!samePath(recentPaths[index], value)) updated.push(recentPaths[index]);
         }
         recentPaths = cleanPathList(updated, 20);
@@ -404,7 +404,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         } catch (ignoreUnreadableFolder) {
             return;
         }
-        for (var i = 0; i < entries.length; i++) {
+        for (var i = 0, iLen = entries.length; i < iLen; i++) {
             var entry = entries[i];
             if (entry instanceof File) {
                 if (isScriptFile(entry)) {
@@ -442,7 +442,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         var folderNames = [];
         var knownFolders = {};
 
-        for (var index = 0; index < scripts.length; index++) {
+        for (var index = 0, indexLen = scripts.length; index < indexLen; index++) {
             var folderName = relativeFolder(scripts[index]);
             var folderKey = pathKey(folderName);
             if (!knownFolders[folderKey]) {
@@ -458,7 +458,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
 
         folderFilter.removeAll();
         folderFilter.add("item", OZO.tr("All folders"));
-        for (index = 0; index < folderNames.length; index++) {
+        for (var index = 0, indexLen = folderNames.length; index < indexLen; index++) {
             folderFilter.add("item", folderNames[index]);
         }
         folderFilter.selection = 0;
@@ -486,7 +486,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                 }
             }
             scripts.sort(sortFiles);
-            for (var sIdx = 0; sIdx < scripts.length; sIdx++) {
+            for (var sIdx = 0, sIdxLen = scripts.length; sIdx < sIdxLen; sIdx++) {
                 var sFile = scripts[sIdx];
                 sFile._rel = relativeName(sFile);
                 sFile._pathKey = pathKey(sFile._rel);
@@ -497,7 +497,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             }
             updateFolderFilter();
             if (!launcherPreferencesApplied && savedFolderPreference) {
-                for (var folderIndex = 0; folderIndex < folderFilter.items.length; folderIndex++) {
+                for (var folderIndex = 0, folderIndexLen = folderFilter.items.length; folderIndex < folderIndexLen; folderIndex++) {
                     if (pathKey(folderFilter.items[folderIndex].text) === pathKey(savedFolderPreference)) {
                         folderFilter.selection = folderIndex;
                         break;
@@ -541,9 +541,9 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             var preferredFile = previousFile || savedScriptPreference;
 
             var favMap = {};
-            for (var f = 0; f < favoritePaths.length; f++) favMap[pathKey(favoritePaths[f])] = true;
+            for (var f = 0, fLen = favoritePaths.length; f < fLen; f++) favMap[pathKey(favoritePaths[f])] = true;
             var recentMap = {};
-            for (var r = 0; r < recentPaths.length; r++) recentMap[pathKey(recentPaths[r])] = true;
+            for (var r = 0, rLen = recentPaths.length; r < rLen; r++) recentMap[pathKey(recentPaths[r])] = true;
 
             var filterMode = viewFilter.selection ? viewFilter.selection.index : 0;
 
@@ -551,11 +551,11 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             if (filterMode === 2) {
                 orderedScripts = [];
                 var scriptMap = {};
-                for (var s = 0; s < scripts.length; s++) {
+                for (var s = 0, sLen = scripts.length; s < sLen; s++) {
                     var k = scripts[s]._pathKey || pathKey(relativeName(scripts[s]));
                     scriptMap[k] = scripts[s];
                 }
-                for (var recentIndex = 0; recentIndex < recentPaths.length; recentIndex++) {
+                for (var recentIndex = 0, recentIndexLen = recentPaths.length; recentIndex < recentIndexLen; recentIndex++) {
                     var recKey = pathKey(recentPaths[recentIndex]);
                     if (scriptMap[recKey]) {
                         orderedScripts.push(scriptMap[recKey]);
@@ -563,7 +563,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                 }
             }
 
-            for (var i = 0; i < orderedScripts.length; i++) {
+            for (var i = 0, iLen = orderedScripts.length; i < iLen; i++) {
                 var scriptFile = orderedScripts[i];
                 var pKey = scriptFile._pathKey || pathKey(relativeName(scriptFile));
 
@@ -795,7 +795,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         var value = relativeName(visibleScripts[scriptList.selection.index]);
         if (listHasPath(favoritePaths, value)) {
             var retained = [];
-            for (var index = 0; index < favoritePaths.length; index++) {
+            for (var index = 0, indexLen = favoritePaths.length; index < indexLen; index++) {
                 if (!samePath(favoritePaths[index], value)) retained.push(favoritePaths[index]);
             }
             favoritePaths = retained;

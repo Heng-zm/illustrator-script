@@ -13,7 +13,7 @@
     var originalSelection = [];
     var selectionValue = doc.selection;
     if (selectionValue && selectionValue.typename !== "TextRange") {
-        for (var originalIndex = 0; originalIndex < selectionValue.length; originalIndex++) {
+        for (var originalIndex = 0, originalIndexLen = selectionValue.length; originalIndex < originalIndexLen; originalIndex++) {
             originalSelection.push(selectionValue[originalIndex]);
         }
     }
@@ -24,7 +24,7 @@
             Folder.current.fsName + "/lib/iconify-api.ps1",
             Folder.current.fsName + "/Script all/lib/iconify-api.ps1"
         ];
-        for (var i = 0; i < candidates.length; i++) {
+        for (var i = 0, iLen = candidates.length; i < iLen; i++) {
             if (candidates[i]) {
                 var f = new File(candidates[i]);
                 if (f.exists) return f;
@@ -49,7 +49,7 @@
     function base64Utf16Le(value) {
         var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         var bytes = [];
-        for (var index = 0; index < value.length; index++) {
+        for (var index = 0, indexLen = value.length; index < indexLen; index++) {
             var code = value.charCodeAt(index);
             bytes.push(code & 255, (code >>> 8) & 255);
         }
@@ -72,7 +72,7 @@
         var bytes = [];
         var accumulator = 0;
         var bitCount = 0;
-        for (var index = 0; index < value.length; index++) {
+        for (var index = 0, indexLen = value.length; index < indexLen; index++) {
             var digit = alphabet.indexOf(value.charAt(index));
             if (digit < 0) {
                 if (value.charAt(index) === "=") break;
@@ -310,7 +310,7 @@
         var lines = payload.split(/\r?\n/);
         var results = [];
         var total = 0;
-        for (var index = 0; index < lines.length; index++) {
+        for (var index = 0, indexLen = lines.length; index < indexLen; index++) {
             var iconId = trim(lines[index]);
             if (iconId.indexOf("@total:") === 0) {
                 total = Number(iconId.substring(7));
@@ -405,7 +405,7 @@
 
     function downloadIconsToCache(iconIds, color) {
         var missing = [];
-        for (var index = 0; index < iconIds.length; index++) {
+        for (var index = 0, indexLen = iconIds.length; index < indexLen; index++) {
             var cached = cacheFileFor(iconIds[index], color);
             if (!isValidSvgFile(cached)) {
                 try { if (cached.exists) cached.remove(); } catch (ignoreBadCache) {}
@@ -416,7 +416,7 @@
             callIconify("DownloadBatch", missing.join("\n"), "", iconCacheFolder(),
                 {color: color});
         }
-        for (index = 0; index < iconIds.length; index++) {
+        for (var index = 0, indexLen = iconIds.length; index < indexLen; index++) {
             if (!isValidSvgFile(cacheFileFor(iconIds[index], color))) {
                 throw new Error("Could not download " + iconIds[index] + ".");
             }
@@ -427,7 +427,7 @@
         var result = [];
         if (!list.selection) return result;
         if (list.selection instanceof Array) {
-            for (var index = 0; index < list.selection.length; index++) {
+            for (var index = 0, indexLen = list.selection.length; index < indexLen; index++) {
                 result.push(list.selection[index]._iconId || list.selection[index].text);
             }
         } else {
@@ -474,7 +474,7 @@
 
     function uniqueLayerName(baseName) {
         var used = {};
-        for (var index = 0; index < doc.layers.length; index++) {
+        for (var index = 0, indexLen = doc.layers.length; index < indexLen; index++) {
             used[doc.layers[index].name] = true;
         }
         if (!used[baseName]) return baseName;
@@ -493,7 +493,7 @@
     function restoreOriginalSelection() {
         try {
             doc.selection = null;
-            for (var index = 0; index < originalSelection.length; index++) {
+            for (var index = 0, indexLen = originalSelection.length; index < indexLen; index++) {
                 try { originalSelection[index].selected = true; } catch (ignoreItem) {}
             }
         } catch (ignoreSelection) {}
@@ -514,7 +514,7 @@
                 imported = null;
                 wrapper = targetGroup.groupItems.add();
                 sourceDocument = app.open(svgFile);
-                for (var index = 0; index < sourceDocument.pageItems.length; index++) {
+                for (var index = 0, indexLen = sourceDocument.pageItems.length; index < indexLen; index++) {
                     var sourceItem = sourceDocument.pageItems[index];
                     if (sourceItem.parent && sourceItem.parent.typename === "Layer") {
                         sourceItem.duplicate(wrapper, ElementPlacement.PLACEATEND);
@@ -794,7 +794,7 @@
     }
 
     function cachedSearchResult(key) {
-        for (var index = 0; index < searchCacheKeys.length; index++) {
+        for (var index = 0, indexLen = searchCacheKeys.length; index < indexLen; index++) {
             if (searchCacheKeys[index] === key) return searchCacheValues[index];
         }
         return null;
@@ -936,7 +936,7 @@
     };
     selectAllButton.onClick = function () {
         populatingResults = true;
-        for (var index = 0; index < resultsList.items.length; index++) {
+        for (var index = 0, indexLen = resultsList.items.length; index < indexLen; index++) {
             resultsList.items[index].selected = true;
         }
         populatingResults = false;
@@ -1058,7 +1058,7 @@
 
         var importedCount = 0;
         var failedList = [];
-        for (var index = 0; index < selectedIds.length; index++) {
+        for (var index = 0, indexLen = selectedIds.length; index < indexLen; index++) {
             var iconId = selectedIds[index];
             progressText.text = "Importing " + (index + 1) + " of " +
                 selectedIds.length + ": " + iconId;

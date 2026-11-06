@@ -66,7 +66,7 @@
         return false;
     }
 
-    for (i = 0; i < selectionValue.length; i++) {
+    for (var i = 0, iLen = selectionValue.length; i < iLen; i++) {
         try {
             if (isEffectivelyUneditable(selectionValue[i])) {
                 skippedUneditable++;
@@ -200,7 +200,7 @@
 
     function selectItems(items) {
         doc.selection = null;
-        for (var index = 0; index < items.length; index++) {
+        for (var index = 0, indexLen = items.length; index < indexLen; index++) {
             try {
                 items[index].selected = true;
             } catch (ignoreSelectionError) {}
@@ -208,7 +208,7 @@
     }
 
     function restoreSources() {
-        for (var index = 0; index < sourceItems.length; index++) {
+        for (var index = 0, indexLen = sourceItems.length; index < indexLen; index++) {
             try {
                 sourceItems[index].hidden = sourceHidden[index];
             } catch (ignoreRestoreError) {}
@@ -241,7 +241,7 @@
         previewLayer.visible = true;
 
         var duplicates = [];
-        for (var index = 0; index < sourceItems.length; index++) {
+        for (var index = 0, indexLen = sourceItems.length; index < indexLen; index++) {
             var duplicate = sourceItems[index].duplicate(
                 previewLayer,
                 ElementPlacement.PLACEATEND
@@ -261,7 +261,7 @@
         var removed = 0;
         var groups = [];
         try {
-            for (var index = 0; index < container.groupItems.length; index++) {
+            for (var index = 0, indexLen = container.groupItems.length; index < indexLen; index++) {
                 groups.push(container.groupItems[index]);
             }
         } catch (ignoreCollection) {
@@ -289,7 +289,7 @@
                 break;
             }
             var hasSelectedGroup = false;
-            for (var index = 0; index < currentSelection.length; index++) {
+            for (var index = 0, indexLen = currentSelection.length; index < indexLen; index++) {
                 if (currentSelection[index].typename === "GroupItem") {
                     hasSelectedGroup = true;
                     break;
@@ -314,7 +314,7 @@
             return;
         }
         var selectedGroups = [];
-        for (var index = 0; index < currentSelection.length; index++) {
+        for (var index = 0, indexLen = currentSelection.length; index < indexLen; index++) {
             if (currentSelection[index].typename === "GroupItem") {
                 selectedGroups.push(currentSelection[index]);
             }
@@ -378,7 +378,7 @@
             return items;
         }
         if (currentSelection instanceof Array || currentSelection.typename === "Array" || Object.prototype.toString.call(currentSelection) === "[object Array]" || typeof currentSelection.length === "number") {
-            for (var index = 0; index < currentSelection.length; index++) {
+            for (var index = 0, indexLen = currentSelection.length; index < indexLen; index++) {
                 items.push(currentSelection[index]);
             }
         } else {
@@ -408,7 +408,7 @@
             );
 
             var pairResults = selectedItemsSnapshot();
-            for (var resultIndex = 0; resultIndex < pairResults.length; resultIndex++) {
+            for (var resultIndex = 0, resultIndexLen = pairResults.length; resultIndex < resultIndexLen; resultIndex++) {
                 results.push(pairResults[resultIndex]);
             }
         }
@@ -457,7 +457,7 @@
     function commitWorkingResult(keepOriginals) {
         var produced = selectedItemsSnapshot();
         var usableCount = 0;
-        for (var producedIndex = 0; producedIndex < produced.length; producedIndex++) {
+        for (var producedIndex = 0, producedIndexLen = produced.length; producedIndex < producedIndexLen; producedIndex++) {
             var producedItem = produced[producedIndex];
             var isEmptyGroup = false;
             try {
@@ -481,7 +481,7 @@
         var index;
         try {
             if (keepOriginals) {
-                for (index = 0; index < sourceItems.length; index++) {
+                for (var index = 0, indexLen = sourceItems.length; index < indexLen; index++) {
                     try { sourceItems[index].hidden = sourceHidden[index]; } catch (eH) {}
                 }
             } else {
@@ -489,7 +489,7 @@
                 backupLayer.name = "__Pathfinder Rollback Backup__";
                 backupLayer.locked = false;
                 backupLayer.visible = true;
-                for (index = 0; index < sourceItems.length; index++) {
+                for (var index = 0, indexLen = sourceItems.length; index < indexLen; index++) {
                     var backupCopy = sourceItems[index].duplicate(
                         backupLayer,
                         ElementPlacement.PLACEATEND
@@ -519,7 +519,7 @@
                     backupLayer.locked = false;
                     backupLayer.visible = true;
                 } catch (ignoreBackupState) {}
-                for (index = 0; index < deleted.length; index++) {
+                for (var index = 0, indexLen = deleted.length; index < indexLen; index++) {
                     if (!deleted[index]) continue;
                     try {
                         backupCopies[index].move(
@@ -731,7 +731,7 @@
     operationRows[0].spacing = 6;
     operationRows[1].spacing = 6;
 
-    for (i = 0; i < operations.length; i++) {
+    for (var i = 0, iLen = operations.length; i < iLen; i++) {
         var operationButton = operationRows[Math.floor(i / 5)].add(
             "button",
             undefined,
@@ -825,7 +825,7 @@
     }
 
     function refreshOperationIcons() {
-        for (var index = 0; index < operationButtons.length; index++) {
+        for (var index = 0, indexLen = operationButtons.length; index < indexLen; index++) {
             try {
                 operationButtons[index].notify("onDraw");
             } catch (ignoreNotify) {}
@@ -942,7 +942,7 @@
             var opIdx = 0;
             if (typeof hp.operation === "number") opIdx = hp.operation;
             else if (typeof hp.operation === "string") {
-                for (var oi = 0; oi < operations.length; oi++) {
+                for (var oi = 0, oiLen = operations.length; oi < oiLen; oi++) {
                     if (operations[oi].name.toLowerCase() === hp.operation.toLowerCase()) {
                         opIdx = oi;
                         break;

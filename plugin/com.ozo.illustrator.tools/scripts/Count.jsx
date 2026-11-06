@@ -41,7 +41,7 @@
 
     if (selItems.length > 0) {
         selectedCount = selItems.length;
-        for (var s = 0; s < selItems.length; s++) {
+        for (var s = 0, sLen = selItems.length; s < sLen; s++) {
             var item = selItems[s];
             var b = null;
             try { b = item.geometricBounds; } catch (eGeo) {
@@ -70,7 +70,7 @@
     function countContainerItems(container, counters) {
         var items;
         try { items = container.pageItems; } catch (ignoreItems) { return; }
-        for (var index = 0; index < items.length; index++) {
+        for (var index = 0, indexLen = items.length; index < indexLen; index++) {
             var item = items[index];
             counters.total++;
             try {

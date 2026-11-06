@@ -43,7 +43,7 @@
             if (!sel || sel.typename === "TextRange") return [];
             if (sel instanceof Array || sel.typename === "Array" || Object.prototype.toString.call(sel) === "[object Array]" || typeof sel.length === "number") {
                 var arr = [];
-                for (var si = 0; si < sel.length; si++) arr.push(sel[si]);
+                for (var si = 0, siLen = sel.length; si < siLen; si++) arr.push(sel[si]);
                 return arr;
             }
             return [sel];
@@ -71,10 +71,10 @@
     // background box, then to the group bounds.
     function findExistingHeader() {
         try {
-            for (var li = 0; li < doc.layers.length; li++) {
+            for (var li = 0, liLen = doc.layers.length; li < liLen; li++) {
                 var layer = doc.layers[li];
                 if (layer.name !== RESULT_LAYER_NAME) continue;
-                for (var pi = 0; pi < layer.pageItems.length; pi++) {
+                for (var pi = 0, piLen = layer.pageItems.length; pi < piLen; pi++) {
                     var item = layer.pageItems[pi];
                     try {
                         if (item.name !== "Print Header Block" || !item.geometricBounds) continue;
@@ -90,7 +90,7 @@
 
                         var backgroundBottom = null;
                         try {
-                            for (var ci = 0; ci < item.pageItems.length; ci++) {
+                            for (var ci = 0, ciLen = item.pageItems.length; ci < ciLen; ci++) {
                                 var child = item.pageItems[ci];
                                 if (child.name === "Header Background" && child.geometricBounds) {
                                     backgroundBottom = child.geometricBounds[3];
@@ -114,7 +114,7 @@
     var initialSelectedTextFrame = null;
     try {
         var initSel = getNormalizedSelection();
-        for (var is = 0; is < initSel.length; is++) {
+        for (var is = 0, isLen = initSel.length; is < isLen; is++) {
             if (initSel[is].typename === "TextFrame") {
                 initialSelectedTextFrame = initSel[is];
                 break;
@@ -182,7 +182,7 @@
     var fontCache = {};
 
     function getFontByExactNames(nameList) {
-        for (var i = 0; i < nameList.length; i++) {
+        for (var i = 0, iLen = nameList.length; i < iLen; i++) {
             var n = nameList[i];
             try {
                 var f = app.textFonts.getByName(n);
@@ -195,14 +195,14 @@
     function findFontByKeywords(familyKeywords, styleKeywords) {
         var bestMatch = null;
         try {
-            for (var i = 0; i < app.textFonts.length; i++) {
+            for (var i = 0, iLen = app.textFonts.length; i < iLen; i++) {
                 var tf = app.textFonts[i];
                 var fam = (tf.family || "").toLowerCase();
                 var name = (tf.name || "").toLowerCase();
                 var style = (tf.style || "").toLowerCase();
 
                 var familyMatches = false;
-                for (var fk = 0; fk < familyKeywords.length; fk++) {
+                for (var fk = 0, fkLen = familyKeywords.length; fk < fkLen; fk++) {
                     if (fam.indexOf(familyKeywords[fk]) !== -1 || name.indexOf(familyKeywords[fk]) !== -1) {
                         familyMatches = true;
                         break;
@@ -211,7 +211,7 @@
                 if (familyMatches) {
                     if (!bestMatch) bestMatch = tf;
                     if (styleKeywords) {
-                        for (var sk = 0; sk < styleKeywords.length; sk++) {
+                        for (var sk = 0, skLen = styleKeywords.length; sk < skLen; sk++) {
                             if (style.indexOf(styleKeywords[sk]) !== -1 || name.indexOf(styleKeywords[sk]) !== -1) {
                                 return tf;
                             }
@@ -300,7 +300,7 @@
         // 2. Active selection
         try {
             var sel = getNormalizedSelection();
-            for (var s = 0; s < sel.length; s++) {
+            for (var s = 0, sLen = sel.length; s < sLen; s++) {
                 if (sel[s].typename === "TextFrame" && isUsableDonor(sel[s])) {
                     return sel[s];
                 }
@@ -313,7 +313,7 @@
             var anyPointDonor = null;
             var anyDonor = null;
 
-            for (var i = 0; i < doc.textFrames.length; i++) {
+            for (var i = 0, iLen = doc.textFrames.length; i < iLen; i++) {
                 var tf = doc.textFrames[i];
                 if (!isUsableDonor(tf)) continue;
 
@@ -338,7 +338,7 @@
         var sel = getNormalizedSelection();
         if (sel.length > 0) {
             var combined = null;
-            for (var i = 0; i < sel.length; i++) {
+            for (var i = 0, iLen = sel.length; i < iLen; i++) {
                 if (isGeneratedItem(sel[i])) continue;
                 var b = null;
                 try { b = sel[i].geometricBounds; } catch (eGeo) {
@@ -1073,7 +1073,7 @@
         }
 
         // Disable hyphenation
-        for (var pa = 0; pa < txt.paragraphs.length; pa++) {
+        for (var pa = 0, paLen = txt.paragraphs.length; pa < paLen; pa++) {
             try {
                 txt.paragraphs[pa].paragraphAttributes.hyphenation = false;
             } catch (eNoHyphen) {}
@@ -1097,7 +1097,7 @@
         if (settings.alignmentIndex === 1) targetJust = Justification.CENTER;
         else if (settings.alignmentIndex === 2) targetJust = Justification.RIGHT;
 
-        for (var p = 0; p < txt.paragraphs.length; p++) {
+        for (var p = 0, pLen = txt.paragraphs.length; p < pLen; p++) {
             try { txt.paragraphs[p].paragraphAttributes.justification = targetJust; } catch (eJ) {}
         }
 
@@ -1160,7 +1160,7 @@
 
         // Reuse preview layer if already created for ultra-fast in-place preview
         if (!previewLayer) {
-            for (var pl = 0; pl < doc.layers.length; pl++) {
+            for (var pl = 0, plLen = doc.layers.length; pl < plLen; pl++) {
                 if (doc.layers[pl].name === PREVIEW_LAYER_NAME) {
                     previewLayer = doc.layers[pl];
                     break;
@@ -1294,7 +1294,7 @@
 
         // Find or create result layer
         var destLayer = null;
-        for (var li = 0; li < doc.layers.length; li++) {
+        for (var li = 0, liLen = doc.layers.length; li < liLen; li++) {
             if (doc.layers[li].name === RESULT_LAYER_NAME) {
                 destLayer = doc.layers[li];
                 break;

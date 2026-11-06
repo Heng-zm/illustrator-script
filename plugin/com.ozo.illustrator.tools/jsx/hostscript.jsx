@@ -40,7 +40,7 @@ function ozoJsonStringify(value) {
     }
     if (value instanceof Array || Object.prototype.toString.call(value) === "[object Array]") {
         var items = [];
-        for (var i = 0; i < value.length; i++) {
+        for (var i = 0, iLen = value.length; i < iLen; i++) {
             items.push(ozoJsonStringify(value[i]));
         }
         return "[" + items.join(",") + "]";
@@ -65,7 +65,7 @@ function ozoJsonStringify(value) {
 
 function ozoJsonQuote(text) {
     var result = '"';
-    for (var i = 0; i < text.length; i++) {
+    for (var i = 0, iLen = text.length; i < iLen; i++) {
         var character = text.charAt(i);
         var code = text.charCodeAt(i);
         if (character === '"') {
@@ -253,13 +253,13 @@ function ozoResolveScriptsFolder() {
                 roots.push(new Folder(app.path.parent.fsName + "/Presets"));
                 roots.push(new Folder(app.path.parent.fsName + "/Presets.localized"));
             }
-            for (var r = 0; r < roots.length; r++) {
+            for (var r = 0, rLen = roots.length; r < rLen; r++) {
                 var rt = roots[r];
                 if (rt && rt.exists) {
                     var locale = app.locale || "en_US";
                     candidates.push(rt.fsName + "/" + locale + "/Scripts/Ozo Tools");
                     var sub = rt.getFiles(function (f) { return f instanceof Folder; });
-                    for (var s = 0; s < sub.length; s++) {
+                    for (var s = 0, sLen = sub.length; s < sLen; s++) {
                         candidates.push(sub[s].fsName + "/Scripts/Ozo Tools");
                     }
                 }
@@ -276,7 +276,7 @@ function ozoResolveScriptsFolder() {
         }
     } catch (ignoreDocs) {}
 
-    for (var i = 0; i < candidates.length; i++) {
+    for (var i = 0, iLen = candidates.length; i < iLen; i++) {
         var f = new Folder(candidates[i]);
         if (f.exists) {
             return f;
@@ -964,7 +964,7 @@ function ozoGetExportMetadata() {
         }
 
         var artboards = [];
-        for (var i = 0; i < doc.artboards.length; i++) {
+        for (var i = 0, iLen = doc.artboards.length; i < iLen; i++) {
             var ab = doc.artboards[i];
             var rect = ab.artboardRect;
             var widthPt = Math.abs(rect[2] - rect[0]);
@@ -980,7 +980,7 @@ function ozoGetExportMetadata() {
         var pdfPresets = [];
         try {
             if (app.PDFPresetsList && app.PDFPresetsList.length > 0) {
-                for (var p = 0; p < app.PDFPresetsList.length; p++) {
+                for (var p = 0, pLen = app.PDFPresetsList.length; p < pLen; p++) {
                     pdfPresets.push(String(app.PDFPresetsList[p]));
                 }
             }
@@ -1185,10 +1185,10 @@ function ozoIsGeneratedPrintJobItem(item) {
 function ozoGetPreviousPrintJobHeader() {
     try {
         var doc = app.activeDocument;
-        for (var li = 0; li < doc.layers.length; li++) {
+        for (var li = 0, liLen = doc.layers.length; li < liLen; li++) {
             var layer = doc.layers[li];
             if (layer.name !== "[Print Job Info]") continue;
-            for (var pi = 0; pi < layer.pageItems.length; pi++) {
+            for (var pi = 0, piLen = layer.pageItems.length; pi < piLen; pi++) {
                 var item = layer.pageItems[pi];
                 try {
                     if (item.name !== "Print Header Block" || !item.geometricBounds) continue;
@@ -1204,7 +1204,7 @@ function ozoGetPreviousPrintJobHeader() {
 
                     var backgroundBottom = null;
                     try {
-                        for (var ci = 0; ci < item.pageItems.length; ci++) {
+                        for (var ci = 0, ciLen = item.pageItems.length; ci < ciLen; ci++) {
                             var child = item.pageItems[ci];
                             if (child.name === "Header Background" && child.geometricBounds) {
                                 backgroundBottom = child.geometricBounds[3];
@@ -1242,14 +1242,14 @@ function ozoGetPrintJobDefaults() {
             var selItems = [];
             if (sel && sel.typename !== "TextRange") {
                 if (sel instanceof Array || sel.typename === "Array" || Object.prototype.toString.call(sel) === "[object Array]" || typeof sel.length === "number") {
-                    for (var si = 0; si < sel.length; si++) selItems.push(sel[si]);
+                    for (var si = 0, siLen = sel.length; si < siLen; si++) selItems.push(sel[si]);
                 } else {
                     selItems.push(sel);
                 }
             }
             if (selItems.length > 0) {
                 var combined = null;
-                for (var i = 0; i < selItems.length; i++) {
+                for (var i = 0, iLen = selItems.length; i < iLen; i++) {
                     if (ozoIsGeneratedPrintJobItem(selItems[i])) continue;
                     var b = null;
                     try { b = selItems[i].geometricBounds; } catch (eGeo) {
@@ -1723,7 +1723,7 @@ function ozoImportIconSvg(paramsJsonStr) {
 
         // Get or create layer
         var targetLayer = null;
-        for (var li = 0; li < doc.layers.length; li++) {
+        for (var li = 0, liLen = doc.layers.length; li < liLen; li++) {
             if (doc.layers[li].name === layerName) {
                 targetLayer = doc.layers[li];
                 break;
@@ -1750,7 +1750,7 @@ function ozoImportIconSvg(paramsJsonStr) {
             wrapper = targetLayer.groupItems.add();
             wrapper.name = iconName;
             sourceDoc = app.open(tempFile);
-            for (var si = 0; si < sourceDoc.pageItems.length; si++) {
+            for (var si = 0, siLen = sourceDoc.pageItems.length; si < siLen; si++) {
                 var sItem = sourceDoc.pageItems[si];
                 if (sItem.parent && sItem.parent.typename === "Layer") {
                     sItem.duplicate(wrapper, ElementPlacement.PLACEATEND);
@@ -1822,7 +1822,7 @@ function ozoScanLauncherScripts(customFolderPath) {
         function scanDir(dir, depth) {
             if (!dir || !dir.exists || depth > 2) return;
             var files = dir.getFiles();
-            for (var i = 0; i < files.length; i++) {
+            for (var i = 0, iLen = files.length; i < iLen; i++) {
                 var f = files[i];
                 if (f instanceof Folder) {
                     var fn = f.name;
@@ -1853,7 +1853,7 @@ function ozoScanLauncherScripts(customFolderPath) {
                     new Folder(app.path.fsName + "/Presets/Scripts"),
                     new Folder(app.path.fsName + "/Presets.localized/Scripts")
                 ];
-                for (var p = 0; p < appPresetFolders.length; p++) {
+                for (var p = 0, pLen = appPresetFolders.length; p < pLen; p++) {
                     if (appPresetFolders[p].exists) {
                         scanDir(appPresetFolders[p], 0);
                         break;
@@ -1865,7 +1865,7 @@ function ozoScanLauncherScripts(customFolderPath) {
         // Remove duplicates by path
         var seen = {};
         var unique = [];
-        for (var u = 0; u < results.length; u++) {
+        for (var u = 0, uLen = results.length; u < uLen; u++) {
             if (!seen[results[u].path]) {
                 seen[results[u].path] = true;
                 unique.push(results[u]);

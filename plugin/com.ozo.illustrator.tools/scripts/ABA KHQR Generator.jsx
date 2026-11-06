@@ -36,7 +36,7 @@
 
     function calculateCRC16(str) {
         var crc = 0xFFFF;
-        for (var i = 0; i < str.length; i++) {
+        for (var i = 0, iLen = str.length; i < iLen; i++) {
             var c = str.charCodeAt(i) & 0xFF;
             crc ^= (c << 8);
             for (var j = 0; j < 8; j++) {
@@ -108,7 +108,7 @@
 
     function utf8Bytes(text) {
         var bytes = [];
-        for (var index = 0; index < text.length; index++) {
+        for (var index = 0, indexLen = text.length; index < indexLen; index++) {
             var code = text.charCodeAt(index);
             if (code >= 0xD800 && code <= 0xDBFF && index + 1 < text.length) {
                 var low = text.charCodeAt(index + 1);
@@ -192,11 +192,11 @@
     function polynomialMultiply(first, second) {
         var result = [];
         var index;
-        for (index = 0; index < first.length + second.length - 1; index++) {
+        for (var index = 0, combLen = first.length + second.length - 1; index < combLen; index++) {
             result[index] = 0;
         }
-        for (index = 0; index < first.length; index++) {
-            for (var secondIndex = 0; secondIndex < second.length; secondIndex++) {
+        for (var index = 0, indexLen = first.length; index < indexLen; index++) {
+            for (var secondIndex = 0, secondIndexLen = second.length; secondIndex < secondIndexLen; secondIndex++) {
                 result[index + secondIndex] ^= gfExp(
                     gfLog(first[index]) + gfLog(second[secondIndex])
                 );
@@ -228,7 +228,7 @@
                 continue;
             }
             var ratio = gfLog(result[offset]) - gfLog(divisor[0]);
-            for (var index = 0; index < divisor.length; index++) {
+            for (var index = 0, indexLen = divisor.length; index < indexLen; index++) {
                 result[offset + index] ^= gfExp(gfLog(divisor[index]) + ratio);
             }
             while (offset < result.length && result[offset] === 0) {
@@ -261,7 +261,7 @@
     function expandedBlocks(version, level) {
         var definitions = RS_BLOCKS[(version - 1) * 4 + LEVEL_INDEX[level]];
         var blocks = [];
-        for (var index = 0; index < definitions.length; index++) {
+        for (var index = 0, indexLen = definitions.length; index < indexLen; index++) {
             for (var count = 0; count < definitions[index][0]; count++) {
                 blocks.push({
                     totalCount: definitions[index][1],
@@ -275,7 +275,7 @@
     function dataCapacityFor(version, level) {
         var definitions = RS_BLOCKS[(version - 1) * 4 + LEVEL_INDEX[level]];
         var capacity = 0;
-        for (var index = 0; index < definitions.length; index++) {
+        for (var index = 0, indexLen = definitions.length; index < indexLen; index++) {
             capacity += definitions[index][0] * definitions[index][2];
         }
         return capacity;
@@ -285,14 +285,14 @@
         var blocks = expandedBlocks(version, level);
         var dataCapacity = 0;
         var index;
-        for (index = 0; index < blocks.length; index++) {
+        for (var index = 0, indexLen = blocks.length; index < indexLen; index++) {
             dataCapacity += blocks[index].dataCount;
         }
 
         var buffer = new BitBuffer();
         buffer.put(4, 4); // Byte mode.
         buffer.put(bytes.length, version < 10 ? 8 : 16);
-        for (index = 0; index < bytes.length; index++) {
+        for (var index = 0, indexLen = bytes.length; index < indexLen; index++) {
             buffer.put(bytes[index], 8);
         }
         if (buffer.length > dataCapacity * 8) {
@@ -315,7 +315,7 @@
         var errorBlocks = [];
         var maxData = 0;
         var maxError = 0;
-        for (index = 0; index < blocks.length; index++) {
+        for (var index = 0, indexLen = blocks.length; index < indexLen; index++) {
             var dataCount = blocks[index].dataCount;
             var errorCount = blocks[index].totalCount - dataCount;
             dataBlocks[index] = buffer.buffer.slice(offset, offset + dataCount);
@@ -338,14 +338,14 @@
 
         var codewords = [];
         for (index = 0; index < maxData; index++) {
-            for (var dataBlock = 0; dataBlock < dataBlocks.length; dataBlock++) {
+            for (var dataBlock = 0, dataBlockLen = dataBlocks.length; dataBlock < dataBlockLen; dataBlock++) {
                 if (index < dataBlocks[dataBlock].length) {
                     codewords.push(dataBlocks[dataBlock][index]);
                 }
             }
         }
         for (index = 0; index < maxError; index++) {
-            for (var errorBlock = 0; errorBlock < errorBlocks.length; errorBlock++) {
+            for (var errorBlock = 0, errorBlockLen = errorBlocks.length; errorBlock < errorBlockLen; errorBlock++) {
                 if (index < errorBlocks[errorBlock].length) {
                     codewords.push(errorBlocks[errorBlock][index]);
                 }
@@ -425,8 +425,8 @@
 
     function setupAlignment(matrix, version) {
         var positions = ALIGNMENT_POSITIONS[version - 1];
-        for (var first = 0; first < positions.length; first++) {
-            for (var second = 0; second < positions.length; second++) {
+        for (var first = 0, firstLen = positions.length; first < firstLen; first++) {
+            for (var second = 0, secondLen = positions.length; second < secondLen; second++) {
                 var row = positions[first];
                 var column = positions[second];
                 if (matrix[row][column] !== null) {
@@ -443,7 +443,7 @@
     }
 
     function setupTiming(matrix) {
-        for (var index = 8; index < matrix.length - 8; index++) {
+        for (var index = 8, mBound = matrix.length - 8; index < mBound; index++) {
             if (matrix[index][6] === null) {
                 matrix[index][6] = index % 2 === 0;
             }

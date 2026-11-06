@@ -118,7 +118,7 @@
         if (!trimmed) return indices;
 
         var parts = trimmed.split(",");
-        for (var i = 0; i < parts.length; i++) {
+        for (var i = 0, iLen = parts.length; i < iLen; i++) {
             var part = parts[i];
             if (part.indexOf("-") !== -1) {
                 var range = part.split("-");
@@ -144,7 +144,7 @@
         // Deduplicate and sort ascending
         var seen = {};
         var unique = [];
-        for (var j = 0; j < indices.length; j++) {
+        for (var j = 0, jLen = indices.length; j < jLen; j++) {
             var idx = indices[j];
             if (!seen[idx]) {
                 seen[idx] = true;
@@ -239,7 +239,7 @@
         try {
             unlockAllForOutline(targetDoc);
             var tfList = [];
-            for (var i = 0; i < targetDoc.textFrames.length; i++) {
+            for (var i = 0, iLen = targetDoc.textFrames.length; i < iLen; i++) {
                 tfList.push(targetDoc.textFrames[i]);
             }
             for (var t = tfList.length - 1; t >= 0; t--) {
@@ -486,7 +486,7 @@
             }
 
             // Export TIFF, PNG, JPEG
-            for (var t = 0; t < targetIndices.length; t++) {
+            for (var t = 0, tLen = targetIndices.length; t < tLen; t++) {
                 var abIdx = targetIndices[t];
                 doc.artboards.setActiveArtboardIndex(abIdx);
 
@@ -542,7 +542,7 @@
                         var combinedFileName = buildFileName(cfg.template, docBaseName, combinedIndex, "pdf", selUnit, "All", batchCtx);
                         var combinedFile = new File(targetFolder.fsName + "/" + combinedFileName);
                         var rangeArr = [];
-                        for (var rIdx = 0; rIdx < targetIndices.length; rIdx++) {
+                        for (var rIdx = 0, rIdxLen = targetIndices.length; rIdx < rIdxLen; rIdx++) {
                             rangeArr.push(targetIndices[rIdx] + 1);
                         }
                         pdfOpts.artboardRange = rangeArr.join(",");
@@ -565,7 +565,7 @@
                         }
                     }
 
-                    for (var pIdx = 0; pIdx < targetIndices.length; pIdx++) {
+                    for (var pIdx = 0, pIdxLen = targetIndices.length; pIdx < pIdxLen; pIdx++) {
                         var abIndexForPdf = targetIndices[pIdx];
                         try {
                             var pdfFile = new File(targetFolder.fsName + "/" + buildFileName(cfg.template, docBaseName, abIndexForPdf, "pdf", selUnit, null, batchCtx));
@@ -783,7 +783,7 @@
     var availablePresets = [];
     try {
         if (app.PDFPresetsList && app.PDFPresetsList.length > 0) {
-            for (var p = 0; p < app.PDFPresetsList.length; p++) {
+            for (var p = 0, pLen = app.PDFPresetsList.length; p < pLen; p++) {
                 availablePresets.push(app.PDFPresetsList[p]);
             }
         }
@@ -791,7 +791,7 @@
     if (availablePresets.length === 0) {
         availablePresets = ["[High Quality Print]", "[Press Quality]", "[Illustrator Default]", "[Smallest File Size]"];
     }
-    for (var ap = 0; ap < availablePresets.length; ap++) {
+    for (var ap = 0, apLen = availablePresets.length; ap < apLen; ap++) {
         pdfPresetList.add("item", availablePresets[ap]);
     }
     pdfPresetList.selection = 0;
@@ -931,7 +931,7 @@
     presetLabel.preferredSize.width = 46;
 
     var presetLabels = [];
-    for (var pi = 0; pi < namingPresets.length; pi++) {
+    for (var pi = 0, piLen = namingPresets.length; pi < piLen; pi++) {
         presetLabels.push(namingPresets[pi].label);
     }
     var namingPresetList = presetUnitRow.add("dropdownlist", undefined, presetLabels);
@@ -999,7 +999,7 @@
 
     function syncPresetToInput() {
         var txt = templateInput.text;
-        for (var i = 0; i < namingPresets.length - 1; i++) {
+        for (var i = 0, npLen = namingPresets.length - 1; i < npLen; i++) {
             if (namingPresets[i].pattern === txt) {
                 namingPresetList.selection = i;
                 return;

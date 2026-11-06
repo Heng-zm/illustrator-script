@@ -31,7 +31,7 @@
                 try {
                     var actLayer = doc.activeLayer;
                     if (actLayer && actLayer.pageItems && actLayer.pageItems.length > 0) {
-                        for (var pi = 0; pi < actLayer.pageItems.length; pi++) {
+                        for (var pi = 0, piLen = actLayer.pageItems.length; pi < piLen; pi++) {
                             try { actLayer.pageItems[pi].selected = true; } catch (eSel) {}
                         }
                         selectionValue = doc.selection;
@@ -56,7 +56,7 @@
     }
 
     var sourceItems = [];
-    for (var s = 0; s < selectionValue.length; s++) {
+    for (var s = 0, sLen = selectionValue.length; s < sLen; s++) {
         sourceItems.push(selectionValue[s]);
     }
     var originalActiveLayer = doc.activeLayer;
@@ -94,7 +94,7 @@
 
     function getSelectionBounds(items) {
         var combined = null;
-        for (var i = 0; i < items.length; i++) {
+        for (var i = 0, iLen = items.length; i < iLen; i++) {
             var b = null;
             try { b = items[i].geometricBounds; } catch (eGeo) {
                 try { b = items[i].visibleBounds; } catch (eVis) {}
@@ -194,7 +194,7 @@
     // -------------------------------------------------------------
     function getOrCreateSpotColor(targetDoc, spotName, cmykValues) {
         var existingSpot = null;
-        for (var i = 0; i < targetDoc.spots.length; i++) {
+        for (var i = 0, iLen = targetDoc.spots.length; i < iLen; i++) {
             if (targetDoc.spots[i].name === spotName) {
                 existingSpot = targetDoc.spots[i];
                 break;
@@ -235,13 +235,13 @@
         if (!item) return;
         try {
             if (item.typename === "GroupItem") {
-                for (var g = 0; g < item.pageItems.length; g++) {
+                for (var g = 0, gLen = item.pageItems.length; g < gLen; g++) {
                     styleCutPath(item.pageItems[g], spotColor, settings);
                 }
                 return;
             }
             if (item.typename === "CompoundPathItem") {
-                for (var cp = 0; cp < item.pathItems.length; cp++) {
+                for (var cp = 0, cpLen = item.pathItems.length; cp < cpLen; cp++) {
                     styleCutPath(item.pathItems[cp], spotColor, settings);
                 }
                 return;
@@ -281,14 +281,14 @@
             } else if (type === "GroupItem") {
                 stats.groups++;
                 if (item.clipped) stats.compounds++;
-                for (var g = 0; g < item.pageItems.length; g++) {
+                for (var g = 0, gLen = item.pageItems.length; g < gLen; g++) {
                     inspectItem(item.pageItems[g]);
                 }
             } else if (type === "TextFrame") stats.texts++;
             else if (type === "RasterItem" || type === "PlacedItem") stats.rasters++;
         }
 
-        for (var i = 0; i < items.length; i++) {
+        for (var i = 0, iLen = items.length; i < iLen; i++) {
             inspectItem(items[i]);
         }
 
@@ -324,7 +324,7 @@
         if (!item) return;
         try {
             if (item.typename === "CompoundPathItem") {
-                for (var cp = 0; cp < item.pathItems.length; cp++) {
+                for (var cp = 0, cpLen = item.pathItems.length; cp < cpLen; cp++) {
                     optimizePathItem(item.pathItems[cp], tolerancePt);
                 }
                 return;
@@ -406,7 +406,7 @@
             try {
                 var contourGroup = targetContainer.groupItems.add();
                 contourGroup.name = "Tight Contour Group";
-                for (var i = 0; i < sourceItems.length; i++) {
+                for (var i = 0, iLen = sourceItems.length; i < iLen; i++) {
                     try {
                         sourceItems[i].duplicate(contourGroup, ElementPlacement.PLACEATEND);
                     } catch (eDup) {}
@@ -495,7 +495,7 @@
             markColor.black = 100;
         }
 
-        for (var c = 0; c < corners.length; c++) {
+        for (var c = 0, cLen = corners.length; c < cLen; c++) {
             var pt = corners[c];
             // Crosshair
             var hLine = container.pathItems.add();
@@ -542,7 +542,7 @@
     function restoreSelection() {
         try {
             doc.selection = null;
-            for (var i = 0; i < sourceItems.length; i++) {
+            for (var i = 0, iLen = sourceItems.length; i < iLen; i++) {
                 sourceItems[i].selected = true;
             }
         } catch (ignoreSel) {}
@@ -662,7 +662,7 @@
         // Move previewGroup to destination production layer
         var layerName = finalSettings.layerName || "CutContour";
         var finalLayer = null;
-        for (var lIdx = 0; lIdx < doc.layers.length; lIdx++) {
+        for (var lIdx = 0, lIdxLen = doc.layers.length; lIdx < lIdxLen; lIdx++) {
             if (doc.layers[lIdx].name === layerName && doc.layers[lIdx] !== previewLayer) {
                 finalLayer = doc.layers[lIdx];
                 break;
@@ -815,7 +815,7 @@
     presetSubGrp.add("statictext", undefined, OZO.tr("Machine / RIP Preset:"));
     var presetList = presetSubGrp.add("dropdownlist", undefined, []);
     presetList.preferredSize.width = 200;
-    for (var p = 0; p < MACHINE_PRESETS.length; p++) {
+    for (var p = 0, pLen = MACHINE_PRESETS.length; p < pLen; p++) {
         presetList.add("item", MACHINE_PRESETS[p].name);
     }
     presetList.selection = 0;
@@ -1024,7 +1024,7 @@
         if (u !== previousUnit) {
             var ratio = unitFactor(previousUnit) / unitFactor(u);
             var fields = [offsetInput, radiusInput, kissOffsetInput, perfOffsetInput];
-            for (var fi = 0; fi < fields.length; fi++) {
+            for (var fi = 0, fiLen = fields.length; fi < fiLen; fi++) {
                 var raw = (typeof OZO !== "undefined" && OZO.parseNumber) ?
                     OZO.parseNumber(fields[fi].text, NaN) : Number(fields[fi].text);
                 if (isFinite(raw)) {

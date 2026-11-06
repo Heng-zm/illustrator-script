@@ -22,7 +22,7 @@
         if (rawSelection.typename === "TextRange") {
             currentSelection = [rawSelection];
         } else if (rawSelection instanceof Array || rawSelection.typename === "Array" || Object.prototype.toString.call(rawSelection) === "[object Array]" || typeof rawSelection.length === "number") {
-            for (var csi = 0; csi < rawSelection.length; csi++) currentSelection.push(rawSelection[csi]);
+            for (var csi = 0, csiLen = rawSelection.length; csi < csiLen; csi++) currentSelection.push(rawSelection[csi]);
         } else {
             currentSelection = [rawSelection];
         }
@@ -250,7 +250,7 @@
 
     function uniqueResultLayerName() {
         var used = {};
-        for (var i = 0; i < doc.layers.length; i++) used[doc.layers[i].name] = true;
+        for (var i = 0, iLen = doc.layers.length; i < iLen; i++) used[doc.layers[i].name] = true;
         if (!used[RESULT_LAYER_NAME]) return RESULT_LAYER_NAME;
         var suffix = 2;
         while (used[RESULT_LAYER_NAME + " " + suffix]) suffix++;
@@ -418,7 +418,7 @@
         } catch (ignoreLayerSelect) {
             try {
                 doc.selection = null;
-                for (var itemIndex = 0; itemIndex < previewItems.length; itemIndex++) {
+                for (var itemIndex = 0, itemIndexLen = previewItems.length; itemIndex < itemIndexLen; itemIndex++) {
                     previewItems[itemIndex].selected = true;
                 }
             } catch (ignoreItemSelect) {}
@@ -561,7 +561,7 @@
         if (restoringState) return;
         var newUnit = getSelectionText(unitList, "mm");
         var controls = [horizontalInput, verticalInput, startXInput, startYInput];
-        for (var i = 0; i < controls.length; i++) {
+        for (var i = 0, iLen = controls.length; i < iLen; i++) {
             var val = (typeof OZO !== "undefined" && OZO.parseNumber) ?
                 OZO.parseNumber(controls[i].text, NaN) :
                 parseFloat(String(controls[i].text).replace(/,/g, "."));
@@ -684,7 +684,7 @@
         } catch (ignoreFinalSelect) {
             try {
                 doc.selection = null;
-                for (var finalIndex = 0; finalIndex < previewItems.length; finalIndex++) {
+                for (var finalIndex = 0, finalIndexLen = previewItems.length; finalIndex < finalIndexLen; finalIndex++) {
                     previewItems[finalIndex].selected = true;
                 }
             } catch (ignoreItemSelect) {}

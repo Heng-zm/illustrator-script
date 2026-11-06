@@ -454,7 +454,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                 var content = file.read();
                 file.close();
                 var lines = content.split(/\r?\n/);
-                for (var i = 0; i < lines.length; i++) {
+                for (var i = 0, iLen = lines.length; i < iLen; i++) {
                     var line = lines[i];
                     var split = line.indexOf("\t");
                     if (split < 1) continue;
@@ -476,7 +476,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                 file.lineFeed = "Unix";
                 if (!file.open("w")) return false;
                 var buffer = [];
-                for (var i = 0; i < keys.length; i++) {
+                for (var i = 0, iLen = keys.length; i < iLen; i++) {
                     buffer.push(encodeURIComponent(keys[i]) + "\t" +
                         encodeURIComponent(String(data[keys[i]])));
                 }
@@ -500,7 +500,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         function visit(parent, callback, path) {
             path = path || "";
             if (!parent || !parent.children) return;
-            for (var i = 0; i < parent.children.length; i++) {
+            for (var i = 0, iLen = parent.children.length; i < iLen; i++) {
                 var child = parent.children[i], childPath = path ? path + "." + i : String(i);
                 callback(child, childPath);
                 visit(child, callback, childPath);
@@ -563,7 +563,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                 if (control.type === "dropdownlist") {
                     if (!control._ozoEnglishItems) {
                         control._ozoEnglishItems = [];
-                        for (var i = 0; i < control.items.length; i++) control._ozoEnglishItems.push(control.items[i].text);
+                        for (var i = 0, iLen = control.items.length; i < iLen; i++) control._ozoEnglishItems.push(control.items[i].text);
                     }
                     for (i = 0; i < control.items.length && i < control._ozoEnglishItems.length; i++) {
                         control.items[i].text = language() === "km" && km.hasOwnProperty(control._ozoEnglishItems[i]) ?
@@ -748,7 +748,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             ];
             var value = "";
             var checksum = 0;
-            for (var i = 0; i < encoded.length; i++) {
+            for (var i = 0, iLen = encoded.length; i < iLen; i++) {
                 var character = String.fromCharCode(encoded[i] ^ 90);
                 value += character;
                 checksum = (checksum * 131 + character.charCodeAt(0)) % 2147483647;
@@ -952,10 +952,10 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
                 try { doc = app.activeDocument; } catch (e) { return null; }
             }
             try {
-                for (var l = 0; l < doc.layers.length; l++) {
+                for (var l = 0, lLen = doc.layers.length; l < lLen; l++) {
                     var layer = doc.layers[l];
                     if (layer.visible && !layer.locked) {
-                        for (var t = 0; t < layer.textFrames.length; t++) {
+                        for (var t = 0, tLen = layer.textFrames.length; t < tLen; t++) {
                             var tf = layer.textFrames[t];
                             if (tf.visible && !tf.locked) {
                                 return tf;
@@ -1026,7 +1026,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
         // ------------------------------------------------------------------
         function ozoJsonQuote(text) {
             var result = '"';
-            for (var i = 0; i < text.length; i++) {
+            for (var i = 0, iLen = text.length; i < iLen; i++) {
                 var character = text.charAt(i);
                 var code = text.charCodeAt(i);
                 if (character === '"') {
@@ -1072,7 +1072,7 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             }
             if (value instanceof Array || Object.prototype.toString.call(value) === "[object Array]") {
                 var items = [];
-                for (var i = 0; i < value.length; i++) {
+                for (var i = 0, iLen = value.length; i < iLen; i++) {
                     items.push(ozoJsonStringify(value[i]));
                 }
                 return "[" + items.join(",") + "]";
