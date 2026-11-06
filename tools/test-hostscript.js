@@ -14,8 +14,10 @@
 
 var assert = require("assert");
 var fs = require("fs");
+var os = require("os");
 var path = require("path");
 var vm = require("vm");
+var childProcess = require("child_process");
 
 var ROOT = path.resolve(__dirname, "..");
 var HOST_SCRIPT = path.join(ROOT, "plugin", "com.ozo.illustrator.tools", "jsx", "hostscript.jsx");
@@ -463,6 +465,46 @@ test("naming-template preview generates identical filenames to host exporter", f
     assert.strictEqual(combPreview, "Catalogue_All.pdf");
     assert.strictEqual(combPreview, combHost);
 });
+
+// ------------------------------------------------------------------
+// Updater script validation
+// ------------------------------------------------------------------
+// The Windows updater is generated as a PowerShell script. A stray brace or
+// throw used to make it unparseable, so PowerShell exited without writing a
+// status file and every update surfaced as "timed out". Parse the generated
+// script with the real PowerShell parser to catch that class of bug.
+if (process.platform === "win32") {
+    test("generated Windows updater is a valid PowerShell script", function () {
+        var src = fs.readFileSync(HOST_SCRIPT, "utf8");
+        var start = src.indexOf("var psScript = [");
+        var endMarker = "].join(\"\\r\\n\");";
+        var end = src.indexOf(endMarker, start);
+        assert.ok(start !== -1 && end !== -1, "psScript construction found in hostscript.jsx");
+
+        var expr = src.slice(start + "var psScript = ".length, end + endMarker.length);
+        var psScript = vm.runInNewContext(expr, {
+            targetFsPath: "C:\\\\Temp\\\\plugin",
+            resultFsPath: "C:\\\\Temp\\\\result.json",
+            safeZipUrl: "https://example.com/update.zip",
+            cleanTag: "v1.2.3"
+        });
+        assert.ok(psScript.indexOf("ConvertTo-Json") !== -1, "status output is built with ConvertTo-Json");
+
+        var scriptPath = path.join(os.tmpdir(), "ozo_updater_selftest_" + process.pid + ".ps1");
+        fs.writeFileSync(scriptPath, psScript, "utf8");
+        try {
+            childProcess.execFileSync("powershell.exe", [
+                "-NoProfile",
+                "-Command",
+                "$e = $null; [System.Management.Automation.Language.Parser]::ParseFile('" +
+                    scriptPath.replace(/'/g, "''") +
+                    "', [ref]$null, [ref]$e) | Out-Null; if ($e) { $e | ForEach-Object { Write-Error $_.Message }; exit 1 }"
+            ], { encoding: "utf8", windowsHide: true });
+        } finally {
+            try { fs.unlinkSync(scriptPath); } catch (e) {}
+        }
+    });
+}
 
 // ------------------------------------------------------------------
 // Version Consistency Check

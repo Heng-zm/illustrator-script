@@ -650,16 +650,16 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "    $downloadOk = $false",
                 "    if (Get-Command curl.exe -ErrorAction SilentlyContinue) {",
                 "        try {",
-                "            & curl.exe -fL --retry 3 --retry-delay 2 --connect-timeout 20 -m 120 -A 'OzoTools-Updater' -sS -o $tempZip $zipUrl",
+                "            & curl.exe -fL --retry 1 --retry-delay 2 --connect-timeout 20 -m 90 -A 'OzoTools-Updater' -sS -o $tempZip $zipUrl",
                 "            if ((Test-Path $tempZip) -and (Get-Item $tempZip).Length -ge 1000) {",
                 "                $downloadOk = $true",
                 "            }",
                 "        } catch {}",
                 "    }",
                 "    if (-not $downloadOk) {",
-                "        for ($attempt = 1; $attempt -le 3; $attempt++) {",
+                "        for ($attempt = 1; $attempt -le 2; $attempt++) {",
                 "            try {",
-                "                Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing -UserAgent 'OzoTools-Updater' -TimeoutSec 90 -MaximumRedirection 10",
+                "                Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing -UserAgent 'OzoTools-Updater' -TimeoutSec 60 -MaximumRedirection 10",
                 "                if ((Test-Path $tempZip) -and (Get-Item $tempZip).Length -ge 1000) {",
                 "                    $downloadOk = $true",
                 "                    break",
@@ -669,21 +669,8 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "            }",
                 "        }",
                 "    }",
-                "    if (-not $downloadOk) {",
-                "        try {",
-                "            $wc = New-Object System.Net.WebClient",
-                "            $wc.Headers.Add('User-Agent', 'OzoTools-Updater')",
-                "            if ($wc.Proxy) { $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials }",
-                "            $wc.DownloadFile($zipUrl, $tempZip)",
-                "            if ((Test-Path $tempZip) -and (Get-Item $tempZip).Length -ge 1000) {",
-                "                $downloadOk = $true",
-                "            }",
-                "        } catch {}",
-                "    }",
                 "    if (-not $downloadOk -or -not (Test-Path $tempZip) -or (Get-Item $tempZip).Length -lt 1000) {",
-                "        throw 'Download timed out or failed (504 Gateway Timeout). Please check your internet connection and retry.'",
-                "    }",
-                "        throw 'Downloaded package is empty or invalid'",
+                "        throw 'Download timed out or failed. Please check your internet connection and retry.'",
                 "    }",
                 "    New-Item -Path $tempDir -ItemType Directory -Force | Out-Null",
                 "    try {",
@@ -745,8 +732,9 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "    } finally {",
                 "        Remove-Item -Path $backupDir -Recurse -Force -ErrorAction SilentlyContinue",
                 "    }",
-                "    $json = '{\"status\":\"success\",\"version\":\"' + $versionTag + '\"}'",
-                "    [System.IO.File]::WriteAllText($resultFile, $json, [System.Text.Encoding]::ASCII)",
+                "    $json = [pscustomobject]@{ status = 'success'; version = $versionTag } | ConvertTo-Json -Compress",
+                "    [System.IO.File]::WriteAllText($resultFile + '.tmp', $json)",
+                "    Move-Item -LiteralPath ($resultFile + '.tmp') -Destination $resultFile -Force",
                 "} catch {",
                 "    $rawMsg = $_.Exception.Message",
                 "    $errMsg = $rawMsg",
@@ -755,9 +743,10 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "    } elseif ($rawMsg -match '403|rate limit') {",
                 "        $errMsg = 'GitHub rate limit reached. Please wait a few minutes before retrying.'",
                 "    }",
-                "    $errMsg = $errMsg.Replace('\"', '`\"').Replace(\"`r\", ' ').Replace(\"`n\", ' ')",
-                "    $json = '{\"status\":\"error\",\"message\":\"' + $errMsg + '\"}'",
-                "    [System.IO.File]::WriteAllText($resultFile, $json, [System.Text.Encoding]::ASCII)",
+                "    $errMsg = $errMsg -replace '\\r?\\n', ' '",
+                "    $json = [pscustomobject]@{ status = 'error'; message = $errMsg } | ConvertTo-Json -Compress",
+                "    [System.IO.File]::WriteAllText($resultFile + '.tmp', $json)",
+                "    Move-Item -LiteralPath ($resultFile + '.tmp') -Destination $resultFile -Force",
                 "} finally {",
                 "    try { Remove-Item -Path $tempZip -Force -ErrorAction SilentlyContinue } catch {}",
                 "    try { Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue } catch {}",
@@ -769,10 +758,13 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
             if (!runnerFile.open("w")) {
                 return ozoJsonStringify({ status: "error", message: "Failed to write update script" });
             }
-            runnerFile.write(psScript);
+            // Windows PowerShell 5.1 reads BOM-less files as ANSI, which mangles
+            // non-ASCII paths. Prepend a UTF-8 BOM so -File decodes it correctly.
+            runnerFile.write("\uFEFF" + psScript);
             runnerFile.close();
 
-            runnerBat.encoding = "UTF-8";
+            // cmd.exe expects the system ANSI code page, so leave the launcher
+            // batch file at the platform default encoding instead of UTF-8.
             if (!runnerBat.open("w")) {
                 return ozoJsonStringify({ status: "error", message: "Failed to write launcher batch file" });
             }
@@ -807,16 +799,19 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "BACKUP_DIR=\"/tmp/ozo_backup_" + timestamp + "\"",
                 "EXPECTED_VERSION=\"${VERSION_TAG#v}\"",
                 "write_error() {",
-                "    printf '{\"status\":\"error\",\"message\":\"%s\"}\\n' \"$1\" > \"$RESULT_FILE\"",
+                "    printf '{\"status\":\"error\",\"message\":\"%s\"}\\n' \"$1\" > \"$RESULT_FILE.tmp\" && mv -f \"$RESULT_FILE.tmp\" \"$RESULT_FILE\"",
                 "    rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\" \"$BACKUP_DIR\"",
                 "}",
                 "mkdir -p \"$TEMP_DIR\"",
-                "curl -s -L -A \"OzoTools-Updater\" \"$ZIP_URL\" -o \"$TEMP_ZIP\"",
-                "if [ $? -ne 0 ] || [ ! -f \"$TEMP_ZIP\" ]; then",
+                "curl -fsSL --retry 1 --retry-delay 2 --connect-timeout 20 -m 240 -A \"OzoTools-Updater\" \"$ZIP_URL\" -o \"$TEMP_ZIP\"",
+                "if [ $? -ne 0 ] || [ ! -s \"$TEMP_ZIP\" ]; then",
                 "    write_error \"Failed to download update package\"",
                 "    exit 1",
                 "fi",
-                "unzip -q -o \"$TEMP_ZIP\" -d \"$TEMP_DIR\"",
+                "if ! unzip -q -o \"$TEMP_ZIP\" -d \"$TEMP_DIR\"; then",
+                "    write_error \"Failed to extract update package\"",
+                "    exit 1",
+                "fi",
                 "FOUND_CEP=$(find \"$TEMP_DIR\" -type d -name \"com.ozo.illustrator.tools\" | head -n 1)",
                 "FOUND_SCRIPTS=$(find \"$TEMP_DIR\" -type d -name \"Script all\" | head -n 1)",
                 "FOUND_VERSION=$(find \"$TEMP_DIR\" -type f -name \"version.json\" | head -n 1)",
@@ -849,7 +844,7 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
                 "    mkdir -p \"$TARGET_DIR/scripts\"",
                 "    cp -R \"$FOUND_SCRIPTS/\"* \"$TARGET_DIR/scripts/\"",
                 "fi",
-                "printf '{\"status\":\"success\",\"version\":\"%s\"}\\n' \"$VERSION_TAG\" > \"$RESULT_FILE\"",
+                "printf '{\"status\":\"success\",\"version\":\"%s\"}\\n' \"$VERSION_TAG\" > \"$RESULT_FILE.tmp\" && mv -f \"$RESULT_FILE.tmp\" \"$RESULT_FILE\"",
                 "rm -rf \"$TEMP_ZIP\" \"$TEMP_DIR\" \"$BACKUP_DIR\""
             ].join("\n");
 
@@ -884,7 +879,9 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
         }
 
         var resultText = "";
-        for (var waitCount = 0; waitCount < 600; waitCount++) {
+        // The updater script budgets roughly five minutes for download retries
+        // plus extraction, so wait six minutes before declaring a timeout.
+        for (var waitCount = 0; waitCount < 3600; waitCount++) {
             if (resultFile.exists) break;
             $.sleep(100);
         }
@@ -905,7 +902,7 @@ function ozoDownloadAndApplyUpdate(zipUrl, versionTag) {
             resultText = resultText.replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "");
             return resultText;
         }
-        return ozoJsonStringify({ status: "error", message: "Update timed out or completed without status output" });
+        return ozoJsonStringify({ status: "error", message: "Update could not finish within 6 minutes. Check your internet connection, then click Retry." });
     } catch (e) {
         return ozoJsonStringify({ status: "error", message: String(e && e.message ? e.message : e) });
     }
