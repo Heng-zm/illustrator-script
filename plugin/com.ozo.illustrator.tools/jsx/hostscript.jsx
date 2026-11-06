@@ -1265,7 +1265,7 @@ function ozoGetPrintJobDefaults() {
                         combined[3] = Math.min(combined[3], b[3]);
                     }
                 }
-                if (combined) {
+                if (combined && (combined[2] - combined[0] > 0.01) && (combined[1] - combined[3] > 0.01)) {
                     widthPt = combined[2] - combined[0];
                     heightPt = combined[1] - combined[3];
                     isArtboard = false;
@@ -1314,6 +1314,8 @@ function ozoGetPrintJobDefaults() {
         else if (ru === "m") factor = 72000 / 25.4;
         var w = Math.round((widthPt / factor) * 100) / 100;
         var h = Math.round((heightPt / factor) * 100) / 100;
+        if (!isFinite(w) || w <= 0) w = 10;
+        if (!isFinite(h) || h <= 0) h = 10;
 
         var d = new Date();
         var day = ("0" + d.getDate()).slice(-2);

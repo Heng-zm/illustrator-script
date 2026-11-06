@@ -12,7 +12,7 @@
  */
 (function () {
     var SCRIPT_NAME = "Print Job Info";
-    var SCRIPT_VERSION = "2.2";
+    var SCRIPT_VERSION = "2.3";
     var STATE_NAMESPACE = "print_job_info_v1";
     var PREVIEW_LAYER_NAME = "__PrintJobInfo_Preview__";
     var RESULT_LAYER_NAME = "[Print Job Info]";
@@ -159,7 +159,7 @@
 
     function sanitizeKhmerText(str) {
         if (!str) return "";
-        var s = String(str);
+        var s = String(str).replace(/[\r\n]+/g, " ");
         if (!hasKhmerText(s)) return trim(s);
 
         // 1. Remove space/ZWS/NBSP between base consonant/vowel and combining vowels/diacritics
@@ -274,6 +274,14 @@
             resolved = getFontByExactNames(["Impact"]);
         }
 
+        if (!resolved && (containsKhmer || (fontChoiceIndex >= 1 && fontChoiceIndex <= 4))) {
+            resolved = getFontByExactNames([
+                "KantumruyPro-Bold", "Kantumruy-Bold", "KantumruyProBold",
+                "LeelawadeeUI-Bold", "KhmerOSBattambang-Bold", "Hanuman-Bold",
+                "KantumruyPro", "LeelawadeeUI", "KhmerOSBattambang", "Hanuman"
+            ]) || findFontByKeywords(["kantumruy", "leelawadee", "battambang", "hanuman", "khmer"], ["bold", "regular"]);
+        }
+
         if (resolved) {
             fontCache[fontChoiceIndex] = resolved;
         }
@@ -283,8 +291,14 @@
     function isUsableDonor(tf) {
         if (!tf) return false;
         try {
+            if (tf.locked || tf.hidden) return false;
+            if (tf.layer && (tf.layer.locked || !tf.layer.visible)) return false;
             var lName = tf.layer ? tf.layer.name : "";
             if (lName === PREVIEW_LAYER_NAME || lName === RESULT_LAYER_NAME) return false;
+            if (tf.matrix) {
+                var m = tf.matrix;
+                if (Math.abs(m.mValueB) > 0.001 || Math.abs(m.mValueC) > 0.001) return false;
+            }
             return true;
         } catch (e) {
             return false;
@@ -354,7 +368,7 @@
                     combined[3] = Math.min(combined[3], b[3]);
                 }
             }
-            if (combined) {
+            if (combined && (combined[2] - combined[0] > 0.01) && (combined[1] - combined[3] > 0.01)) {
                 return {
                     bounds: combined,
                     isArtboard: false,
@@ -519,7 +533,7 @@
     dialog.minimumSize = [530, 520];
 
     // Top Header Banner
-    OZO.addDialogHeader(dialog, OZO.tr("Print Job Info"), "v2.2 \u2022 " + OZO.tr("Wide-Format RIP Metadata & Banner Studio"));
+    OZO.addDialogHeader(dialog, OZO.tr("Print Job Info"), "v2.3 \u2022 " + OZO.tr("Wide-Format RIP Metadata & Banner Studio"));
 
     // Panel 1: Job Information
     var headerPanel = dialog.add("panel", undefined, OZO.tr("Job Information"));
@@ -907,9 +921,9 @@
             String(settings.note || "").length
         );
         if (maxChars > 0) {
-            var maxAllowed = (artworkW * 0.80) / (maxChars * 0.65);
+            var maxAllowed = (artworkW * 0.85) / (maxChars * 0.65);
             if (baseFontSize > maxAllowed) {
-                baseFontSize = Math.max(12, maxAllowed);
+                baseFontSize = Math.max(6, maxAllowed);
             }
         }
 
@@ -936,13 +950,25 @@
         if (!expandArtboard || !originalArtboardRect || activeArtboardIndex < 0 || activeArtboardIndex >= doc.artboards.length) {
             return originalArtboardRect;
         }
-        // target.bounds already excludes a header from a previous run, so using it
-        // for both artboard and selection targets keeps repeat runs stable.
+        if (target.isArtboard) {
+            return [
+                originalArtboardRect[0],
+                target.bounds[1] + geom.headerHeight,
+                originalArtboardRect[2],
+                originalArtboardRect[3]
+            ];
+        }
+        // Selection target: keep artboard horizontal and bottom bounds intact, only expand top if needed
+        var headerTop = target.bounds[1] + geom.headerHeight;
+        var newTop = Math.max(originalArtboardRect[1], headerTop);
+        if (target.bounds[1] >= originalArtboardRect[1] - geom.headerHeight) {
+            newTop = target.bounds[1] + geom.headerHeight;
+        }
         return [
-            target.bounds[0],
-            target.bounds[1] + geom.headerHeight,
-            target.bounds[2],
-            target.bounds[3]
+            originalArtboardRect[0],
+            newTop,
+            originalArtboardRect[2],
+            originalArtboardRect[3]
         ];
     }
 
@@ -956,6 +982,16 @@
         }
         previewLayer = null;
         previewGroup = null;
+
+        try {
+            for (var pl = doc.layers.length - 1; pl >= 0; pl--) {
+                if (doc.layers[pl].name === PREVIEW_LAYER_NAME) {
+                    doc.layers[pl].locked = false;
+                    doc.layers[pl].visible = true;
+                    doc.layers[pl].remove();
+                }
+            }
+        } catch (eOrphanPl) {}
 
         // Restore artboard if modified during preview
         if (artboardIsModified && originalArtboardRect &&
@@ -1022,6 +1058,8 @@
         if (donor) {
             try {
                 txt = donor.duplicate(grp, ElementPlacement.PLACEATEND);
+                txt.locked = false;
+                txt.hidden = false;
                 if (txt.kind === TextType.AREATEXT && txt.textPath) {
                     try {
                         txt.textPath.width = Math.max(geom.headerWidth - (geom.paddingX * 2), 200);
@@ -1084,7 +1122,7 @@
         try {
             if (txt.width > maxAvailableWidth && txt.width > 0) {
                 var fitRatio = (maxAvailableWidth * 0.95) / txt.width;
-                charAttr.size = Math.max(10, Math.round(charAttr.size * fitRatio * 10) / 10);
+                charAttr.size = Math.max(6, Math.round(charAttr.size * fitRatio * 10) / 10);
                 charAttr.leading = charAttr.size * 1.25;
             }
         } catch (eFit) {}
@@ -1110,8 +1148,10 @@
                 txt.textPath.left = left + geom.paddingX;
                 txt.textPath.width = Math.max(geom.headerWidth - (geom.paddingX * 2), 200);
                 txt.textPath.height = Math.max(geom.headerHeight * 2, 120);
-            } catch (eTp) {}
-            txt.left = left + geom.paddingX;
+            } catch (eTp) {
+                txt.top = textTop;
+                txt.left = left + geom.paddingX;
+            }
         } else {
             if (settings.alignmentIndex === 1) {
                 // Center: center the text block bounding box inside the header
@@ -1312,6 +1352,7 @@
         for (var dli = destLayer.pageItems.length - 1; dli >= 0; dli--) {
             try {
                 if (destLayer.pageItems[dli].name === "Print Header Block") {
+                    destLayer.pageItems[dli].locked = false;
                     destLayer.pageItems[dli].remove();
                 }
             } catch (eOldItem) {}

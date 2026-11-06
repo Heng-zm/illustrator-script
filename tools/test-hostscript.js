@@ -369,6 +369,21 @@ test("print defaults strip a previous header out of the artboard height", functi
     near(defaults.height, 5, "original artwork cm height");
 });
 
+test("print defaults fall back to artboard when selection has degenerate 0-width bounds", function () {
+    var context = makeContext();
+    context.__app.documents = [{}];
+    context.__app.activeDocument = makeArtboardDoc({
+        widthPt: 500,
+        heightPt: 250,
+        rulerUnits: RulerUnits.Centimeters,
+        selection: { typename: "PathItem", geometricBounds: [100, 100, 100, 100] },
+        pageItems: 1
+    });
+    var defaults = JSON.parse(context.ozoGetPrintJobDefaults());
+    assert.strictEqual(defaults.status, "success");
+    assert.strictEqual(defaults.isArtboard, true, "falls back to artboard on degenerate bounds");
+});
+
 test("print defaults use the recorded header height without a dark box", function () {
     var context = makeContext();
     context.__app.documents = [{}];

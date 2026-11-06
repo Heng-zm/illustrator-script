@@ -3618,14 +3618,24 @@
 
         var materials = [
             { id: "Silk Light Box", name: "Silk Light Box" },
-            { id: "Sticker / Decal", name: isKhmer() ? "Sticker (ស្ទីគ័រ)" : "Sticker / Decal" },
-            { id: "Sticker បិតបត់", name: isKhmer() ? "Sticker បិតបត់ (Standee)" : "Sticker Foldable (បិតបត់)" },
             { id: "Sticker ចោះកុង", name: isKhmer() ? "Sticker ចោះកុង (Die-Cut)" : "Sticker Die-Cut (ចោះកុង)" },
-            { id: "Vinyl Banner", name: isKhmer() ? "Vinyl Banner (បដា)" : "Vinyl Banner" },
+            { id: "Sticker បិតបត់", name: isKhmer() ? "Sticker បិតបត់ (Standee)" : "Sticker Foldable (បិតបត់)" },
+            { id: "Sticker បិតប្លាកែត", name: isKhmer() ? "Sticker បិតប្លាកែត (Foam Board)" : "Sticker Foam Board (បិតប្លាកែត)" },
+            { id: "Sticker ធម្មតា", name: isKhmer() ? "Sticker ធម្មតា (Standard)" : "Sticker Standard" },
+            { id: "Sticker ថ្លា", name: isKhmer() ? "Sticker ថ្លា (Clear)" : "Sticker Clear (ថ្លា)" },
+            { id: "Sticker ឆ្លុះ", name: isKhmer() ? "Sticker ឆ្លុះ (Reflective)" : "Sticker Reflective (ឆ្លុះ)" },
+            { id: "Sticker ស្អិតខ្លាំង", name: isKhmer() ? "Sticker ស្អិតខ្លាំង (High-Tack)" : "Sticker High-Tack (ស្អិតខ្លាំង)" },
+            { id: "Sticker Glossy", name: "Sticker Glossy" },
+            { id: "Sticker Matte", name: "Sticker Matte" },
+            { id: "Banner", name: isKhmer() ? "Banner (បដា)" : "Banner" },
+            { id: "Banner Flex", name: "Banner Flex" },
             { id: "Slim LED", name: "Slim LED" },
+            { id: "Slim LED Light Box", name: "Slim LED Light Box" },
             { id: "Backlit Film", name: "Backlit Film" },
             { id: "Canvas", name: "Canvas" },
-            { id: "Clear Sticker", name: isKhmer() ? "Clear Sticker (ស្ទីគ័រថ្លា)" : "Clear Sticker" },
+            { id: "Standee / Roll-Up", name: "Standee / Roll-Up" },
+            { id: "PP Paper", name: "PP Paper" },
+            { id: "One Way Vision", name: "One Way Vision" },
             { id: "Custom", name: isKhmer() ? "ផ្សេងទៀត (Custom...)" : "Custom..." }
         ];
 
@@ -3705,7 +3715,7 @@
         html.push('    <div>');
         html.push('      <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ខ្នាត:" : "Unit:") + '</label>');
         html.push('      <select id="pjUnitSelect" class="embed-select" style="width:100%;margin-top:2px;">');
-        var pjUnits = ["cm", "mm", "in", "m", "pt"];
+        var pjUnits = ["cm", "mm", "m", "in", "pt"];
         for (var pju = 0; pju < pjUnits.length; pju++) {
             html.push('        <option value="' + pjUnits[pju] + '" ' + (state.unit === pjUnits[pju] ? "selected" : "") + '>' + pjUnits[pju] + '</option>');
         }
@@ -3815,6 +3825,7 @@
 
         // Same point conversions as OZO.toPoints / OZO.fromPoints in ExtendScript.
         function pjUnitToPoints(value, unit) {
+            unit = (unit || "pt").toLowerCase();
             if (unit === "mm") return value * (72 / 25.4);
             if (unit === "cm") return value * (72 / 2.54);
             if (unit === "in") return value * 72;
@@ -3823,6 +3834,7 @@
         }
 
         function pjPointsToUnit(points, unit) {
+            unit = (unit || "pt").toLowerCase();
             if (unit === "mm") return points * (25.4 / 72);
             if (unit === "cm") return points * (2.54 / 72);
             if (unit === "in") return points / 72;
@@ -3831,12 +3843,15 @@
         }
 
         function pjCleanNumber(value) {
-            return String(Math.round(value * 100) / 100);
+            if (!isFinite(value)) return "";
+            var rounded = Math.round(value * 100) / 100;
+            return String(rounded).replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1");
         }
 
         function getEffectiveMaterial() {
             if (pjMatSelect.value === "Custom") {
-                return pjMatCustomInput.value.trim() || "Silk Light Box";
+                var cVal = pjMatCustomInput.value.trim();
+                return (cVal && cVal !== "Custom") ? cVal : "Silk Light Box";
             }
             return pjMatSelect.value;
         }
@@ -3911,6 +3926,7 @@
         pjMatSelect.addEventListener("change", function() {
             if (this.value === "Custom") {
                 pjMatCustomInput.style.display = "block";
+                if (pjMatCustomInput.value === "Custom") pjMatCustomInput.value = "";
                 pjMatCustomInput.focus();
             } else {
                 pjMatCustomInput.style.display = "none";
@@ -3926,7 +3942,7 @@
         pjWidthInput.addEventListener("input", saveState);
         pjHeightInput.addEventListener("input", saveState);
         pjUnitSelect.addEventListener("change", function() {
-            var newUnit = pjUnitSelect.value;
+            var newUnit = (pjUnitSelect.value || "cm").toLowerCase();
             var wVal = parseFloat(String(pjWidthInput.value).replace(/,/g, "."));
             var hVal = parseFloat(String(pjHeightInput.value).replace(/,/g, "."));
             if (isFinite(wVal)) {
@@ -3953,29 +3969,29 @@
             });
         }
 
-        function fetchArtboardDefaults() {
-            if (!csInterface) return;
+        function fetchArtboardDefaults(force) {
+            if (!csInterface) {
+                if (!pjWidthInput.value) pjWidthInput.value = "100";
+                if (!pjHeightInput.value) pjHeightInput.value = "50";
+                updateTicketPreview();
+                return;
+            }
             csInterface.evalScript("ozoGetPrintJobDefaults()", function(raw) {
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
                 if (res && res.status === "success") {
-                    var oldUnit = pjPreviousUnit;
-                    var existingW = parseFloat(String(pjWidthInput.value).replace(/,/g, "."));
-                    var existingH = parseFloat(String(pjHeightInput.value).replace(/,/g, "."));
-                    if (isFinite(existingW) && existingW > 0) {
-                        pjWidthInput.value = pjCleanNumber(pjPointsToUnit(pjUnitToPoints(existingW, oldUnit), res.unit));
-                    } else {
+                    if (force || !pjWidthInput.value || !pjHeightInput.value) {
                         pjWidthInput.value = res.width;
-                    }
-                    if (isFinite(existingH) && existingH > 0) {
-                        pjHeightInput.value = pjCleanNumber(pjPointsToUnit(pjUnitToPoints(existingH, oldUnit), res.unit));
-                    } else {
                         pjHeightInput.value = res.height;
+                        pjUnitSelect.value = res.unit;
+                        pjPreviousUnit = res.unit;
+                        state.unit = res.unit;
                     }
-                    if (!pjDateInput.value) pjDateInput.value = res.dateStr;
-                    pjUnitSelect.value = res.unit;
-                    pjPreviousUnit = res.unit;
+                    if (!pjDateInput.value && res.dateStr) pjDateInput.value = res.dateStr;
                     saveState();
+                    updateTicketPreview();
+                } else {
+                    updateTicketPreview();
                 }
             });
         }
@@ -4054,12 +4070,8 @@
             });
         });
 
-        // Initialize defaults if width/height are empty
-        if (!state.widthVal || !state.heightVal) {
-            fetchArtboardDefaults();
-        } else {
-            updateTicketPreview();
-        }
+        // Fetch active document / selection dimensions on open
+        fetchArtboardDefaults(true);
     }
 
     // -------------------------------------------------------------
