@@ -112,6 +112,7 @@ Double-click `setup.bat` and choose:
   - **Category Tabs**: Filter by *All*, *Favorites*, *Prepress*, *Layout*, or *Utilities*.
   - **Grid / List View**: Toggle the compact grid or detailed list layout with the view button; your choice is remembered.
   - **Pin Favorites**: Click the star icon (★) on any tool to pin it to your favorites list.
+  - **One-Click Run**: Click **Run** on a card to execute the script immediately, or press `R` on a focused card. Clicking the card itself (or pressing `Enter`) opens its in-panel settings.
   - **Language Toggle**: Click `EN` / `KM` at top-right to switch between English and Khmer.
 
 ### 2. Native Menu Commands

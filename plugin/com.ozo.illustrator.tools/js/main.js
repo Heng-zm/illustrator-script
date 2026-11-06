@@ -595,7 +595,7 @@
     }
 
     // e.key is missing on very old Chromium builds, so fall back to keyCode.
-    var KEYCODES = { 13: "Enter", 27: "Escape", 32: " ", 35: "End", 36: "Home", 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 70: "f", 75: "k", 191: "/" };
+    var KEYCODES = { 13: "Enter", 27: "Escape", 32: " ", 35: "End", 36: "Home", 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 70: "f", 75: "k", 82: "r", 191: "/" };
     function keyOf(e) {
         return e.key || KEYCODES[e.keyCode] || "";
     }
@@ -1473,7 +1473,7 @@
                 '<button type="button" class="preview-card-btn" tabindex="-1" title="' + escapeHtml(t("preview.btn") + ': ' + name) + '" aria-label="' + escapeHtml(t("preview.btn") + ': ' + name) + '" data-preview="' + tool.id + '">' +
                     '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
                 '</button>' +
-                '<button type="button" class="run-btn" tabindex="-1" title="' + escapeHtml(t("run.title", { name: name })) + '">' + escapeHtml(t("run.label")) + "</button>" +
+                '<button type="button" class="run-btn" tabindex="-1" title="' + escapeHtml(t("run.title", { name: name })) + '"><span class="run-btn-label">' + escapeHtml(t("run.label")) + "</span></button>" +
             "</div>"
         );
     }
@@ -1489,7 +1489,9 @@
         card.setAttribute("tabindex", "0");
         card.setAttribute("role", "button");
         card.setAttribute("aria-label", name + ": " + desc);
-        card.title = name + "\n" + desc; // grid view hides the description
+        // grid view hides the description, so the tooltip carries the interaction hints
+        card.title = name + "\n" + desc + "\n" +
+            (isKhmer() ? "Enter: បើក  •  R: ដំណើរការ  •  F: សំណព្វ" : "Enter: Open  •  R: Run  •  F: Favorite");
 
         var inner;
         if (!searchQuery) {
@@ -1648,7 +1650,8 @@
                 items: [
                     { desc: km ? "បើកឧបករណ៍ក្នុងផ្ទាំង" : "Open Selected Tool", keys: ["Enter"] },
                     { desc: km ? "មើលទម្រង់គំរូ (Preview)" : "Preview Tool Details", keys: ["P"] },
-                    { desc: km ? "ដាក់ / ដកសំណព្វ" : "Toggle Favorite", keys: ["F"] }
+                    { desc: km ? "ដាក់ / ដកសំណព្វ" : "Toggle Favorite", keys: ["F"] },
+                    { desc: km ? "ដំណើរការស្គ្រីបភ្លាម" : "Run Script Directly", keys: ["R"] }
                 ]
             },
             {
@@ -1758,7 +1761,9 @@
                 var btnRunning = runBtn.classList.contains("running");
                 if (btnRunning !== on) {
                     runBtn.classList.toggle("running", on);
-                    runBtn.textContent = t(on ? "run.busy" : "run.label");
+                    var runLabel = runBtn.querySelector(".run-btn-label");
+                    if (runLabel) runLabel.textContent = t(on ? "run.busy" : "run.label");
+                    else runBtn.textContent = t(on ? "run.busy" : "run.label");
                 }
             }
         });
@@ -5907,33 +5912,33 @@
 
         // 1. Search & Filter Bar Card
         html.push('<div class="embed-card">');
-        html.push('  <div style="display:flex;gap:6px;align-items:center;">');
-        html.push('    <div style="position:relative;flex:1;">');
+        html.push('  <div class="launcher-search-row">');
+        html.push('    <div class="launcher-search-wrap">');
         html.push('      <input type="text" id="launcherSearchInput" class="embed-input" placeholder="' + (isKhmer() ? "ស្វែងរកស្គ្រីប... (/)" : "Search scripts... (/ or Enter)") + '" style="width:100%;padding-right:26px;">');
         html.push('      <button type="button" id="launcherSearchClear" class="embed-input-clear" style="position:absolute;right:5px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;display:none;font-size:14px;line-height:1;" title="Clear search">&times;</button>');
         html.push('    </div>');
-        html.push('    <button type="button" id="btnLauncherRefresh" class="btn-action-secondary" style="padding:4px 8px;font-size:11px;" title="Rescan Scripts">' + uiIcon("refresh", 12) + ' <span class="hide-mobile">' + (isKhmer() ? "ផ្ទុកឡើងវិញ" : "Rescan") + '</span></button>');
+        html.push('    <button type="button" id="btnLauncherRefresh" class="btn-action-secondary" title="Rescan Scripts">' + uiIcon("refresh", 12) + ' <span class="hide-mobile">' + (isKhmer() ? "ផ្ទុកឡើងវិញ" : "Rescan") + '</span></button>');
         html.push('  </div>');
         html.push('  <div class="embed-segmented" id="launcherFilterSegmented" style="margin-top:6px;">');
         html.push('    <button type="button" class="embed-seg-btn active" data-filter="all">' + (isKhmer() ? "ទាំងអស់" : "All Scripts") + ' (<span id="countAll">0</span>)</button>');
         html.push('    <button type="button" class="embed-seg-btn" data-filter="favorites">★ ' + (isKhmer() ? "សំណព្វ" : "Favorites") + ' (<span id="countFavs">0</span>)</button>');
         html.push('    <button type="button" class="embed-seg-btn" data-filter="recent">🕒 ' + (isKhmer() ? "ថ្មីៗ" : "Recent") + '</button>');
         html.push('  </div>');
-        html.push('  <div class="script-folder-bar" style="margin-top:6px;display:flex;align-items:center;gap:6px;padding:4px 6px;background:var(--bg-main);border-radius:var(--radius-sm);border:1px solid var(--border-color);">');
-        html.push('    <span class="script-folder-icon" style="color:var(--accent);font-size:12px;">📁</span>');
-        html.push('    <span class="script-folder-path" id="launcherFolderPath" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--text-muted);" title="Scripts Directory">Scanning scripts...</span>');
-        html.push('    <button type="button" id="btnLauncherOpenFolder" class="btn-action-secondary" style="padding:1px 6px;font-size:9.5px;white-space:nowrap;" title="Open folder in File Explorer">📂 ' + (isKhmer() ? "បើក" : "Open") + '</button>');
-        html.push('    <button type="button" id="btnLauncherBrowse" class="btn-action-secondary" style="padding:1px 7px;font-size:9.5px;white-space:nowrap;" title="Change scripts folder">' + (isKhmer() ? "ផ្លាស់ប្តូរ..." : "Change...") + '</button>');
+        html.push('  <div class="script-folder-bar">');
+        html.push('    <span class="script-folder-icon" aria-hidden="true">' + uiIcon("folder", 12) + '</span>');
+        html.push('    <span class="script-folder-path" id="launcherFolderPath" title="Scripts Directory">Scanning scripts...</span>');
+        html.push('    <button type="button" id="btnLauncherOpenFolder" class="script-folder-btn" title="Open folder in File Explorer">' + (isKhmer() ? "បើក" : "Open") + '</button>');
+        html.push('    <button type="button" id="btnLauncherBrowse" class="script-folder-btn" title="Change scripts folder">' + (isKhmer() ? "ផ្លាស់ប្តូរ..." : "Change...") + '</button>');
         html.push('  </div>');
         html.push('</div>');
 
         // 2. Scripts List Card
-        html.push('<div class="embed-card" style="flex:1;display:flex;flex-direction:column;min-height:0;">');
+        html.push('<div class="embed-card launcher-scripts-card">');
         html.push('  <div class="embed-card-header" style="justify-content:space-between;">');
         html.push('    <span id="launcherCountHeader">' + (isKhmer() ? "បញ្ជីស្គ្រីប" : "Available Scripts") + '</span>');
         html.push('    <span class="embed-badge-soft" id="launcherActiveFilterBadge" style="font-size:9.5px;text-transform:uppercase;">ALL</span>');
         html.push('  </div>');
-        html.push('  <div class="script-list" id="launcherScriptList" style="flex:1;max-height:360px;overflow-y:auto;">');
+        html.push('  <div class="script-list" id="launcherScriptList">');
         html.push('    <div style="padding:24px 16px;text-align:center;color:var(--text-muted);font-size:11px;">' + uiIcon("refresh", 14) + ' ' + (isKhmer() ? "កំពុងស្កេនស្គ្រីប..." : "Scanning scripts...") + '</div>');
         html.push('  </div>');
         html.push('</div>');
@@ -6934,6 +6939,7 @@
             }
         }
 
+        if (closest(e.target, ".run-btn", card)) { runScript(tool); return; }
         if (closest(e.target, ".preview-card-btn", card)) { openPreviewPanel(card.getAttribute("data-id")); return; }
         if (closest(e.target, ".fav-btn", card)) toggleFavorite(tool.id);
         else openEmbeddedView(tool.id);
@@ -6956,6 +6962,9 @@
         } else if (key === "p" || key === "P") {
             e.preventDefault();
             if (tool) openPreviewPanel(tool.id);
+        } else if (key === "r" || key === "R") {
+            e.preventDefault();
+            if (tool) runScript(tool);
         } else if (key === "ArrowDown" || key === "ArrowRight") {
             e.preventDefault();
             target = card.nextElementSibling;
