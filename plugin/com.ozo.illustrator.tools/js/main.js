@@ -595,7 +595,7 @@
     }
 
     // e.key is missing on very old Chromium builds, so fall back to keyCode.
-    var KEYCODES = { 13: "Enter", 27: "Escape", 32: " ", 35: "End", 36: "Home", 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 70: "f", 75: "k", 82: "r", 191: "/" };
+    var KEYCODES = { 13: "Enter", 27: "Escape", 32: " ", 35: "End", 36: "Home", 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 70: "f", 75: "k", 80: "p", 82: "r", 191: "/" };
     function keyOf(e) {
         return e.key || KEYCODES[e.keyCode] || "";
     }
@@ -1215,6 +1215,10 @@
     }
 
     function showError(title, message) {
+        if (message === undefined) {
+            message = title;
+            title = isKhmer() ? "បញ្ហា" : "Error";
+        }
         showAlertBanner(title, message, "error");
     }
 
@@ -1466,7 +1470,7 @@
             "</div>" +
             '<div class="tool-actions">' +
                 // Inner buttons stay out of the tab order: the card itself is the single
-                // tab stop (Enter = run, F = favourite, arrows = move).
+                // tab stop (Enter = open, R = run, F = favourite, arrows = move).
                 '<button type="button" class="fav-btn' + (fav ? " active" : "") + (popFavId === tool.id ? " pop" : "") + '" tabindex="-1" aria-pressed="' + fav + '" title="' + escapeHtml(t("fav.toggle")) + '" aria-label="' + escapeHtml(t("fav.aria", { name: name })) + '">' +
                     STAR_SVG.replace("{fill}", fav ? "currentColor" : "none") +
                 "</button>" +
@@ -6537,7 +6541,7 @@
 
         btnRbSubmit.addEventListener("click", function () {
             if (!chkRbFills.checked && !chkRbStrokes.checked) {
-                showError(isKhmer() ? "សូមជ្រើសរើស Fills ឬ Strokes ជាមុនសិន!" : "Please enable Fills or Strokes first!");
+                showError("Rich Black Optimizer", isKhmer() ? "សូមជ្រើសរើស Fills ឬ Strokes ជាមុនសិន!" : "Please enable Fills or Strokes first!");
                 return;
             }
             hideError();
@@ -6575,7 +6579,7 @@
                 if (res && res.status === "success") {
                     setStatus(res.message, "success", 4500);
                 } else {
-                    showError((res && res.message) || String(raw || "Rich Black optimization failed"));
+                    showError("Rich Black Optimizer", (res && res.message) || String(raw || "Rich Black optimization failed"));
                 }
             });
         });
@@ -6883,7 +6887,7 @@
                 if (res && res.status === "success") {
                     setStatus(res.message, "success", 4500);
                 } else {
-                    showError((res && res.message) || String(raw || "Failed to generate ABA KHQR"));
+                    showError("ABA KHQR Generator", (res && res.message) || String(raw || "Failed to generate ABA KHQR"));
                 }
             });
         });

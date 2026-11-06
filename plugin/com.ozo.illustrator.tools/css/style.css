@@ -46,12 +46,14 @@
     --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
     --ease-spring: cubic-bezier(0.3, 1.4, 0.5, 1);
     --font-stack: "Adobe Clean", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Kantumruy Pro", "Kantumruy", "Battambang", "Khmer UI", "Leelawadee UI", "Khmer Sangam MN", "Noto Sans Khmer", sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     color-scheme: dark;
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.28);
     --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.38);
+    --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35);
     --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
     --ring: 0 0 0 3px rgba(var(--accent-rgb), 0.25);
     --tile: var(--bg-surface-active);
@@ -1195,6 +1197,8 @@ body.theme-light {
 }
 
 .script-folder-path {
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
