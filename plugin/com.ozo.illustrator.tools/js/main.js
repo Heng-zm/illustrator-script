@@ -904,16 +904,7 @@
             if (primaryBtn) flashButtonSuccess(primaryBtn);
         }
 
-        if (type === "success") {
-            showToast(msg, type, 4500, isKhmer() ? "មិនធ្វើវិញ (Undo)" : "Undo", function () {
-                if (csInterface) {
-                    csInterface.evalScript("ozoExecuteCanvasCommand('undo')", function () {
-                        refreshDocumentStatus();
-                        showToast(isKhmer() ? "បានមិនធ្វើវិញ" : "Action undone", "info", 1800);
-                    });
-                }
-            });
-        } else if (type === "error") {
+        if (type === "error") {
             showToast(msg, type, duration || 3200);
         }
 
@@ -7793,7 +7784,7 @@
         } else {
             availableRelease = null;
             updateUpdateUI();
-            if (force) setStatus(t("update.latest"), "success", 3000);
+            if (force) setStatus(t("update.latest"), "ready", 2500);
         }
     }
 
