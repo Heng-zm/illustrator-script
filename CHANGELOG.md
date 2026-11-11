@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.49] - 2026-11-11
+
+### Changed
+- **Sort Menu**: Replaced the cycling sort button with an accessible dropdown offering Default / A–Z / Z–A, with a clearer sort icon, checkmarked selection, arrow-key navigation, and outside-click / Escape dismissal. `Alt+S` still cycles instantly.
+- Sort feedback now appears in the status bar instead of a toast, and the control no longer leaves a stray focus ring after a mouse selection.
+
+### Fixed
+- **Panel Bootstrap**: Guarded the theme-change listener so the panel still renders when the CEP host API is unavailable (browser preview or a partial host).
+
+---
+
 ## [2.6.48] - 2026-11-11
 
 ### Added
