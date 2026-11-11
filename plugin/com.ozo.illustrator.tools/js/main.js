@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.6.48"; // keep in sync with version.json
+    var CURRENT_VERSION = "2.6.49"; // keep in sync with version.json
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
@@ -688,7 +688,8 @@
     var searchClearBtn = $("searchClearBtn");
     var viewToggleBtn = $("viewToggleBtn");
     var sortToggleBtn = $("sortToggleBtn");
-    var sortToggleLabel = $("sortToggleLabel");
+    var sortMenu = $("sortMenu");
+    var sortMenuItems = sortMenu ? sortMenu.querySelectorAll(".sort-menu-item") : [];
     var viewIconGrid = $("viewIconGrid");
     var viewIconList = $("viewIconList");
     var langToggleBtn = $("langToggleBtn");
@@ -1816,24 +1817,59 @@
     }
 
     function updateSortUI() {
-        if (sortToggleLabel) {
-            sortToggleLabel.textContent = sortMode === "az" ? "A–Z" : (sortMode === "za" ? "Z–A" : "↕");
-        }
         if (sortToggleBtn) {
             var label = t("sort.toggle") + " — " + sortModeLabel();
             sortToggleBtn.title = label;
             sortToggleBtn.setAttribute("aria-label", label);
             sortToggleBtn.classList.toggle("active", sortMode !== "default");
         }
+        each(sortMenuItems, function (item) {
+            item.setAttribute("aria-checked", item.getAttribute("data-sort") === sortMode ? "true" : "false");
+        });
     }
 
-    function cycleSort() {
-        sortMode = sortMode === "default" ? "az" : (sortMode === "az" ? "za" : "default");
+    var sortMenuOpen = false;
+
+    function openSortMenu() {
+        if (!sortMenu || !sortToggleBtn) return;
+        sortMenuOpen = true;
+        sortMenu.hidden = false;
+        sortToggleBtn.setAttribute("aria-expanded", "true");
+        sortToggleBtn.classList.add("menu-open");
+        var current = sortMenu.querySelector('[data-sort="' + sortMode + '"]');
+        if (current) current.focus();
+    }
+
+    function closeSortMenu(returnFocus) {
+        if (!sortMenu || !sortMenuOpen) return;
+        sortMenuOpen = false;
+        sortMenu.hidden = true;
+        sortToggleBtn.setAttribute("aria-expanded", "false");
+        sortToggleBtn.classList.remove("menu-open");
+        if (returnFocus) sortToggleBtn.focus();
+    }
+
+    function toggleSortMenu() {
+        if (sortMenuOpen) closeSortMenu(true);
+        else openSortMenu();
+    }
+
+    function setSortMode(mode) {
+        if (mode !== "az" && mode !== "za") mode = "default";
+        var changed = mode !== sortMode;
+        sortMode = mode;
         store.set("ozo_sort_mode", sortMode);
         updateSortUI();
-        playEnter();
-        renderTools();
-        showToast(t("sort.changed", { mode: sortModeLabel() }), "info", 1400);
+        if (changed) {
+            playEnter();
+            renderTools();
+        }
+        setStatus(t("sort.changed", { mode: sortModeLabel() }), "ready", 1500);
+    }
+
+    // Alt+S cycles without opening the menu, so the shortcut stays one keypress.
+    function cycleSort() {
+        setSortMode(sortMode === "default" ? "az" : (sortMode === "az" ? "za" : "default"));
     }
 
     function setCategory(btn) {
@@ -7298,6 +7334,7 @@
         // Cycle catalog sort: Alt+S
         if (!activeEmbeddedTool && !activePreviewTool && e.altKey && !e.ctrlKey && !e.metaKey && (key === "s" || key === "S")) {
             e.preventDefault();
+            closeSortMenu(false);
             cycleSort();
             return;
         }
@@ -7361,6 +7398,10 @@
                 return;
             }
         } else if (key === "Escape") {
+            if (sortMenuOpen) {
+                closeSortMenu(true);
+                return;
+            }
             if (alertModal && !alertModal.hidden) {
                 closeAlertModal();
                 return;
@@ -7619,7 +7660,57 @@
         setStatus(t(viewMode === "grid" ? "view.grid" : "view.list"), "ready", 1500);
     });
 
-    if (sortToggleBtn) sortToggleBtn.addEventListener("click", cycleSort);
+    if (sortToggleBtn && sortMenu) {
+        sortToggleBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            toggleSortMenu();
+        });
+
+        each(sortMenuItems, function (item) {
+            item.addEventListener("click", function (e) {
+                setSortMode(item.getAttribute("data-sort"));
+                // Return focus to the trigger for keyboard picks, but not after a
+                // mouse click (that would leave a stray focus ring on the button).
+                closeSortMenu(e.detail === 0);
+            });
+        });
+
+        sortMenu.addEventListener("keydown", function (e) {
+            var key = keyOf(e);
+            if (key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                closeSortMenu(true);
+                return;
+            }
+            if (key === "Tab") {
+                // Hide the menu but let the browser tab onward from the trigger.
+                closeSortMenu(false);
+                sortToggleBtn.focus();
+                return;
+            }
+            if (key === "ArrowDown" || key === "ArrowUp" || key === "Home" || key === "End") {
+                e.preventDefault();
+                var items = [];
+                each(sortMenuItems, function (it) { items.push(it); });
+                if (!items.length) return;
+                var idx = items.indexOf(document.activeElement);
+                var next;
+                if (key === "Home") next = 0;
+                else if (key === "End") next = items.length - 1;
+                else if (key === "ArrowDown") next = idx < 0 ? 0 : (idx + 1) % items.length;
+                else next = idx < 0 ? items.length - 1 : (idx - 1 + items.length) % items.length;
+                items[next].focus();
+            }
+        });
+
+        // Any click outside the control dismisses the menu.
+        document.addEventListener("click", function (e) {
+            if (!sortMenuOpen) return;
+            if (sortToggleBtn.contains(e.target) || sortMenu.contains(e.target)) return;
+            closeSortMenu(false);
+        });
+    }
 
     langToggleBtn.addEventListener("click", function () {
         currentLang = isKhmer() ? "en" : "km";
@@ -8064,7 +8155,9 @@
     brandBadge.textContent = "v" + CURRENT_VERSION;
 
     if (csInterface) {
-        csInterface.addEventListener(CSInterface.THEME_COLOR_CHANGED_EVENT, updateTheme);
+        if (typeof csInterface.addEventListener === "function") {
+            csInterface.addEventListener(CSInterface.THEME_COLOR_CHANGED_EVENT, updateTheme);
+        }
         updateTheme();
     }
 

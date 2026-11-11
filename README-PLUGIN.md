@@ -1,4 +1,4 @@
-# Ozo Tools - Adobe Illustrator Plugin Suite (v2.6.48)
+# Ozo Tools - Adobe Illustrator Plugin Suite (v2.6.49)
 
 <p align="center">
   <img src="assets/logo.png" alt="Ozo Tools Logo" width="520">
@@ -111,7 +111,7 @@ Double-click `setup.bat` and choose:
   - **Live Search**: Instant keyword search in English or Khmer. Press `/` to focus the search box, `Enter` to run the first matched tool, or `Esc` to reset.
   - **Category Tabs**: Filter by *All*, *Favorites*, *Prepress*, *Layout*, or *Utilities*.
   - **Grid / List View**: Toggle the compact grid or detailed list layout with the view button; your choice is remembered.
-  - **Sort Tools**: Cycle Default / A–Z / Z–A order with the toolbar control or `Alt+S`; favorites stay pinned and your choice is remembered.
+  - **Sort Tools**: Choose Default / A–Z / Z–A from the toolbar sort menu or press `Alt+S` to cycle; favorites stay pinned and your choice is remembered.
   - **Pin Favorites**: Click the star icon (★) on any tool to pin it to your favorites list.
   - **One-Click Run**: Click **Run** on a card to execute the script immediately, or press `R` on a focused card. Clicking the card itself (or pressing `Enter`) opens its in-panel settings.
   - **Language Toggle**: Click `EN` / `KM` at top-right to switch between English and Khmer.

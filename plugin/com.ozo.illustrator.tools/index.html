@@ -114,9 +114,25 @@
                 <svg id="viewIconGrid" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
                 <svg id="viewIconList" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;"><rect x="3.5" y="4" width="17" height="4.5" rx="1.6"/><rect x="3.5" y="10" width="17" height="4.5" rx="1.6"/><rect x="3.5" y="16" width="17" height="4.5" rx="1.6"/></svg>
             </button>
-            <button type="button" id="sortToggleBtn" class="icon-btn sort-toggle" data-i18n-title="sort.toggle" title="Sort tools (Alt+S)" aria-label="Sort tools">
-                <span id="sortToggleLabel" aria-hidden="true">↕</span>
-            </button>
+            <div class="sort-control">
+                <button type="button" id="sortToggleBtn" class="icon-btn sort-toggle" data-i18n-title="sort.toggle" title="Sort tools (Alt+S)" aria-label="Sort tools" aria-haspopup="menu" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20V4"/><path d="M4 7l3-3 3 3"/><path d="M17 4v16"/><path d="M14 17l3 3 3-3"/></svg>
+                </button>
+                <div id="sortMenu" class="sort-menu" role="menu" aria-labelledby="sortToggleBtn" hidden>
+                    <button type="button" class="sort-menu-item" role="menuitemradio" data-sort="default" aria-checked="true">
+                        <span data-i18n="sort.default">Default order</span>
+                        <svg class="sort-menu-check" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                    <button type="button" class="sort-menu-item" role="menuitemradio" data-sort="az" aria-checked="false">
+                        <span data-i18n="sort.az">Name A–Z</span>
+                        <svg class="sort-menu-check" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                    <button type="button" class="sort-menu-item" role="menuitemradio" data-sort="za" aria-checked="false">
+                        <span data-i18n="sort.za">Name Z–A</span>
+                        <svg class="sort-menu-check" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Filter Chips -->
@@ -289,7 +305,7 @@
             <span id="statusMessage">Ready</span>
         </div>
         <div class="footer-links">
-            <button type="button" id="brandBadge" class="brand-badge" data-i18n-title="badge.title">v2.6.48</button>
+            <button type="button" id="brandBadge" class="brand-badge" data-i18n-title="badge.title">v2.6.49</button>
             <button type="button" id="donateBtn" class="donate-link" data-i18n-title="donate.title" title="Support developer via ABA Pay">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="#e0245e" stroke="none" style="vertical-align:-1px;margin-right:2px;" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><span data-i18n="donate.text">Donate</span>
             </button>
