@@ -49,6 +49,11 @@ jobs:
           # 1. Fetch all tags from remote to ensure complete tag history
           git fetch --tags --force
 
+          # Tag creation (step 6) needs a committer identity even when no version
+          # bump is required, so configure it once up front.
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           # 2. Single source of truth: version.json
           $versionFile = "version.json"
           if (-not (Test-Path -LiteralPath $versionFile)) {
@@ -143,9 +148,6 @@ jobs:
             [System.IO.File]::WriteAllText((Join-Path (Get-Location) "version.json"), $newJson, $utf8NoBom)
 
             & .\sync-version.ps1
-
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
 
             git add -A
             git commit -m "chore(release): bump version to v$ver [skip ci]"
