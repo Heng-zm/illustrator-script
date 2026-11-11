@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.6.46"; // keep in sync with version.json
+    var CURRENT_VERSION = "2.6.47"; // keep in sync with version.json
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
@@ -104,6 +104,11 @@
             "recent.label": "Recent:",
             "recent.clear": "Clear recent history",
             "density.toggle": "Toggle Compact / Comfortable View (Alt+D)",
+            "sort.toggle": "Sort tools (Alt+S)",
+            "sort.default": "Default order",
+            "sort.az": "Name A–Z",
+            "sort.za": "Name Z–A",
+            "sort.changed": "Sorted: {mode}",
         },
         km: {
             "cat.all": "ទាំងអស់", "cat.favorites": "សំណព្វ", "cat.prepress": "មុនបោះពុម្ព",
@@ -174,6 +179,11 @@
             "recent.label": "ទើបប្រើ៖",
             "recent.clear": "សម្អាតប្រវត្តិឧបករណ៍ថ្មីៗ",
             "density.toggle": "ប្តូររចនាប័ទ្ម បង្រួម / ធម្មតា (Alt+D)",
+            "sort.toggle": "តម្រៀបឧបករណ៍ (Alt+S)",
+            "sort.default": "លំនាំដើម",
+            "sort.az": "ឈ្មោះ A–Z",
+            "sort.za": "ឈ្មោះ Z–A",
+            "sort.changed": "បានតម្រៀប៖ {mode}",
             "preview.title": "ព័តឹម័នឡបករណ៍",
             "preview.features": "លក្ខណែសំខាញ។",
             "preview.open": "បើកឡបករណ៍",
@@ -595,7 +605,7 @@
     }
 
     // e.key is missing on very old Chromium builds, so fall back to keyCode.
-    var KEYCODES = { 13: "Enter", 27: "Escape", 32: " ", 35: "End", 36: "Home", 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 70: "f", 75: "k", 80: "p", 82: "r", 191: "/" };
+    var KEYCODES = { 13: "Enter", 27: "Escape", 32: " ", 35: "End", 36: "Home", 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 70: "f", 75: "k", 80: "p", 82: "r", 83: "s", 191: "/" };
     function keyOf(e) {
         return e.key || KEYCODES[e.keyCode] || "";
     }
@@ -605,6 +615,8 @@
     // ------------------------------------------------------------------
     var currentLang = store.get("ozo_lang", "en") === "km" ? "km" : "en";
     var viewMode = store.get("ozo_view_mode", "list") === "grid" ? "grid" : "list";
+    var sortMode = store.get("ozo_sort_mode", "default");
+    if (sortMode !== "az" && sortMode !== "za") sortMode = "default";
     var currentCategory = store.get("ozo_category", "all");
     if (CATEGORIES.indexOf(currentCategory) === -1 && currentCategory !== "all" && currentCategory !== "favorites") currentCategory = "all";
     var searchQuery = "";
@@ -675,6 +687,8 @@
     var searchWrap = searchInput.parentNode;
     var searchClearBtn = $("searchClearBtn");
     var viewToggleBtn = $("viewToggleBtn");
+    var sortToggleBtn = $("sortToggleBtn");
+    var sortToggleLabel = $("sortToggleLabel");
     var viewIconGrid = $("viewIconGrid");
     var viewIconList = $("viewIconList");
     var langToggleBtn = $("langToggleBtn");
@@ -1453,9 +1467,24 @@
             if (!ok) continue;
             (isFav(tool.id) ? favs : rest).push(tool);
         }
-        // Favourites first. A plain partition keeps the original order stable
-        // (Array.sort is not stable on older Chromium for arrays over 10 items).
-        return favs.concat(rest);
+        // Favourites stay pinned above the rest; the chosen sort applies inside each group.
+        return sortToolGroup(favs).concat(sortToolGroup(rest));
+    }
+
+    function sortToolGroup(list) {
+        if (sortMode === "default" || list.length < 2) return list;
+        var rows = [];
+        for (var i = 0; i < list.length; i++) {
+            rows.push({ tool: list[i], name: toolName(list[i]).toLowerCase(), order: i });
+        }
+        rows.sort(function (a, b) {
+            var cmp = a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+            if (cmp === 0) return a.order - b.order; // stable tie-break on older Chromium
+            return sortMode === "za" ? -cmp : cmp;
+        });
+        var out = [];
+        for (var k = 0; k < rows.length; k++) out.push(rows[k].tool);
+        return out;
     }
 
     function buildCardInner(tool, name, desc, fav) {
@@ -1645,6 +1674,7 @@
                     { desc: km ? "ស្វែងរកឧបករណ៍" : "Search Tools", keys: ["/", km ? "ឬ" : "or", "Ctrl", "K"] },
                     { desc: km ? "ប្តូរប្រភេទ Tab" : "Switch Category Tab", keys: ["Alt", "1–5"] },
                     { desc: km ? "ប្តូរបង្រួម / ធម្មតា" : "Toggle Density", keys: ["Alt", "D"] },
+                    { desc: km ? "ប្តូរតម្រៀបឧបករណ៍" : "Cycle Tool Sort", keys: ["Alt", "S"] },
                     { desc: km ? "រំកិលរវាងឧបករណ៍" : "Navigate Tools", keys: ["↑", "↓", "←", "→"] },
                     { desc: km ? "បង្ហាញផ្ទាំងផ្លូវកាត់" : "Keyboard Help", keys: ["?"] }
                 ]
@@ -1779,6 +1809,31 @@
         viewIconGrid.style.display = grid ? "none" : "block";
         viewIconList.style.display = grid ? "block" : "none";
         viewToggleBtn.setAttribute("aria-pressed", grid ? "true" : "false");
+    }
+
+    function sortModeLabel() {
+        return t(sortMode === "az" ? "sort.az" : (sortMode === "za" ? "sort.za" : "sort.default"));
+    }
+
+    function updateSortUI() {
+        if (sortToggleLabel) {
+            sortToggleLabel.textContent = sortMode === "az" ? "A–Z" : (sortMode === "za" ? "Z–A" : "↕");
+        }
+        if (sortToggleBtn) {
+            var label = t("sort.toggle") + " — " + sortModeLabel();
+            sortToggleBtn.title = label;
+            sortToggleBtn.setAttribute("aria-label", label);
+            sortToggleBtn.classList.toggle("active", sortMode !== "default");
+        }
+    }
+
+    function cycleSort() {
+        sortMode = sortMode === "default" ? "az" : (sortMode === "az" ? "za" : "default");
+        store.set("ozo_sort_mode", sortMode);
+        updateSortUI();
+        playEnter();
+        renderTools();
+        showToast(t("sort.changed", { mode: sortModeLabel() }), "info", 1400);
     }
 
     function setCategory(btn) {
@@ -7240,6 +7295,13 @@
             return;
         }
 
+        // Cycle catalog sort: Alt+S
+        if (!activeEmbeddedTool && !activePreviewTool && e.altKey && !e.ctrlKey && !e.metaKey && (key === "s" || key === "S")) {
+            e.preventDefault();
+            cycleSort();
+            return;
+        }
+
         // Quick tab switching: Alt+1 to Alt+5
         if (e.altKey && !e.ctrlKey && !e.metaKey && e.key >= "1" && e.key <= "5") {
             var tabIdx = parseInt(e.key, 10) - 1;
@@ -7557,10 +7619,13 @@
         setStatus(t(viewMode === "grid" ? "view.grid" : "view.list"), "ready", 1500);
     });
 
+    if (sortToggleBtn) sortToggleBtn.addEventListener("click", cycleSort);
+
     langToggleBtn.addEventListener("click", function () {
         currentLang = isKhmer() ? "en" : "km";
         store.set("ozo_lang", currentLang);
         applyI18n();
+        updateSortUI();
         if (activePreviewTool) {
             openPreviewPanel(activePreviewTool.id);
         } else if (activeEmbeddedTool) {
@@ -8014,6 +8079,7 @@
     }
 
     applyI18n();
+    updateSortUI();
     var splashReady = initWelcomeSplash(); // early, so a later init error can never trap the user behind the overlay
     if (csInterface) initHost();
     updateCounts();

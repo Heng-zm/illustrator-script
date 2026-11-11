@@ -1,4 +1,4 @@
-# Ozo Tools - Adobe Illustrator Plugin Suite (v2.6.46)
+# Ozo Tools - Adobe Illustrator Plugin Suite (v2.6.47)
 
 <p align="center">
   <img src="assets/logo.png" alt="Ozo Tools Logo" width="520">
@@ -9,7 +9,7 @@ Transform all your Illustrator scripts into an official, native Illustrator plug
 2. **Native Menu Integration**: Appears in `File > Scripts > Ozo Tools > ...` with full support for Illustrator custom keyboard shortcuts (`Edit > Keyboard Shortcuts`).
 3. **Bilingual Support**: Instant toggle between English & Khmer (ភាសាខ្មែរ).
 4. **4-Tier Adaptive Theme Synchronization**: Automatically matches Illustrator's interface brightness (Dark, Medium Dark, Medium Light, Light) dynamically reading CEP skin color.
-5. **Favorites, Search & View Modes**: Pin favorites with dynamic count badge, category color tags, instant search (`/` to focus, `Enter` to launch the first match, `Esc` to clear), and a persistent grid/list view toggle.
+5. **Favorites, Search, Sorting & View Modes**: Pin favorites with dynamic count badge, category color tags, instant search (`/` to focus, `Enter` to launch the first match, `Esc` to clear), a persistent grid/list view toggle, and a remembered Default / A–Z / Z–A sort order.
 
 ---
 
@@ -111,6 +111,7 @@ Double-click `setup.bat` and choose:
   - **Live Search**: Instant keyword search in English or Khmer. Press `/` to focus the search box, `Enter` to run the first matched tool, or `Esc` to reset.
   - **Category Tabs**: Filter by *All*, *Favorites*, *Prepress*, *Layout*, or *Utilities*.
   - **Grid / List View**: Toggle the compact grid or detailed list layout with the view button; your choice is remembered.
+  - **Sort Tools**: Cycle Default / A–Z / Z–A order with the toolbar control or `Alt+S`; favorites stay pinned and your choice is remembered.
   - **Pin Favorites**: Click the star icon (★) on any tool to pin it to your favorites list.
   - **One-Click Run**: Click **Run** on a card to execute the script immediately, or press `R` on a focused card. Clicking the card itself (or pressing `Enter`) opens its in-panel settings.
   - **Language Toggle**: Click `EN` / `KM` at top-right to switch between English and Khmer.
