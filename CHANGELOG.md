@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.47] - 2026-11-11
+
+### Added
+- **Catalog Sorting**: Added a Default / A–Z / Z–A sort control to the panel toolbar and `Alt+S` shortcut, with the chosen order remembered across sessions. Favorites stay pinned above the rest while the selected order applies within each group.
+- **Bilingual Sort UI**: Added English and Khmer labels, tooltip and toast feedback for the new sort control, plus a Keyboard Help entry.
+
+---
+
 ## [2.6.2] - 2026-11-03
 
 ### Fixed
