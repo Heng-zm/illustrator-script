@@ -1,0 +1,21 @@
+{
+  "name": "ozo-khqrpay-server",
+  "version": "1.0.0",
+  "description": "KHQRPay donation and webhook processing backend for Ozo Tools",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-webhook.js"
+  },
+  "keywords": [
+    "khqrpay",
+    "khqr",
+    "aba",
+    "donation",
+    "webhooks"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "private": true
+}

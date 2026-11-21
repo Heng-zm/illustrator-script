@@ -9,6 +9,7 @@
     var CURRENT_VERSION = "2.6.52"; // keep in sync with version.json
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
+    var DONATE_API_ENDPOINT = ""; // Optional KHQRPay backend endpoint (e.g. "http://localhost:3000/api/donate")
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
     var UPDATE_POLL_INTERVAL = 30 * 60 * 1000; // re-apply the cached result; network still capped by UPDATE_CHECK_INTERVAL
     var SPLASH_MIN_MS = 650;   // keep the intro visible long enough to register
@@ -7406,7 +7407,44 @@
         }
     }
 
-    donateBtn.addEventListener("click", function () { openExternalURL(DONATE_URL); });
+    donateBtn.addEventListener("click", function () {
+        if (!DONATE_API_ENDPOINT) {
+            openExternalURL(DONATE_URL);
+            return;
+        }
+        if (donateBtn.disabled) return;
+        donateBtn.disabled = true;
+        var originalOpacity = donateBtn.style.opacity;
+        donateBtn.style.opacity = "0.6";
+
+        function resetBtn() {
+            donateBtn.disabled = false;
+            donateBtn.style.opacity = originalOpacity || "";
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", DONATE_API_ENDPOINT, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.timeout = 6000;
+        xhr.onload = function () {
+            resetBtn();
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data && data.payment && data.payment.checkout_url) {
+                        openExternalURL(data.payment.checkout_url);
+                        return;
+                    }
+                } catch (e) {}
+            }
+            openExternalURL(DONATE_URL);
+        };
+        xhr.onerror = xhr.ontimeout = function () {
+            resetBtn();
+            openExternalURL(DONATE_URL);
+        };
+        xhr.send(JSON.stringify({ amount: "1.00", currency: "USD", reference_id: "DONATE-" + Date.now() }));
+    });
 
     refreshBtn.addEventListener("click", function () {
         if (activePreviewTool) {
