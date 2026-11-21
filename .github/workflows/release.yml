@@ -2,8 +2,6 @@ name: Release Automation
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -96,47 +94,41 @@ jobs:
               $bumpNeeded = $true
             }
           } else {
-            $tagExists = [bool](& git tag -l $tagRef)
-            if ($tagExists) {
-              $tagSha = (& git rev-list -n 1 $tagRef).Trim()
-              if ($tagSha -ne $headSha) {
-                Write-Host "Tag $tagRef already exists on older commit $tagSha (HEAD is $headSha)."
-                Write-Host "Auto-incrementing $bumpType version for new push..."
-
-                $parts = $ver.Split('.')
-                $major = [int]$parts[0]
-                $minor = [int]$parts[1]
-                $patch = [int]$parts[2]
-
-                if ($bumpType -eq "major") {
-                  $major++
-                  $minor = 0
-                  $patch = 0
-                } elseif ($bumpType -eq "minor") {
-                  $minor++
-                  $patch = 0
-                } else {
-                  $patch++
-                }
-                $ver = "$major.$minor.$patch"
-                $tagRef = "v$ver"
-
-                while ([bool](& git tag -l $tagRef)) {
-                  $patch++
-                  $ver = "$major.$minor.$patch"
-                  $tagRef = "v$ver"
-                }
-
-                Write-Host "Determined next auto-version: $ver ($tagRef)"
-                $bumpNeeded = $true
-              } else {
-                Write-Host "Tag $tagRef already points to HEAD ($headSha). Re-building existing release."
-              }
-            } else {
-              Write-Host "New version $ver ($tagRef) detected (no existing tag)."
+            # Triggered via workflow_dispatch
+            if ($inputVer) {
+              $ver = $inputVer
+              $tagRef = "v$ver"
               if ($vObj.version -ne $ver) {
                 $bumpNeeded = $true
               }
+            } else {
+              Write-Host "Auto-incrementing $bumpType version for manual release dispatch..."
+              $parts = $ver.Split('.')
+              $major = [int]$parts[0]
+              $minor = [int]$parts[1]
+              $patch = [int]$parts[2]
+
+              if ($bumpType -eq "major") {
+                $major++
+                $minor = 0
+                $patch = 0
+              } elseif ($bumpType -eq "minor") {
+                $minor++
+                $patch = 0
+              } else {
+                $patch++
+              }
+              $ver = "$major.$minor.$patch"
+              $tagRef = "v$ver"
+
+              while ([bool](& git tag -l $tagRef)) {
+                $patch++
+                $ver = "$major.$minor.$patch"
+                $tagRef = "v$ver"
+              }
+
+              Write-Host "Determined next auto-version: $ver ($tagRef)"
+              $bumpNeeded = $true
             }
           }
 
