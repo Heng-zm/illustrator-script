@@ -6857,6 +6857,16 @@
             searchTagsWrap.hidden = true;
             searchInput.focus();
         });
+        searchTagsWrap.addEventListener("keydown", function (e) {
+            var k = keyOf(e);
+            if (k === "Enter" || k === " " || k === "Spacebar") {
+                var tag = closest(e.target, ".search-tag", searchTagsWrap);
+                if (tag) {
+                    e.preventDefault();
+                    tag.click();
+                }
+            }
+        });
     }
 
     // UI Density (Comfortable vs Compact)

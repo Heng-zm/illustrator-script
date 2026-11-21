@@ -8103,3 +8103,453 @@ body.theme-light .embed-card-header > span:first-child, body.theme-medium-light 
     transform: translateY(-1px);
     box-shadow: 0 2px 7px rgba(224, 36, 94, 0.22);
 }
+
+/* ==================================================================
+   5. UI/UX Enhancements
+   Modernized visual hierarchy, micro-interactions, accessibility & responsiveness
+   ================================================================== */
+
+/* ------------------------------------------------------------------
+   5.1 Tool Cards: Hierarchy, category accents & micro-interactions
+   ------------------------------------------------------------------ */
+.tool-card {
+    transition: transform 0.18s var(--ease-spring),
+                box-shadow 0.18s var(--ease-out),
+                border-color 0.18s ease,
+                background-color 0.18s ease !important;
+}
+
+.tool-card:hover {
+    transform: translateY(-1.5px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22), var(--shadow-1) !important;
+    border-color: var(--border-strong) !important;
+}
+
+.tool-card:active {
+    transform: scale(0.985) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+}
+
+.tool-name {
+    font-weight: 600;
+}
+
+.tool-desc {
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+/* Category subtle rail indicator */
+.tool-card.cat-prepress {
+    --rail: rgb(var(--prepress-rgb));
+}
+
+.tool-card.cat-layout {
+    --rail: rgb(var(--layout-rgb));
+}
+
+.tool-card.cat-utilities {
+    --rail: rgb(var(--util-rgb));
+}
+
+/* Category subtle accent border tint on hover */
+.tool-card.cat-prepress:hover {
+    border-color: rgba(var(--prepress-rgb), 0.45) !important;
+}
+
+.tool-card.cat-layout:hover {
+    border-color: rgba(var(--layout-rgb), 0.45) !important;
+}
+
+.tool-card.cat-utilities:hover {
+    border-color: rgba(var(--util-rgb), 0.45) !important;
+}
+
+/* Tool icon tile refinement */
+.tool-icon-wrap {
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-active);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s var(--ease-spring), border-color 0.2s ease;
+}
+
+.tool-card.cat-prepress .tool-icon-wrap {
+    border-color: rgba(var(--prepress-rgb), 0.25);
+}
+
+.tool-card.cat-layout .tool-icon-wrap {
+    border-color: rgba(var(--layout-rgb), 0.25);
+}
+
+.tool-card.cat-utilities .tool-icon-wrap {
+    border-color: rgba(var(--util-rgb), 0.25);
+}
+
+.tool-card:hover .tool-icon-wrap {
+    transform: scale(1.05);
+}
+
+/* Running state progress indicator enhancement */
+.tool-card.is-running::after {
+    height: 2.5px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent-hover), transparent);
+    box-shadow: 0 0 8px var(--accent);
+}
+
+/* ------------------------------------------------------------------
+   5.2 Header, Search Bar & Filter Tags
+   ------------------------------------------------------------------ */
+.app-header {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.search-input-wrap {
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.search-input-wrap:focus-within {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2) !important;
+}
+
+.search-kbd {
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-active);
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    padding: 1px 5px;
+    line-height: 1.2;
+}
+
+/* Filter Tag Chips */
+.search-tag {
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    border-radius: 99px;
+    transition: all 0.16s var(--ease-out);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.search-tag:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+    background: var(--bg-surface-hover);
+    transform: translateY(-1px);
+}
+
+.search-tag:active {
+    transform: scale(0.96);
+}
+
+.search-tag.active {
+    background: var(--accent-subtle);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------------
+   5.3 Category Tabs & Indicator
+   ------------------------------------------------------------------ */
+.tabs-container {
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+.tab-btn {
+    font-weight: 500;
+    transition: color 0.18s ease, opacity 0.18s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.tab-indicator {
+    transition: transform 0.22s var(--ease-out), width 0.22s var(--ease-out) !important;
+    border-radius: 2px 2px 0 0;
+}
+
+/* ------------------------------------------------------------------
+   5.4 Empty State
+   ------------------------------------------------------------------ */
+.empty-state {
+    padding: 32px 16px;
+    text-align: center;
+}
+
+.empty-state svg {
+    color: var(--text-muted);
+    opacity: 0.55;
+    margin-bottom: 8px;
+    transition: transform 0.2s ease;
+}
+
+.empty-clear-btn {
+    margin-top: 10px;
+    padding: 5px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.16s ease;
+}
+
+.empty-clear-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+    color: var(--accent);
+}
+
+/* ------------------------------------------------------------------
+   5.5 Embedded Tool View & Toolbar
+   ------------------------------------------------------------------ */
+.embedded-header {
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding: 6px 8px;
+}
+
+.embedded-nav-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.embedded-nav-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+
+.embedded-nav-arrow:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.embedded-quick-canvas {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.embed-canvas-btn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+
+.embed-canvas-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+}
+
+.embedded-sel-ribbon {
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Form controls in embedded tool forms */
+.embed-input,
+.embed-select,
+.embed-textarea {
+    border-radius: var(--radius-sm);
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.embed-input:focus,
+.embed-select:focus,
+.embed-textarea:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.22) !important;
+    outline: none !important;
+}
+
+/* ------------------------------------------------------------------
+   5.6 Modals Consistency & Backdrop
+   ------------------------------------------------------------------ */
+.shortcuts-dialog,
+.alert-dialog,
+.donate-dialog {
+    border-radius: var(--radius-lg, 14px) !important;
+    box-shadow: var(--shadow-3) !important;
+    border: 1px solid var(--border-strong) !important;
+    overflow: hidden;
+}
+
+.shortcuts-backdrop,
+.alert-backdrop {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* ------------------------------------------------------------------
+   5.7 Footer Bar & Live Status Dot
+   ------------------------------------------------------------------ */
+.panel-footer {
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-main);
+}
+
+.status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 2px rgba(52, 201, 139, 0.2);
+    transition: background-color 0.2s ease;
+}
+
+.status-dot.running {
+    background: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.35) !important;
+    animation: statusPulse 1.6s infinite ease-in-out !important;
+}
+
+@keyframes statusPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.65; }
+}
+
+.brand-badge {
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    border-radius: 99px;
+    font-size: 10px;
+    padding: 1.5px 7px;
+    cursor: default;
+    transition: all 0.15s ease;
+}
+
+.brand-badge:hover {
+    color: var(--text-secondary);
+    border-color: var(--border-strong);
+}
+
+/* ------------------------------------------------------------------
+   5.8 Accessibility & Visible Focus Ring
+   ------------------------------------------------------------------ */
+:focus-visible {
+    outline: 2px solid var(--accent) !important;
+    outline-offset: 1px !important;
+}
+
+/* Remove default browser outlines when clicked by mouse */
+:focus:not(:focus-visible) {
+    outline: none !important;
+}
+
+.search-tag:focus-visible,
+.tab-btn:focus-visible,
+.tool-card:focus-visible,
+.icon-btn:focus-visible {
+    outline: 2px solid var(--accent) !important;
+    outline-offset: 1px !important;
+}
+
+/* ------------------------------------------------------------------
+   5.9 Narrow Dock Panel Width (~260px) Adaptations
+   ------------------------------------------------------------------ */
+@media (max-width: 275px) {
+    .app-header {
+        padding: 5px 6px;
+    }
+    .header-actions {
+        gap: 2px;
+    }
+    .brand-title {
+        font-size: 11.5px;
+    }
+    .search-container {
+        padding: 4px 6px;
+        gap: 4px;
+    }
+    .search-kbd {
+        display: none;
+    }
+    .embedded-header {
+        padding: 4px 6px;
+    }
+    .embedded-dialog-btn span,
+    .embedded-back-btn span {
+        display: none;
+    }
+    .tab-btn {
+        padding: 5px 4px;
+        font-size: 10.5px;
+    }
+    .panel-footer {
+        padding: 3px 6px;
+    }
+}
+
+/* ------------------------------------------------------------------
+   5.10 Khmer Typography & Reduced Motion
+   ------------------------------------------------------------------ */
+:lang(km) .tool-name,
+:lang(km) .tool-desc,
+:lang(km) .tab-btn,
+:lang(km) .brand-title,
+:lang(km) .shortcuts-title,
+:lang(km) .embedded-tool-title {
+    line-height: 1.65 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .tool-card:hover {
+        transform: none !important;
+    }
+    .tool-card:active {
+        transform: none !important;
+    }
+    .search-tag:hover {
+        transform: none !important;
+    }
+    .tool-card.is-running::after {
+        animation: none !important;
+    }
+}
