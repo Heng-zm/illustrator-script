@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <rect width="48" height="48" rx="10" fill="#005d82"/>
+  <text x="50%" y="54%" dominant-baseline="central" text-anchor="middle" fill="#ffffff" font-family="'Montserrat', 'Segoe UI', 'Arial Black', sans-serif" font-weight="900" font-size="16" letter-spacing="-0.5">ABA</text>
+  <circle cx="39" cy="13" r="3" fill="#00c0f3"/>
+</svg>

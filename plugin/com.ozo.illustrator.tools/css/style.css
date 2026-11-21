@@ -7522,16 +7522,13 @@ body.theme-light .embed-card-header > span:first-child, body.theme-medium-light 
     text-align: left;
 }
 
-.donate-aba-badge {
-    background: #005d82;
-    color: #ffffff;
-    font-weight: 800;
-    font-size: 9.5px;
-    letter-spacing: 0.5px;
-    padding: 3px 5px;
-    border-radius: 4px;
-    line-height: 1;
-    box-shadow: 0 1px 3px rgba(0, 93, 130, 0.4);
+.donate-merchant-logo {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: block;
+    box-shadow: 0 2px 6px rgba(0, 93, 130, 0.35);
+    flex-shrink: 0;
 }
 
 .donate-merchant-meta {
@@ -7975,31 +7972,63 @@ body.theme-light .embed-card-header > span:first-child, body.theme-medium-light 
     font-size: 24px;
 }
 
-/* Bank Badges */
+/* Bank Badges & Real Bank Logos */
 .donate-bank-badges {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 3.5px;
+    align-items: center;
+    gap: 4px;
     width: 100%;
+    margin-top: 2px;
 }
 
 .bank-pill {
-    font-size: 8.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
     font-weight: 700;
-    padding: 1.5px 5px;
-    border-radius: 3px;
+    padding: 2.5px 6px 2.5px 3.5px;
+    border-radius: 6px;
     border: 1px solid var(--border-color);
     background: var(--bg-main);
-    color: var(--text-secondary);
+    color: var(--text-primary);
     letter-spacing: 0.2px;
+    transition: all 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.bank-aba { color: #005d82; border-color: rgba(0, 93, 130, 0.3); }
-.bank-bakong { color: #e0245e; border-color: rgba(224, 36, 94, 0.3); }
-.bank-wing { color: #26b99a; border-color: rgba(38, 185, 154, 0.3); }
-.bank-acleda { color: #1b365d; border-color: rgba(27, 54, 93, 0.3); }
-.bank-canadia { color: #d93829; border-color: rgba(217, 56, 41, 0.3); }
+.bank-pill:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.bank-logo-img {
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    display: block;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.bank-aba { border-color: rgba(0, 93, 130, 0.35); }
+.bank-aba span { color: #0080b0; }
+
+.bank-bakong { border-color: rgba(224, 36, 94, 0.35); }
+.bank-bakong span { color: #e0245e; }
+
+.bank-wing { border-color: rgba(38, 185, 154, 0.35); }
+.bank-wing span { color: #1ea363; }
+
+.bank-acleda { border-color: rgba(27, 54, 93, 0.35); }
+.bank-acleda span { color: #3b82f6; }
+
+.bank-canadia { border-color: rgba(217, 56, 41, 0.35); }
+.bank-canadia span { color: #e02e24; }
 
 /* Footer Actions */
 .donate-footer-actions {
