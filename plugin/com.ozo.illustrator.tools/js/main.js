@@ -6,7 +6,7 @@
     // ------------------------------------------------------------------
     // Config
     // ------------------------------------------------------------------
-    var CURRENT_VERSION = "2.6.52"; // keep in sync with version.json
+    var CURRENT_VERSION = "2.6.53"; // keep in sync with version.json
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
     var DONATE_API_ENDPOINT = ""; // Optional KHQRPay backend endpoint (e.g. "http://localhost:3000/api/donate")
