@@ -9,7 +9,9 @@
     var CURRENT_VERSION = "2.6.53"; // keep in sync with version.json
     var GITHUB_REPO = "Heng-zm/illustrator-script";
     var DONATE_URL = "https://link.payway.com.kh/ABAPAYiR4667130";
-    var DONATE_API_ENDPOINT = ""; // Optional KHQRPay backend endpoint (e.g. "http://localhost:3000/api/donate")
+    var DONATE_API_ENDPOINT = ""; // Optional custom backend endpoint (e.g. "http://localhost:3000/api/donate")
+    var KHQRPAY_API_KEY = "kp_live_qOF2Pt7UvtcxyJvzOr2RWrc4sAr2Y0Qu";
+    var KHQRPAY_BASE_URL = "https://khqrpay.dev";
     var UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // GitHub's anonymous API limit is 60 req/h per IP
     var UPDATE_POLL_INTERVAL = 30 * 60 * 1000; // re-apply the cached result; network still capped by UPDATE_CHECK_INTERVAL
     var SPLASH_MIN_MS = 650;   // keep the intro visible long enough to register
@@ -39,6 +41,8 @@
             "search.clear": "Clear search",
             "donate.text": "Donate",
             "donate.title": "Support developer via ABA Pay",
+            "donate.modalTitle": "Support Ozo Tools (KHQR)",
+            "donate.instructions": "Scan with <strong>ABA Mobile</strong> or any <strong>Bakong</strong> bank app in Cambodia.",
             "dismiss": "Dismiss",
             "empty.search": "No scripts match your search.",
             "empty.favorites": "No favorites yet. Click the star on a tool to add it.",
@@ -124,6 +128,8 @@
             "search.clear": "សម្អាតការស្វែងរក",
             "donate.text": "ឧបត្ថម្ភ",
             "donate.title": "ឧបត្ថម្ភអ្នកអភិវឌ្ឍន៍ (Support developer via ABA Pay)",
+            "donate.modalTitle": "ឧបត្ថម្ភដល់ Ozo Tools (KHQR)",
+            "donate.instructions": "ស្កេនជាមួយ <strong>ABA Mobile</strong> ឬកម្មវិធីធនាគារក្នុងប្រទេសកម្ពុជា។",
             "dismiss": "បិទ",
             "empty.search": "មិនមានស្គ្រីបត្រូវនឹងការស្វែងរករបស់អ្នកទេ។",
             "empty.favorites": "មិនទាន់មានឧបករណ៍សំណព្វទេ។ ចុចសញ្ញាផ្កាយលើឧបករណ៍ណាមួយដើម្បីដាក់ជាសំណព្វ។",
@@ -662,6 +668,20 @@
     var shortcutsBackdrop = $("shortcutsBackdrop");
     var shortcutsCloseBtn = $("shortcutsCloseBtn");
     var shortcutsBody = $("shortcutsBody");
+    var donateModal = $("donateModal");
+    var donateModalBackdrop = $("donateModalBackdrop");
+    var donateModalCloseBtn = $("donateModalCloseBtn");
+    var donateLoading = $("donateLoading");
+    var donateCardWrap = $("donateCardWrap");
+    var donateQrImg = $("donateQrImg");
+    var donateAmountLabel = $("donateAmountLabel");
+    var donateTimerWrap = $("donateTimerWrap");
+    var donateTimerText = $("donateTimerText");
+    var donateSuccessWrap = $("donateSuccessWrap");
+    var donateErrorWrap = $("donateErrorWrap");
+    var donateErrorMsg = $("donateErrorMsg");
+    var donateRetryBtn = $("donateRetryBtn");
+    var donateOpenBrowserBtn = $("donateOpenBrowserBtn");
     var searchTagsWrap = $("searchTagsWrap");
     var embeddedHeader = $("embeddedHeader") || (embeddedBackBtn ? embeddedBackBtn.parentNode : null);
     var embeddedSelRibbon = $("embeddedSelRibbon");
@@ -7064,6 +7084,10 @@
                 closeDocPopover();
                 return;
             }
+            if (donateModal && !donateModal.hidden) {
+                closeDonateModal();
+                return;
+            }
             if (shortcutsModal && !shortcutsModal.hidden) {
                 closeShortcutsModal();
                 return;
@@ -7407,44 +7431,245 @@
         }
     }
 
-    donateBtn.addEventListener("click", function () {
-        if (!DONATE_API_ENDPOINT) {
-            openExternalURL(DONATE_URL);
+    // ------------------------------------------------------------------
+    // In-Plugin KHQR Donation Modal
+    // ------------------------------------------------------------------
+    var currentDonateAmount = "1.00";
+    var currentCheckoutUrl = DONATE_URL;
+    var currentPaymentId = null;
+    var donateTimerInterval = null;
+    var donatePollInterval = null;
+
+    function executeKhqrRequest(url, method, headers, body, callback) {
+        // 1. Try Node.js https in CEP (bypasses browser CORS restrictions completely)
+        try {
+            if (typeof require === "function") {
+                var https = require("https");
+                var urlMod = require("url");
+                var parsed = urlMod.parse(url);
+                var bodyStr = body ? JSON.stringify(body) : null;
+                var h = {};
+                if (headers) {
+                    for (var k in headers) {
+                        if (headers.hasOwnProperty(k)) h[k] = headers[k];
+                    }
+                }
+                if (bodyStr) {
+                    h["Content-Type"] = "application/json";
+                    h["Content-Length"] = Buffer.byteLength(bodyStr, "utf8");
+                }
+                var req = https.request({
+                    hostname: parsed.hostname,
+                    port: parsed.port || 443,
+                    path: parsed.path,
+                    method: method || "GET",
+                    headers: h,
+                    timeout: 10000
+                }, function (res) {
+                    var chunks = [];
+                    res.on("data", function (chunk) { chunks.push(chunk); });
+                    res.on("end", function () {
+                        var text = Buffer.concat(chunks).toString("utf8");
+                        try {
+                            var json = JSON.parse(text);
+                            callback(null, json, res.statusCode);
+                        } catch (e) {
+                            callback(new Error(text || "Non-JSON response"), null, res.statusCode);
+                        }
+                    });
+                });
+                req.on("error", function (err) { callback(err); });
+                req.on("timeout", function () { req.abort(); callback(new Error("Request timed out")); });
+                if (bodyStr) req.write(bodyStr);
+                req.end();
+                return;
+            }
+        } catch (e) {
+            // fallback to XHR
+        }
+
+        // 2. Fallback to standard XMLHttpRequest
+        try {
+            var xhr = new XMLHttpRequest();
+            xhr.open(method || "GET", url, true);
+            if (headers) {
+                for (var key in headers) {
+                    if (headers.hasOwnProperty(key)) xhr.setRequestHeader(key, headers[key]);
+                }
+            }
+            if (body) xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.timeout = 10000;
+            xhr.onload = function () {
+                try {
+                    var json = JSON.parse(xhr.responseText);
+                    callback(null, json, xhr.status);
+                } catch (e) {
+                    callback(new Error(xhr.responseText || "Invalid JSON"), null, xhr.status);
+                }
+            };
+            xhr.onerror = function () { callback(new Error("Network error")); };
+            xhr.ontimeout = function () { callback(new Error("Request timed out")); };
+            xhr.send(body ? JSON.stringify(body) : null);
+        } catch (err) {
+            callback(err);
+        }
+    }
+
+    function clearDonateIntervals() {
+        if (donateTimerInterval) { clearInterval(donateTimerInterval); donateTimerInterval = null; }
+        if (donatePollInterval) { clearInterval(donatePollInterval); donatePollInterval = null; }
+    }
+
+    function closeDonateModal() {
+        clearDonateIntervals();
+        if (donateModal) donateModal.hidden = true;
+    }
+
+    function openDonateModal() {
+        if (!donateModal) return;
+        donateModal.hidden = false;
+        loadDonationQR(currentDonateAmount);
+    }
+
+    function loadDonationQR(amount) {
+        clearDonateIntervals();
+        currentDonateAmount = amount || "1.00";
+
+        if (donateLoading) donateLoading.hidden = false;
+        if (donateCardWrap) donateCardWrap.hidden = true;
+        if (donateSuccessWrap) donateSuccessWrap.hidden = true;
+        if (donateErrorWrap) donateErrorWrap.hidden = true;
+
+        var km = isKhmer();
+
+        // 1. If user configured a custom backend endpoint, query that
+        if (DONATE_API_ENDPOINT) {
+            executeKhqrRequest(DONATE_API_ENDPOINT, "POST", null, {
+                amount: currentDonateAmount,
+                currency: "USD",
+                reference_id: "DONATE-" + Date.now()
+            }, handlePaymentResponse);
             return;
         }
-        if (donateBtn.disabled) return;
-        donateBtn.disabled = true;
-        var originalOpacity = donateBtn.style.opacity;
-        donateBtn.style.opacity = "0.6";
 
-        function resetBtn() {
-            donateBtn.disabled = false;
-            donateBtn.style.opacity = originalOpacity || "";
+        // 2. Direct KHQRPay REST API payment creation
+        var idempotencyKey = "donate-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
+        executeKhqrRequest(KHQRPAY_BASE_URL + "/v1/payments", "POST", {
+            "Authorization": "Bearer " + KHQRPAY_API_KEY,
+            "Idempotency-Key": idempotencyKey
+        }, {
+            amount: currentDonateAmount,
+            currency: "USD",
+            reference_id: "DONATE-" + Date.now(),
+            metadata: { app: "ozo-illustrator-plugin" }
+        }, handlePaymentResponse);
+    }
+
+    function handlePaymentResponse(err, data, statusCode) {
+        var km = isKhmer();
+        if (err || !data || (statusCode && statusCode >= 400)) {
+            if (donateLoading) donateLoading.hidden = true;
+            if (donateErrorWrap) {
+                donateErrorWrap.hidden = false;
+                if (donateErrorMsg) {
+                    donateErrorMsg.textContent = km
+                        ? "មិនអាចបង្កើតកូដ QR បានទេ។ សូមពិនិត្យមើលការភ្ជាប់អ៊ីនធឺណិត ឬបើកតាម Browser។"
+                        : "Failed to generate KHQR code. Please check your internet or open in browser.";
+                }
+            }
+            return;
         }
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", DONATE_API_ENDPOINT, true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.timeout = 6000;
-        xhr.onload = function () {
-            resetBtn();
-            if (xhr.status >= 200 && xhr.status < 300) {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data && data.payment && data.payment.checkout_url) {
-                        openExternalURL(data.payment.checkout_url);
-                        return;
-                    }
-                } catch (e) {}
+        var payment = data.payment || data;
+        currentPaymentId = payment.id;
+        currentCheckoutUrl = payment.checkout_url || DONATE_URL;
+
+        if (donateLoading) donateLoading.hidden = true;
+
+        // Render official SVG KHQR Card
+        if (donateQrImg && payment.qr_string) {
+            donateQrImg.src = KHQRPAY_BASE_URL + "/api/render/khqr/" + encodeURIComponent(payment.qr_string) + ".svg";
+        }
+
+        if (donateAmountLabel) {
+            var rielFormatted = payment.amount ? Number(payment.amount).toLocaleString() : "4,000";
+            var usdVal = payment.requested_amount || currentDonateAmount;
+            donateAmountLabel.textContent = "$" + usdVal + " (" + rielFormatted + " KHR)";
+        }
+
+        if (donateCardWrap) donateCardWrap.hidden = false;
+
+        // Countdown timer
+        var expiresAt = payment.expires_at ? new Date(payment.expires_at).getTime() : (Date.now() + 180000);
+        function updateTimer() {
+            var diff = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+            var mins = Math.floor(diff / 60);
+            var secs = diff % 60;
+            var timeStr = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+
+            if (donateTimerText) donateTimerText.textContent = timeStr;
+            if (donateTimerWrap) {
+                if (diff <= 30) donateTimerWrap.classList.add("warning");
+                else donateTimerWrap.classList.remove("warning");
             }
-            openExternalURL(DONATE_URL);
-        };
-        xhr.onerror = xhr.ontimeout = function () {
-            resetBtn();
-            openExternalURL(DONATE_URL);
-        };
-        xhr.send(JSON.stringify({ amount: "1.00", currency: "USD", reference_id: "DONATE-" + Date.now() }));
-    });
+
+            if (diff <= 0) {
+                clearDonateIntervals();
+                if (donateCardWrap) donateCardWrap.hidden = true;
+                if (donateErrorWrap) {
+                    donateErrorWrap.hidden = false;
+                    if (donateErrorMsg) {
+                        donateErrorMsg.textContent = km
+                            ? "កូដ QR បានផុតកំណត់ហើយ។ សូមចុចបង្កើតកូដថ្មី។"
+                            : "QR code has expired. Please click below to generate a new code.";
+                    }
+                }
+            }
+        }
+        updateTimer();
+        donateTimerInterval = setInterval(updateTimer, 1000);
+
+        // Poll payment status every 3 seconds to catch approval
+        if (currentPaymentId && KHQRPAY_API_KEY) {
+            donatePollInterval = setInterval(function () {
+                executeKhqrRequest(KHQRPAY_BASE_URL + "/v1/payments/" + currentPaymentId, "GET", {
+                    "Authorization": "Bearer " + KHQRPAY_API_KEY
+                }, null, function (pollErr, pollData) {
+                    if (pollErr || !pollData) return;
+                    var pollPayment = pollData.payment || pollData;
+                    if (pollPayment.status === "paid") {
+                        clearDonateIntervals();
+                        if (donateCardWrap) donateCardWrap.hidden = true;
+                        if (donateSuccessWrap) donateSuccessWrap.hidden = false;
+                        showToast(km ? "ការបង់ប្រាក់បានជោគជ័យ! សូមអរគុណ 🎉" : "Payment received! Thank you for your support! 🎉", "success");
+                    } else if (pollPayment.status === "scanned") {
+                        if (donateTimerText) {
+                            donateTimerText.textContent = km ? "បានស្កេន..." : "Scanned...";
+                        }
+                    }
+                });
+            }, 3000);
+        }
+    }
+
+    if (donateBtn) donateBtn.addEventListener("click", openDonateModal);
+    if (donateModalCloseBtn) donateModalCloseBtn.addEventListener("click", closeDonateModal);
+    if (donateModalBackdrop) donateModalBackdrop.addEventListener("click", closeDonateModal);
+    if (donateRetryBtn) donateRetryBtn.addEventListener("click", function () { loadDonationQR(currentDonateAmount); });
+    if (donateOpenBrowserBtn) donateOpenBrowserBtn.addEventListener("click", function () { openExternalURL(currentCheckoutUrl || DONATE_URL); });
+
+    // Amount selector buttons
+    var donateAmtBtns = document.querySelectorAll(".donate-amt-btn");
+    for (var dIdx = 0; dIdx < donateAmtBtns.length; dIdx++) {
+        (function (btn) {
+            btn.addEventListener("click", function () {
+                for (var j = 0; j < donateAmtBtns.length; j++) donateAmtBtns[j].classList.remove("active");
+                btn.classList.add("active");
+                var amt = btn.getAttribute("data-amount");
+                loadDonationQR(amt);
+            });
+        })(donateAmtBtns[dIdx]);
+    }
 
     refreshBtn.addEventListener("click", function () {
         if (activePreviewTool) {
