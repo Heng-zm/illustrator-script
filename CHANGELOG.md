@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Unified Realtime Artboard Preview Banner**: Upgraded the persistent dock ribbon (`#embeddedSelRibbon`) to serve as the unified real-time artboard and selection preview banner across all 11 embedded tools, featuring an animated pulsing live badge, active artboard index, name, dimensions (`[Artboard Name] ([W] × [H] mm)`), and real-time selection bounds.
+- **Realtime Artboard Tracking Across Tools**: Embedded scripts (Batch Exporter, Print Job Info, Smart Guides, Nesting) now actively sync and refresh target artboard labels, buttons, and export naming previews in real time via `onEmbeddedDocumentStatus(info)` whenever the user switches or resizes artboards in Illustrator.
+- **Streamlined QR & KHQR Payload Copying**: Moved QR code text copying and EMVCo KHQR payload string copying into dedicated, high-visibility quick-action buttons directly within their respective configuration cards.
 - **Realtime Artboard Sync for Live Job Preview**: Print Job Info in the CEP panel now automatically tracks and updates the live ticket preview and dimensions in real time when switching or resizing artboards in Illustrator. Includes an auto-sync toggle badge with pulsing live status.
 - **Live On-Artboard Canvas Preview**: Added a real-time live preview toggle on the active artboard for Print Job Info that renders the banner directly onto the Illustrator canvas with debounced redraws, automatic artboard expansion, and safe artboard-height management to prevent runaway expansion across edits.
 - **Print Job Host Bridge Endpoints**: Added `ozoPreviewPrintJob` and `ozoClearPrintJobPreview` to `hostscript.jsx` and updated `Print Job Info.jsx` headless handling for instant non-destructive previews and automatic cleanup upon tool exit or submission.
@@ -17,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Single-line Enter Submission**: Pressing `Enter` inside any single-line input within an embedded tool immediately submits and executes the tool without requiring a mouse click.
 - **Automated Gatekeeper & Permissions Fix for macOS**: `setup.command` now automatically strips quarantine attributes (`xattr -dr com.apple.quarantine`) and sets proper permissions (`chmod -R 755`) for the CEP extension and installed menu scripts, resolving Gatekeeper launch issues on macOS Sonoma and Sequoia.
 - **Unit Test Coverage**: Added test suite verification for artboard range parsing, embedded tool reset keys, and macOS installer permissions.
+
+### Removed
+- **Obsolete In-Panel Job Ticket Cards**: Removed redundant synthetic ticket preview cards (`.feature-ticket-card` and `.print-job-ticket-card`) across all 11 embedded tools in `main.js`, regaining over 120px of valuable vertical workspace in the dock panel while delegating live previews to the real-time active artboard and top context banner.
 
 ### Fixed
 - **Single-Object Selection Handling in ExtendScript**: Added `OZO.getNormalizedSelection` to `OzoShared.jsxinc` and updated `CutContour Generator.jsx`, `Smart Dimension.jsx`, `Nesting.jsx`, `Pathfinder.jsx`, and `Rich Black Optimizer.jsx`. When a single artwork object is selected in Illustrator, `doc.selection` returns a non-array `PageItem` (without `.length`), which previously caused scripts to falsely treat the selection as empty or throw `"Could not determine selection bounds."`.

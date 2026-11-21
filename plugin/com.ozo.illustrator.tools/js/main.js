@@ -491,14 +491,6 @@
         remove: function (key) { try { window.localStorage.removeItem(key); } catch (e) {} }
     };
 
-    function getTicketDateStr() {
-        var d = new Date();
-        var day = ("0" + d.getDate()).slice(-2);
-        var month = ("0" + (d.getMonth() + 1)).slice(-2);
-        var year = d.getFullYear();
-        return day + " " + month + " " + year;
-    }
-
     function fallbackExecCopy(text, onSuccess, onError) {
         try {
             var textArea = document.createElement("textarea");
@@ -532,66 +524,6 @@
         } else {
             fallbackExecCopy(text, onSuccess, onError);
         }
-    }
-
-    function copyJobTicket(ticketEl, triggerBtn) {
-        if (!ticketEl) return;
-        var lines = [];
-        var lineElements = ticketEl.querySelectorAll(".ticket-line-date, .ticket-line-mat, .ticket-line-dim, .ticket-line-note, .ticket-row-main, .ticket-row-sub, .ticket-row-desc");
-        if (lineElements && lineElements.length > 0) {
-            for (var i = 0; i < lineElements.length; i++) {
-                var el = lineElements[i];
-                if (el.style && el.style.display === "none") continue;
-                var txt = (el.textContent || el.innerText || "").trim();
-                if (txt) lines.push(txt);
-            }
-        }
-        if (lines.length === 0) {
-            var raw = (ticketEl.innerText || ticketEl.textContent || "").trim();
-            var rawLines = raw.split(/\r?\n/);
-            for (var j = 0; j < rawLines.length; j++) {
-                var l = rawLines[j].trim();
-                if (l) lines.push(l);
-            }
-        }
-        if (lines.length === 0) return;
-
-        var formatted = [
-            "📋 PREPRESS JOB TICKET",
-            "------------------------------",
-            lines.join("\n"),
-            "------------------------------"
-        ].join("\n");
-
-        copyToClipboard(formatted, function () {
-            if (ticketEl) {
-                ticketEl.classList.remove("copied-pulse");
-                void ticketEl.offsetWidth;
-                ticketEl.classList.add("copied-pulse");
-                setTimeout(function () {
-                    ticketEl.classList.remove("copied-pulse");
-                }, 500);
-            }
-            if (triggerBtn) {
-                if (!triggerBtn._origTicketHtml) {
-                    triggerBtn._origTicketHtml = triggerBtn.innerHTML;
-                }
-                if (triggerBtn._copyTimer) {
-                    clearTimeout(triggerBtn._copyTimer);
-                }
-                triggerBtn.classList.add("copied");
-                triggerBtn.innerHTML = "✅ " + (isKhmer() ? "បានចម្លង!" : "Copied!");
-                triggerBtn._copyTimer = setTimeout(function () {
-                    triggerBtn.classList.remove("copied");
-                    triggerBtn.innerHTML = triggerBtn._origTicketHtml;
-                    delete triggerBtn._origTicketHtml;
-                    delete triggerBtn._copyTimer;
-                }, 1800);
-            }
-            setStatus(isKhmer() ? "បានចម្លងព័ត៌មាន Ticket ទៅកាន់ Clipboard រួចរាល់!" : "Job Ticket copied to clipboard!", "success", 2000);
-        }, function (err) {
-            setStatus(isKhmer() ? "មិនអាចចម្លងបានទេ: " + (err ? err.message : "") : "Failed to copy ticket: " + (err ? err.message : ""), "error", 2500);
-        });
     }
 
     function escapeHtml(str) {
@@ -1085,7 +1017,7 @@
         var inf = info || latestDocInfo;
         if (!inf || !inf.hasDoc) {
             embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-warn";
-            if (embeddedSelIcon) embeddedSelIcon.textContent = "⚠";
+            if (embeddedSelIcon) embeddedSelIcon.innerHTML = "⚠";
             embeddedSelText.textContent = isKhmer() ? "គ្មានឯកសារបើកក្នុង Illustrator ទេ" : "No active document open in Illustrator";
             embeddedSelRibbon.hidden = false;
             return;
@@ -1094,43 +1026,49 @@
         var tId = activeEmbeddedTool.id;
         var requiresArtwork = (tId === "cutcontour" || tId === "dimension" || tId === "repeat" || tId === "nesting" || tId === "pathfinder");
 
+        var abIdx = (inf.activeArtboardIndex !== undefined) ? inf.activeArtboardIndex : 0;
+        var abName = inf.activeArtboardName || ("Artboard " + (abIdx + 1));
+        var abDim = (inf.artboardWidthMm && inf.artboardHeightMm)
+            ? (inf.artboardWidthMm + " × " + inf.artboardHeightMm + " mm")
+            : "";
+        var abLabel = abName + (abDim ? (" (" + abDim + ")") : "");
+
         if (inf.selectedCount > 0) {
             if (tId === "pathfinder" && inf.selectedCount < 2) {
                 embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-warn";
-                if (embeddedSelIcon) embeddedSelIcon.textContent = "⚠";
+                if (embeddedSelIcon) embeddedSelIcon.innerHTML = "⚠";
                 embeddedSelText.textContent = isKhmer() ?
-                    ("បានជ្រើស " + inf.selectedCount + " វត្ថុ • ត្រូវការយ៉ាងតិច ២ វត្ថុដើម្បីកាត់ត") :
-                    (inf.selectedCount + " item selected • Pathfinder requires at least 2 objects");
+                    ("បានជ្រើស " + inf.selectedCount + " វត្ថុ • ត្រូវការយ៉ាងតិច ២ វត្ថុដើម្បីកាត់ត (" + abLabel + ")") :
+                    (inf.selectedCount + " items selected • Pathfinder requires at least 2 objects (" + abLabel + ")");
             } else {
                 embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-active";
-                if (embeddedSelIcon) embeddedSelIcon.textContent = "✓";
+                if (embeddedSelIcon) embeddedSelIcon.innerHTML = '<span class="live-dot" title="Live Realtime Artboard Sync"></span>';
                 var typeParts = [];
                 if (inf.selPaths) typeParts.push(inf.selPaths + " " + (isKhmer() ? "Path" : "Paths"));
                 if (inf.selText) typeParts.push(inf.selText + " " + (isKhmer() ? "Text" : "Text"));
                 if (inf.selImages) typeParts.push(inf.selImages + " " + (isKhmer() ? "រូបភាព" : "Img"));
                 var typeStr = typeParts.length > 0 ? (' (' + typeParts.join(", ") + ')') : '';
                 var dimStr = (inf.selWidthMm && inf.selHeightMm) ? (' • ' + inf.selWidthMm + ' × ' + inf.selHeightMm + ' mm') : '';
-                embeddedSelText.textContent = inf.selectedCount + ' ' + (isKhmer() ? "វត្ថុបានជ្រើសរើស" : "selected") + typeStr + dimStr;
+                var selPart = inf.selectedCount + ' ' + (isKhmer() ? "វត្ថុបានជ្រើស" : "sel") + typeStr + dimStr;
+                embeddedSelText.textContent = abLabel + " • " + selPart;
             }
         } else {
             if (tId === "pathfinder") {
                 embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-warn";
-                if (embeddedSelIcon) embeddedSelIcon.textContent = "⚠";
+                if (embeddedSelIcon) embeddedSelIcon.innerHTML = "⚠";
                 embeddedSelText.textContent = isKhmer() ?
-                    "ត្រូវការជ្រើសរើសវត្ថុយ៉ាងតិច ២ ដើម្បីកាត់ត (គ្មានវត្ថុជ្រើស)" :
-                    "Pathfinder requires at least 2 selected vector objects";
+                    ("ត្រូវការជ្រើសរើសវត្ថុយ៉ាងតិច ២ ដើម្បីកាត់ត — " + abLabel) :
+                    ("Pathfinder requires at least 2 selected vector objects — " + abLabel);
             } else if (requiresArtwork) {
                 embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-warn";
-                if (embeddedSelIcon) embeddedSelIcon.textContent = "⚠";
-                var abSizeWarn = (inf.artboardWidthMm && inf.artboardHeightMm) ? (' (' + inf.artboardWidthMm + ' × ' + inf.artboardHeightMm + ' mm)') : '';
+                if (embeddedSelIcon) embeddedSelIcon.innerHTML = "⚠";
                 embeddedSelText.textContent = (isKhmer() ?
-                    "គ្មានវត្ថុជ្រើស — នឹងប្រើវត្ថុលើ Artboard៖ " :
-                    "No selection — will auto-target items on: ") + (inf.activeArtboardName || "Artboard") + abSizeWarn;
+                    "គ្មានវត្ថុជ្រើស — នឹងប្រើវត្ថុលើ៖ " :
+                    "No selection — auto-targeting: ") + abLabel;
             } else {
                 embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-idle";
-                if (embeddedSelIcon) embeddedSelIcon.textContent = "📄";
-                var abSize = (inf.artboardWidthMm && inf.artboardHeightMm) ? (' (' + inf.artboardWidthMm + ' × ' + inf.artboardHeightMm + ' mm)') : '';
-                embeddedSelText.textContent = (isKhmer() ? "គ្មានវត្ថុជ្រើស — ប្រើ Artboard៖ " : "No selection (Target: ") + (inf.activeArtboardName || "Artboard") + abSize + ')';
+                if (embeddedSelIcon) embeddedSelIcon.innerHTML = '<span class="live-dot" title="Live Realtime Artboard Sync"></span>';
+                embeddedSelText.textContent = (isKhmer() ? "Artboard សកម្ម៖ " : "Live Artboard: ") + abLabel;
             }
         }
         embeddedSelRibbon.hidden = false;
@@ -2328,18 +2266,6 @@
 
         var html = [];
 
-        // 0. Live Export Job Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="expLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
         // 1. Doc Info Bar
         html.push('<div class="embed-doc-bar">');
         html.push('  <span class="embed-doc-name" title="' + escapeHtml(meta.fullDocName) + '">' + escapeHtml(meta.fullDocName) + '</span>');
@@ -2603,48 +2529,6 @@
             state.openFolder = chkOpenFolder.checked;
 
             store.setDebounced("ozo_exporter_settings", JSON.stringify(state), 250);
-            updateExpTicket();
-        }
-
-        function updateExpTicket() {
-            var box = $("expLiveTicket");
-            if (!box) return;
-
-            var formats = [];
-            if (chkPdf && chkPdf.checked) {
-                formats.push("PDF" + (chkPdfCombined && chkPdfCombined.checked ? " [Combined]" : ""));
-            }
-            if (chkTiff && chkTiff.checked) {
-                formats.push("TIFF " + (selTiffDpi ? selTiffDpi.value : "300") + "DPI");
-            }
-            if (chkPng && chkPng.checked) {
-                formats.push("PNG " + (selPngDpi ? selPngDpi.value : "300") + "DPI");
-            }
-            if (chkJpg && chkJpg.checked) {
-                formats.push("JPG " + (selJpgDpi ? selJpgDpi.value : "300") + "DPI");
-            }
-            var fmtText = formats.length ? formats.join(" \u2022 ") : (isKhmer() ? "គ្មានទម្រង់ជ្រើសរើស" : "No export format selected");
-
-            var scopeText = (state.scope === "all") ? (isKhmer() ? "គ្រប់ Artboards (" + meta.totalArtboards + ")" : "All Artboards (" + meta.totalArtboards + ")")
-                : (state.scope === "active" ? (isKhmer() ? "Artboard សកម្ម (#" + (meta.activeArtboardIndex + 1) + ")" : "Active Artboard (#" + (meta.activeArtboardIndex + 1) + ")") : (isKhmer() ? "ជួរ Artboards: " + (expRangeInput ? expRangeInput.value : state.customRange) : "Range: " + (expRangeInput ? expRangeInput.value : state.customRange)));
-
-            var dest = expDestInput ? expDestInput.value : state.destFolder;
-            var isOut = chkOutline ? chkOutline.checked : state.outline;
-            var noteParts = [];
-            if (isOut) noteParts.push(isKhmer() ? "Outline អក្សរ" : "Text Outlined");
-            if (dest) {
-                noteParts.push((isKhmer() ? "ទៅកាន់៖ " : "To: ") + (dest.length > 45 ? dest.slice(0, 44) + "\u2026" : dest));
-            } else {
-                noteParts.push(isKhmer() ? "មិនទាន់ជ្រើសថត" : "No folder chosen");
-            }
-
-            var html = '';
-            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Batch Exporter</div>';
-            html += '<div class="ticket-line-mat">' + escapeHtml(meta.docName || "Untitled") + ' (' + escapeHtml(scopeText) + ')</div>';
-            html += '<div class="ticket-line-dim">' + escapeHtml(fmtText) + '</div>';
-            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
-
-            box.innerHTML = html;
         }
 
         // Scope handlers
@@ -2838,6 +2722,25 @@
             });
         });
 
+        onEmbeddedDocumentStatus = function (info) {
+            if (!info || !info.hasDoc) return;
+            if (info.activeArtboardIndex !== undefined) {
+                meta.activeArtboardIndex = info.activeArtboardIndex;
+            }
+            if (info.artboardsCount !== undefined) {
+                meta.totalArtboards = info.artboardsCount;
+            }
+            var actBtn = embeddedContent.querySelector('#expScopeSegmented [data-scope="active"]');
+            if (actBtn) {
+                actBtn.textContent = (isKhmer() ? "សកម្ម" : "Active") + ' (#' + (meta.activeArtboardIndex + 1) + ')';
+            }
+            var allBtn = embeddedContent.querySelector('#expScopeSegmented [data-scope="all"]');
+            if (allBtn) {
+                allBtn.textContent = (isKhmer() ? "ទាំងអស់" : "All") + ' (' + meta.totalArtboards + ')';
+            }
+            updateExportPreview();
+        };
+
         updateExportPreview();
     }
 
@@ -2864,18 +2767,6 @@
 
         var html = [];
 
-        // 0. Live QR Job Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="qrLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
         // 1. Style Segmented Control
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "រចនាប័ទ្ម QR" : "QR Style") + '</span></div>');
@@ -2896,7 +2787,10 @@
         html.push('    <button type="button" class="embed-chip" data-tpl="tel:+855">Phone</button>');
         html.push('  </div>');
         html.push('  <textarea id="qrContentInput" class="embed-textarea" placeholder="Enter text, URL, or data...">' + escapeHtml(state.content) + '</textarea>');
-        html.push('  <div class="embed-naming-info" id="qrCharCount"></div>');
+        html.push('  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">');
+        html.push('    <div class="embed-naming-info" id="qrCharCount"></div>');
+        html.push('    <button type="button" id="btnCopyQrContent" class="btn-copy-ticket" style="margin:0;padding:2px 8px;font-size:10px;" title="' + (isKhmer() ? "ចម្លងទិន្នន័យ QR ទៅ Clipboard" : "Copy QR Content to Clipboard") + '">' + uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លង" : "Copy") + '</span></button>');
+        html.push('  </div>');
         html.push('</div>');
 
         // 3. Size & Options Card
@@ -3003,58 +2897,22 @@
             state.handle = qrTgHandleInput.value;
 
             store.setDebounced("ozo_qr_settings", JSON.stringify(state), 250);
-            updateQrTicket();
         }
 
-        function updateQrTicket() {
-            var box = $("qrLiveTicket");
-            if (!box) return;
-            var content = (qrContentInput ? qrContentInput.value : state.content) || "";
-            var size = (qrSizeInput ? qrSizeInput.value : state.size) || "30";
-            var unit = (qrUnitSelect ? qrUnitSelect.value : state.unit) || "mm";
-            var level = (qrCorrectionSelect ? qrCorrectionSelect.value : state.level) || "M";
-            var hasBg = chkQrBg ? chkQrBg.checked : state.background;
-            var isNewLayer = chkQrNewLayer ? chkQrNewLayer.checked : state.newLayer;
-
-            var bgText = hasBg ? (isKhmer() ? "ផ្ទៃស (White BG)" : "White BG") : (isKhmer() ? "ផ្ទៃថ្លា (Transparent)" : "Transparent");
-            var dimText = "w" + size + unit + " x h" + size + unit + " \u2022 EC Level " + level + " \u2022 " + bgText;
-
-            var noteParts = [];
-            if (isNewLayer) noteParts.push(isKhmer() ? "Layer ថ្មី" : "New Layer");
-            if (state.style.indexOf("Telegram") !== -1) noteParts.push(state.theme);
-            if (content) {
-                var clean = content.replace(/\s+/g, " ").trim();
-                noteParts.push((isKhmer() ? "មាតិកា៖ " : "Data: ") + (clean.length > 50 ? clean.slice(0, 49) + "\u2026" : clean));
-            } else {
-                noteParts.push(isKhmer() ? "មិនទាន់មានមាតិកា" : "No content yet");
-            }
-
-            var html = '';
-            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Vector QR Code</div>';
-            html += '<div class="ticket-line-mat">' + escapeHtml(state.style) + '</div>';
-            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
-            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
-            html += '<button type="button" id="btnCopyQrContent" class="btn-copy-ticket" style="margin-top:6px;width:100%;">';
-            html += uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "\u1785\u1798\u17d2\u179b\u1784\u1791\u17b7\u1793\u17d2\u1793\u1793\u17d0\u1799 QR \u1791\u17c5 Clipboard" : "Copy QR Content to Clipboard") + '</span>';
-            html += '</button>';
-
-            box.innerHTML = html;
-
-            var btnCopyQr = box.querySelector("#btnCopyQrContent");
-            if (btnCopyQr) {
-                btnCopyQr.onclick = function (e) {
-                    e.stopPropagation();
-                    var text = (qrContentInput ? qrContentInput.value.trim() : state.content) || "";
-                    if (!text) return;
-                    copyToClipboard(text, function () {
-                        btnCopyQr.innerHTML = uiIcon("check", 11) + " <span>" + (isKhmer() ? "\u1794\u17b6\u1793\u1785\u1798\u17d2\u179b\u1784\u179a\u17bd\u1785\u179a\u17b6\u179b\u17cb!" : "Copied Data!") + "</span>";
-                        setStatus(isKhmer() ? "\u1794\u17b6\u1793\u1785\u1798\u17d2\u179b\u1784\u1791\u17b7\u1793\u17d2\u1793\u1793\u17d0\u1799 QR \u1791\u17c5 Clipboard!" : "QR content copied to clipboard!", "success", 2000);
-                        setTimeout(function () {
-                            btnCopyQr.innerHTML = uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "\u1785\u1798\u17d2\u179b\u1784\u1791\u17b7\u1793\u17d2\u1793\u1793\u17d0\u1799 QR \u1791\u17c5 Clipboard" : "Copy QR Content to Clipboard") + '</span>';
-                        }, 1600);
-                    });
-                };
-            }
+        var btnCopyQr = $("btnCopyQrContent");
+        if (btnCopyQr) {
+            btnCopyQr.onclick = function (e) {
+                e.stopPropagation();
+                var text = (qrContentInput ? qrContentInput.value.trim() : state.content) || "";
+                if (!text) return;
+                copyToClipboard(text, function () {
+                    btnCopyQr.innerHTML = uiIcon("check", 11) + " <span>" + (isKhmer() ? "បានចម្លង!" : "Copied!") + "</span>";
+                    setStatus(isKhmer() ? "បានចម្លងទិន្នន័យ QR ទៅ Clipboard!" : "QR content copied to clipboard!", "success", 2000);
+                    setTimeout(function () {
+                        btnCopyQr.innerHTML = uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លង" : "Copy") + '</span>';
+                    }, 1600);
+                });
+            };
         }
 
         // Style Segmented
@@ -3198,18 +3056,6 @@
 
         var html = [];
 
-        // 0. Live CutContour Job Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="cutLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
         // 1. Machine RIP Preset Card
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ម៉ាស៊ីន / RIP Preset" : "Machine / RIP Preset") + '</span></div>');
@@ -3351,42 +3197,6 @@
             for (var ul = 0; ul < uLabels.length; ul++) uLabels[ul].textContent = state.unit;
 
             store.setDebounced("ozo_cutcontour_settings", JSON.stringify(state), 250);
-            updateCutTicket();
-        }
-
-        function updateCutTicket() {
-            var box = $("cutLiveTicket");
-            if (!box) return;
-            var presetObj = PRESETS_LIST[state.preset] || PRESETS_LIST[0];
-            var shapeObj = null;
-            for (var i = 0; i < SHAPES_LIST.length; i++) {
-                if (SHAPES_LIST[i].id === state.shape) { shapeObj = SHAPES_LIST[i]; break; }
-            }
-            var shapeName = shapeObj ? shapeObj.name : "Custom";
-            if (state.shape === 0) shapeName += " (R: " + state.radius + state.unit + ")";
-
-            var cuts = [];
-            if (state.kissEnabled) {
-                cuts.push("Kiss: " + state.kissName + " (+" + state.kissOffset + state.unit + ")");
-            }
-            if (state.perfEnabled) {
-                cuts.push("Perf: " + state.perfName + " (+" + state.perfOffset + state.unit + ")");
-            }
-            var cutDimText = cuts.length ? cuts.join(" \u2022 ") : (isKhmer() ? "គ្មានបន្ទាត់កាត់" : "No cutline enabled");
-
-            var opts = [];
-            opts.push((isKhmer() ? "កម្រាស់៖ " : "Stroke: ") + state.strokeWeight + " pt");
-            if (state.overprint) opts.push("Overprint");
-            if (state.optimizePath) opts.push(isKhmer() ? "សម្រួល Path" : "Optimize");
-            if (state.addRegMarks) opts.push(isKhmer() ? "សញ្ញាសម្គាល់" : "Marks");
-
-            var html = '';
-            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 CutContour PRO</div>';
-            html += '<div class="ticket-line-mat">' + escapeHtml(presetObj.name) + ' \u2014 ' + escapeHtml(shapeName) + '</div>';
-            html += '<div class="ticket-line-dim">' + escapeHtml(cutDimText) + '</div>';
-            html += '<div class="ticket-line-note">' + escapeHtml(opts.join(" \u2022 ")) + '</div>';
-
-            box.innerHTML = html;
         }
 
         cutPresetSelect.addEventListener("change", function () {
@@ -3510,18 +3320,6 @@
 
         var html = [];
 
-        // 0. Live Dimension Job Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="dimLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
         // 1. Placement Mode (Segmented)
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទិសដៅវាស់ (Direction)" : "Dimension Direction") + '</span></div>');
@@ -3623,34 +3421,6 @@
             }
 
             store.setDebounced("ozo_dimension_settings", JSON.stringify(state), 250);
-            updateDimTicket();
-        }
-
-        function updateDimTicket() {
-            var box = $("dimLiveTicket");
-            if (!box) return;
-            var modeNames = [
-                isKhmer() ? "ទទឹង & កម្ពស់ (W+H)" : "Both (Width + Height)",
-                isKhmer() ? "ទទឹង (Width Only)" : "Width Only",
-                isKhmer() ? "កម្ពស់ (Height Only)" : "Height Only",
-                isKhmer() ? "ប្រអប់ (Bounding Box)" : "Bounding Box All Sides"
-            ];
-            var mName = modeNames[state.mode] || modeNames[0];
-
-            var dimText = "Offset: " + state.offset + state.unit + " \u2022 Text: " + state.textSize + " pt \u2022 Arrow: " + state.arrow + " pt";
-
-            var noteParts = [];
-            noteParts.push((isKhmer() ? "ក្បៀស៖ " : "Precision: ") + state.precision + " decimals");
-            if (state.showUnit) noteParts.push(isKhmer() ? "បង្ហាញខ្នាត (" + state.unit + ")" : "Show unit label (" + state.unit + ")");
-            if (state.labelBackground) noteParts.push(isKhmer() ? "ផ្ទៃសពីក្រោយ (White Pill)" : "White Pill Background");
-
-            var html = '';
-            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Smart Dimension</div>';
-            html += '<div class="ticket-line-mat">' + escapeHtml(mName) + '</div>';
-            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
-            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
-
-            box.innerHTML = html;
         }
 
         for (var m = 0; m < modeBtns.length; m++) {
@@ -3784,29 +3554,12 @@
 
         var html = [];
 
-        // 1. Live Ticket Preview Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">');
-        html.push('      <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('      <span id="pjArtboardBadge" style="font-size:9.5px;color:var(--text-muted);font-weight:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>');
-        html.push('    </div>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="pjTicketCard" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '">');
-        html.push('    <div class="ticket-line-date" id="pjTicketDate">' + escapeHtml(state.dateStr || dStr) + '</div>');
-        html.push('    <div class="ticket-line-mat" id="pjTicketMat">' + escapeHtml(state.material) + '</div>');
-        html.push('    <div class="ticket-line-dim" id="pjTicketDim">w' + (state.widthVal || "--") + state.unit + ' x h' + (state.heightVal || "--") + state.unit + ' =' + state.qty + 'pcs</div>');
-        html.push('    <div class="ticket-line-note" id="pjTicketNote" style="' + (state.note ? "" : "display:none;") + '">' + escapeHtml(state.note) + '</div>');
-        html.push('  </div>');
-        html.push('</div>');
-
-        // 2. Job Metadata
+        // 1. Job Metadata
         html.push('<div class="embed-card">');
-        html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ព័ត៌មានការងារបោះពុម្ព (Job Info)" : "Production Details") + '</span></div>');
+        html.push('  <div class="embed-card-header" style="display:flex;justify-content:space-between;align-items:center;">');
+        html.push('    <span>' + (isKhmer() ? "ព័ត៌មានការងារបោះពុម្ព (Job Info)" : "Production Details") + '</span>');
+        html.push('    <span id="pjArtboardBadge" style="font-size:9.5px;color:var(--text-muted);font-weight:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>');
+        html.push('  </div>');
         html.push('  <div style="margin-bottom:8px;">');
         html.push('    <label style="font-size:10.5px;color:var(--text-secondary);">' + (isKhmer() ? "ប្រភេទសម្ភារៈ (Material / Media):" : "Material / Media:") + '</label>');
         html.push('    <div style="display:flex;gap:6px;margin-top:2px;">');
@@ -3973,11 +3726,6 @@
         var btnPjSubmit = $("btnPjSubmit");
         var alignBtns = embeddedContent.querySelectorAll("#pjAlignSegmented .embed-seg-btn");
 
-        var pjTicketDate = $("pjTicketDate");
-        var pjTicketMat = $("pjTicketMat");
-        var pjTicketDim = $("pjTicketDim");
-        var pjTicketNote = $("pjTicketNote");
-        var pjTicketCard = $("pjTicketCard");
         var pjPreviousUnit = state.unit;
 
         // Same point conversions as OZO.toPoints / OZO.fromPoints in ExtendScript.
@@ -4019,48 +3767,12 @@
 
         function updateTicketPreview() {
             var mat = getEffectiveMaterial();
-            var dt = pjDateInput.value.trim() || dStr;
-            var w = pjWidthInput.value || "--";
-            var h = pjHeightInput.value || "--";
-            var u = pjUnitSelect.value;
-            var q = pjQtyInput.value || "1";
-            var n = pjNoteInput.value.trim();
+            var n = pjNoteInput ? pjNoteInput.value.trim() : "";
 
             if ((hasPjKhmer(mat) || hasPjKhmer(n)) && pjFontSelect && pjFontSelect.value === "0") {
                 pjFontSelect.value = "1";
                 state.fontChoiceIndex = 1;
             }
-
-            pjTicketDate.textContent = dt;
-            pjTicketMat.textContent = mat;
-            pjTicketDim.textContent = "w" + w + u + " x h" + h + u + " =" + q + "pcs";
-            if (n) {
-                pjTicketNote.textContent = n;
-                pjTicketNote.style.display = "block";
-            } else {
-                pjTicketNote.style.display = "none";
-            }
-
-            // Text color preview: 0=White, 1=Yellow, 2=Cyan, 3=Black, 4=Magenta
-            var colorIdx = parseInt(pjColorSelect.value, 10) || 0;
-            var colors = ["#ffffff", "#ffd200", "#00d2ff", "#222222", "#ff2a85"];
-            var textColor = colors[colorIdx] || "#ffffff";
-            if (!chkPjDark.checked && colorIdx === 0) textColor = "#111111";
-            pjTicketMat.style.color = textColor;
-
-            // Dark box preview
-            pjTicketCard.style.background = chkPjDark.checked ? "#080808" : "#f5f6f8";
-            pjTicketCard.style.border = chkPjDark.checked ? "1px solid #333" : "1px solid var(--border-color)";
-            pjTicketDim.style.color = chkPjDark.checked ? "#cfcfcf" : "#333333";
-            pjTicketDate.style.color = chkPjDark.checked ? "#888888" : "#666666";
-
-            var just = "left";
-            if (state.alignmentIndex === 1) just = "center";
-            else if (state.alignmentIndex === 2) just = "right";
-            pjTicketDate.style.textAlign = just;
-            pjTicketMat.style.textAlign = just;
-            pjTicketDim.style.textAlign = just;
-            pjTicketNote.style.textAlign = just;
         }
 
         function saveState() {
@@ -4526,19 +4238,7 @@
             return s;
         }
 
-        // 1. Live Ticket Preview Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="numLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
-        // 2. Sequence Values Card
+        // 1. Sequence Values Card
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header">');
         html.push('    <span>' + (isKhmer() ? "តម្លៃលេខរៀង (Sequence Range)" : "Sequence Range") + '</span>');
@@ -4680,31 +4380,6 @@
             var sample1 = pfx + formatSample(st, pad) + sfx;
             var sample2 = pfx + formatSample(en, pad) + sfx;
             if (numSamplePill) numSamplePill.textContent = sample1 + "  ...  " + sample2;
-
-            var rangeStr = sample1 + "  ...  " + sample2 + " (" + cnt + (isKhmer() ? " លេខ" : " numbers") + ")";
-
-            var layoutText = (state.layout === 0)
-                ? (isKhmer() ? "ក្រឡាចត្រង្គ: " + (numColsInput ? numColsInput.value : state.columns) + " ជួរឈរ \u2022 គម្លាត " + (numStepXInput ? numStepXInput.value : state.horizontalStep) + "\u00d7" + (numStepYInput ? numStepYInput.value : state.verticalStep) + (numUnitSelect ? numUnitSelect.value : state.unit) : "Grid Repeat: " + (numColsInput ? numColsInput.value : state.columns) + " cols \u2022 Step " + (numStepXInput ? numStepXInput.value : state.horizontalStep) + "\u00d7" + (numStepYInput ? numStepYInput.value : state.verticalStep) + (numUnitSelect ? numUnitSelect.value : state.unit))
-                : (isKhmer() ? "តាម Artboards (១ លេខក្នុង ១ ផ្ទាំង)" : "Across Artboards (1 number per artboard)");
-
-            var noteParts = [];
-            if (pad > 0) noteParts.push((isKhmer() ? "ចំនួនខ្ទង់៖ " : "Digits: ") + pad);
-            var tActions = [
-                isKhmer() ? "លាក់អក្សរគំរូដើម" : "Hide original text",
-                isKhmer() ? "ចាក់សោអក្សរគំរូដើម" : "Lock original text",
-                isKhmer() ? "រក្សាទុកអក្សរគំរូដើម" : "Keep original text"
-            ];
-            noteParts.push(tActions[state.templateAction] || tActions[0]);
-
-            var box = $("numLiveTicket");
-            if (box) {
-                var html = '';
-                html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Sequential Numbering</div>';
-                html += '<div class="ticket-line-mat">' + escapeHtml(rangeStr) + '</div>';
-                html += '<div class="ticket-line-dim">' + escapeHtml(layoutText) + '</div>';
-                html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
-                box.innerHTML = html;
-            }
         }
 
         function saveNumState() {
@@ -4956,18 +4631,6 @@
 
         var html = [];
 
-        // 0. Live Guides Job Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="glLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
         // 1. Presets & Target Bar
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "គោលដៅ និងទម្រង់គំរូ (Target & Presets)" : "Target & Presets") + '</span></div>');
@@ -5123,34 +4786,6 @@
         var btnGlClearOnly = $("btnGlClearOnly");
         var swatchDots = embeddedContent.querySelectorAll("#glColorSwatches .guide-swatch-dot");
 
-        function updateGlTicket() {
-            var box = $("glLiveTicket");
-            if (!box) return;
-            var targetNames = [
-                isKhmer() ? "Artboard សកម្ម (Active Artboard)" : "Target: Active Artboard",
-                isKhmer() ? "គ្រប់ Artboards (All Artboards)" : "Target: All Artboards",
-                isKhmer() ? "វត្ថុជ្រើសរើស (Selected Artwork)" : "Target: Selected Artwork"
-            ];
-            var targetText = targetNames[state.targetIndex] || targetNames[0];
-
-            var gc = guideColors[state.colorIndex] || guideColors[0];
-            var colParts = state.useColumns ? (state.colCount + " Cols (Gutter " + state.colGutter + state.unit + ")") : (isKhmer() ? "គ្មានជួរឈរ" : "No cols");
-            var rowParts = state.useRows ? (state.rowCount + " Rows (Gutter " + state.rowGutter + state.unit + ")") : (isKhmer() ? "គ្មានជួរដេក" : "No rows");
-            var dimText = colParts + " \u2022 " + rowParts + " \u2022 " + gc.name;
-
-            var noteParts = [];
-            if (state.useMargin) noteParts.push("Margins: " + state.marginTop + "/" + state.marginLeft + "/" + state.marginBottom + "/" + state.marginRight + state.unit);
-            if (state.clearGuides) noteParts.push(isKhmer() ? "លុបបន្ទាត់ចាស់ៗចេញមុន" : "Clear existing guides");
-
-            var html = '';
-            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Guide Layout</div>';
-            html += '<div class="ticket-line-mat">' + escapeHtml(targetText) + '</div>';
-            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
-            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
-
-            box.innerHTML = html;
-        }
-
         function saveGlState() {
             state.targetIndex = parseInt(glTargetSelect.value, 10) || 0;
             state.useColumns = chkGlColumns.checked;
@@ -5169,7 +4804,6 @@
             state.unit = glUnitSelect.value;
             state.clearGuides = chkGlClear.checked;
             store.setDebounced("ozo_guidelayout_settings", JSON.stringify(state), 250);
-            updateGlTicket();
         }
 
         chkGlColumns.addEventListener("change", function() {
@@ -5328,18 +4962,6 @@
 
         var html = [];
 
-        // 0. Live Repeat Job Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="repLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
         // 1. Mode Segmented
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់ចម្លង (Repeat Mode)" : "Repeat Mode") + '</span></div>');
@@ -5462,39 +5084,6 @@
             state.layerName = repLayerInput.value.trim() || "Object Repeat";
             state.selectResult = chkRepSelect.checked;
             store.setDebounced("ozo_repeat_settings", JSON.stringify(state), 250);
-            updateRepTicket();
-        }
-
-        function updateRepTicket() {
-            var box = $("repLiveTicket");
-            if (!box) return;
-            var repUnits = ["mm", "cm", "in", "pt", "px"];
-            var u = repUnits[state.unitIndex] || "mm";
-            var modeName = state.mode === 0 ? (isKhmer() ? "ពេញ Artboard (Fit Artboard)" : "Fit Artboard")
-                : (state.mode === 1 ? (isKhmer() ? "ក្រឡាចត្រង្គ (Fixed Step & Repeat)" : "Fixed Step & Repeat")
-                : (isKhmer() ? "រាងជារង្វង់ (Radial Array)" : "Radial Array"));
-
-            var dimText = "";
-            if (state.mode === 2) {
-                dimText = state.radialCopies + " " + (isKhmer() ? "ចម្លង" : "copies") + " \u2022 Radius: " + state.radialRadius + u + " \u2022 Angle: " + state.radialTotalAngle + "\u00b0";
-            } else {
-                var total = (state.mode === 1) ? (state.columns * state.rows) + " " + (isKhmer() ? "ចម្លង (" : "copies (") + state.columns + "\u00d7" + state.rows + ")" : (isKhmer() ? "ពេញផ្ទាំងស្វ័យប្រវត្តិ" : "Auto fill artboard");
-                dimText = total + " \u2022 Gap: " + state.horizontalGap + "\u00d7" + state.verticalGap + " " + u;
-            }
-
-            var noteParts = [];
-            noteParts.push((isKhmer() ? "ស្រទាប់៖ " : "Layer: ") + (state.layerName || "Object Repeat"));
-            var altNames = ["None", "Flip X", "Flip Y", "Rotate 180\u00b0"];
-            if (state.alternating > 0) noteParts.push("Alternating: " + (altNames[state.alternating] || ""));
-            if (state.selectResult) noteParts.push(isKhmer() ? "ជ្រើសរើសលទ្ធផល" : "Select Result");
-
-            var html = '';
-            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Object Repeat</div>';
-            html += '<div class="ticket-line-mat">' + escapeHtml(modeName) + '</div>';
-            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
-            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
-
-            box.innerHTML = html;
         }
 
         for (var mi = 0; mi < modeBtns.length; mi++) {
@@ -5609,18 +5198,6 @@
         };
 
         var html = [];
-
-        // 0. Live Nesting Job Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="nestLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
 
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "សន្លឹក / ផ្ទៃរៀបចំ (Sheet & Target)" : "Sheets & Containers") + '</span></div>');
@@ -5825,54 +5402,10 @@
                 autoMultiSheet: chkNestAutoSheets.checked
             };
             store.setDebounced("ozo_nesting_settings", JSON.stringify(s), 250);
-            updateNestTicket(s);
-        }
-
-        function updateNestTicket(curr) {
-            var box = $("nestLiveTicket");
-            if (!box) return;
-            var cur = curr || {
-                mode: parseInt(nestTargetSelect.value, 10),
-                custom: chkNestCustom.checked,
-                width: Math.max(1, nestNumber(numNestWidth, 600)),
-                height: Math.max(1, nestNumber(numNestHeight, 400)),
-                unit: nestUnitSelect.value,
-                spacing: Math.max(0, nestNumber(numNestSpacing, 2)),
-                edge: Math.max(0, nestNumber(numNestEdge, 2)),
-                rotation: parseInt(nestRotSelect.value, 10),
-                resizeArtboard: chkNestResize.checked,
-                best: chkNestBest.checked,
-                allowInside: chkNestHoles.checked
-            };
-            var customSheet = cur.custom && Number(cur.mode) === 0;
-            var sheet = customSheet ? ("Sheet: " + cur.width + " \u00d7 " + cur.height + " " + cur.unit) : (isKhmer() ? "សន្លឹក៖ ទំហំ Artboard សកម្ម" : "Sheet: Active Artboard Size");
-
-            var rotNames = [
-                "Free Rotation (15\u00b0 Steps)",
-                "90\u00b0 Steps",
-                "180\u00b0 Steps",
-                "No Rotation"
-            ];
-            var rotText = rotNames[cur.rotation] || "90\u00b0 Steps";
-            var dimText = "Part Gap: " + cur.spacing + cur.unit + " \u2022 Edge: " + cur.edge + cur.unit + " \u2022 " + rotText;
-
-            var noteParts = [];
-            if (cur.best) noteParts.push(isKhmer() ? "ប្រសិទ្ធភាពខ្ពស់បំផុត (Best Fit)" : "Best Packing Efficiency");
-            if (cur.allowInside) noteParts.push(isKhmer() ? "តម្រៀបក្នុងប្រហោង (Holes)" : "Nest in Holes");
-            noteParts.push(cur.resizeArtboard ? (isKhmer() ? "ពង្រីក Artboard តាមសន្លឹក" : "Resize artboard") : (isKhmer() ? "រក្សាទំហំ Artboard" : "Keep artboard"));
-
-            var html = '';
-            html += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' \u2022 Nesting Optimizer</div>';
-            html += '<div class="ticket-line-mat">' + escapeHtml(sheet) + '</div>';
-            html += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
-            html += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" \u2022 ")) + '</div>';
-
-            box.innerHTML = html;
         }
 
         var inputsToSave = [nestTargetSelect, nestUnitSelect, numNestWidth, numNestHeight, chkNestResize, numNestSpacing, numNestEdge, numNestTop, numNestLeft, numNestBottom, numNestRight, nestRotSelect, nestDivSelect, chkNestHoles, chkNestFixed, chkNestBest, chkNestAutoSheets];
         updateNestTargetControls();
-        updateNestTicket();
         inputsToSave.forEach(function (inp) {
             inp.addEventListener("change", saveNestingState);
             inp.addEventListener("input", saveNestingState);
@@ -6564,18 +6097,6 @@
 
         var html = [];
 
-        // 0. Live Prepress Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="rbLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
         // 1. Profile Preset Selector
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "កម្រិតពណ៌ខ្មៅដិត (Rich Black Profile)" : "Prepress Black Profile") + '</span></div>');
@@ -6665,17 +6186,11 @@
         var btnRbSubmit = $("btnRbSubmit");
 
         function updateRbTicket() {
-            var box = $("rbLiveTicket");
-            if (!box) return;
-
             var c = parseInt(rbCInput.value, 10) || 0;
             var m = parseInt(rbMInput.value, 10) || 0;
             var y = parseInt(rbYInput.value, 10) || 0;
             var k = parseInt(rbKInput.value, 10) || 0;
             var tic = c + m + y + k;
-
-            var pObj = PRESETS[state.preset] || PRESETS[0];
-            var pName = (state.preset === 4) ? ("Custom (C" + c + " M" + m + " Y" + y + " K" + k + ")") : pObj.name;
 
             var safety = tic <= 260 ? "Safe for Press" : (tic <= 300 ? "Heavy Ink (Dry Time)" : "Warning: Over 300%");
             rbTicBadge.textContent = "Total Ink Coverage (TIC): " + tic + "% (" + safety + ")";
@@ -6710,13 +6225,13 @@
 
             if (rbSafetyText) {
                 if (tic <= 260) {
-                    rbSafetyText.textContent = isKhmer() ? "\u179f\u17bb\u179c\u178f\u17d2\u1790\u17b7\u1797\u17b6\u1796\u179b\u17d2\u17a2\u1794\u17c6\u1795\u17bb\u178f (Safe)" : "Optimal: Safe for All Presses";
+                    rbSafetyText.textContent = isKhmer() ? "សុវត្ថិភាពល្អបំផុត (Safe)" : "Optimal: Safe for All Presses";
                     rbSafetyText.style.color = "#10b981";
                 } else if (tic <= 300) {
-                    rbSafetyText.textContent = isKhmer() ? "\u1791\u17b9\u1780\u1781\u17d2\u1798\u17c5\u1780\u17d2\u179a\u17b6\u179f\u17cb (Drying Required)" : "Heavy Ink (Allow Extended Drying)";
+                    rbSafetyText.textContent = isKhmer() ? "ទឹកខ្មៅក្រាស់ (Drying Required)" : "Heavy Ink (Allow Extended Drying)";
                     rbSafetyText.style.color = "#f59e0b";
                 } else {
-                    rbSafetyText.textContent = isKhmer() ? "\u179b\u17be\u179f\u1780\u1798\u17d2\u179a\u17b7\u178f 300% (TAC Warning)" : "Prepress Warning: Exceeds 300% TAC";
+                    rbSafetyText.textContent = isKhmer() ? "លើសកម្រិត 300% (TAC Warning)" : "Prepress Warning: Exceeds 300% TAC";
                     rbSafetyText.style.color = "var(--danger)";
                 }
             }
@@ -6728,25 +6243,6 @@
                 var bCol = Math.round(255 * (1 - y / 100 * 0.9) * kr * 0.14);
                 rbSwatchRight.style.backgroundColor = "rgb(" + rCol + "," + gCol + "," + bCol + ")";
             }
-
-            var targets = [];
-            if (chkRbFills.checked) targets.push(isKhmer() ? "ផ្ទៃក្នុង" : "Fills");
-            if (chkRbStrokes.checked) targets.push(isKhmer() ? "បន្ទាត់ក្រៅ" : "Strokes");
-            var targetText = targets.length ? targets.join(" & ") : (isKhmer() ? "គ្មាន" : "None");
-            var scopeText = state.scope === "selection" ? (isKhmer() ? "លើវត្ថុជ្រើសរើស" : "Selection") : (isKhmer() ? "ឯកសារទាំងមូល" : "Entire Document");
-
-            var dimText = "TIC: " + tic + "% • " + targetText + " • " + scopeText;
-
-            var noteParts = [];
-            if (chkRbProtectText.checked) noteParts.push(isKhmer() ? "ការពារអក្សរ ≤ 24pt" : "Protect text ≤ 24pt");
-            if (chkRbOverprint.checked) noteParts.push(isKhmer() ? "Auto Overprint K100" : "Auto-Overprint K100");
-
-            var tHtml = '';
-            tHtml += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' • Rich Black Optimizer</div>';
-            tHtml += '<div class="ticket-line-mat">' + escapeHtml(pName) + '</div>';
-            tHtml += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
-            tHtml += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" • ")) + '</div>';
-            box.innerHTML = tHtml;
         }
 
         function saveRbState() {
@@ -6900,18 +6396,6 @@
 
         var html = [];
 
-        // 0. Live Prepress Ticket Card
-        html.push('<div class="embed-card feature-ticket-card">');
-        html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
-        html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
-        html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
-        html.push('    </div>');
-        html.push('  </div>');
-        html.push('  <div class="print-job-ticket-card" id="khqrLiveTicket" title="' + (isKhmer() ? "ចុចដើម្បីចម្លងព័ត៌មាន Ticket (Click to Copy)" : "Click anywhere on ticket to copy") + '"></div>');
-        html.push('</div>');
-
         // 1. Template Style Segmented
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header"><span>' + (isKhmer() ? "ទម្រង់កាតទូទាត់ (Output Template)" : "Template Style") + '</span></div>');
@@ -6975,6 +6459,9 @@
         html.push('      <input type="checkbox" id="khqrFitArtboardCheck" ' + (state.fitArtboard ? "checked" : "") + '> ' + (isKhmer() ? "ពង្រីក/តម្រឹម Artboard ស្មើទំហំកាត Standee" : "Fit Active Artboard to Standee Card"));
         html.push('    </label>');
         html.push('  </div>');
+        html.push('  <div style="margin-top:8px;">');
+        html.push('    <button type="button" id="btnCopyKhqrPayload" class="btn-copy-ticket" style="width:100%;">' + uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span></button>');
+        html.push('  </div>');
         html.push('</div>');
 
         // 4. Action Wrap
@@ -6993,94 +6480,68 @@
         var khqrBillInput = $("khqrBillInput");
         var btnKhqrSubmit = $("btnKhqrSubmit");
 
-        function updateKhqrTicket() {
-            var box = $("khqrLiveTicket");
-            if (!box) return;
-
-            var mName = (khqrNameInput ? khqrNameInput.value.trim() : state.merchantName) || "OZO MERCHANT";
-            var bId = (khqrIdInput ? khqrIdInput.value.trim() : state.bakongId) || "merchant@abab";
-            var cur = khqrCurSelect ? khqrCurSelect.value : state.currency;
-            var amt = khqrAmtInput ? khqrAmtInput.value.trim() : state.amount;
-            var w = parseFloat(khqrWidthInput ? khqrWidthInput.value : state.width) || 100;
-
-            var amtDisplay = amt ? ((cur === "KHR" ? "៛ " : "$ ") + amt) : (isKhmer() ? "ស្កេនតាមចិត្ត (Any Amount)" : "Any Amount (Static)");
-            var isCard = state.style.indexOf("Standee") !== -1 || state.style.indexOf("Card") !== -1;
-            var dimText = isCard ? ("w" + w + "mm x h" + Math.round(w * 1.5) + "mm • " + amtDisplay) : ("w" + w + "mm x h" + w + "mm • Vector QR");
-
-            var noteParts = [];
-            noteParts.push(state.style);
-            if (khqrBillInput && khqrBillInput.value.trim()) noteParts.push("Bill: " + khqrBillInput.value.trim());
-            noteParts.push(isKhmer() ? "ស្តង់ដារបាគង EMVCo" : "EMVCo Compliant");
-
-            var tHtml = '';
-            tHtml += '<div class="ticket-line-date">' + escapeHtml(getTicketDateStr()) + ' • ABA KHQR Generator</div>';
-            tHtml += '<div class="ticket-line-mat">' + escapeHtml(mName) + ' (' + escapeHtml(bId) + ')</div>';
-            tHtml += '<div class="ticket-line-dim">' + escapeHtml(dimText) + '</div>';
-            tHtml += '<div class="ticket-line-note">' + escapeHtml(noteParts.join(" • ")) + '</div>';
-            tHtml += '<button type="button" id="btnCopyKhqrPayload" class="btn-copy-ticket" style="margin-top:6px;width:100%;">';
-            tHtml += uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
-            tHtml += '</button>';
-            box.innerHTML = tHtml;
-
-            var btnCopyPayload = box.querySelector("#btnCopyKhqrPayload");
-            if (btnCopyPayload) {
-                btnCopyPayload.onclick = function (e) {
-                    e.stopPropagation();
-                    function formatKhqrTag(tag, val) {
-                        var str = String(val);
-                        var l = str.length;
-                        return tag + (l < 10 ? "0" + l : l) + str;
-                    }
-                    function calculateKhqrCRC16(str) {
-                        var crc = 0xFFFF;
-                        for (var i = 0; i < str.length; i++) {
-                            var c = str.charCodeAt(i) & 0xFF;
-                            crc ^= (c << 8);
-                            for (var j = 0; j < 8; j++) {
-                                if ((crc & 0x8000) !== 0) {
-                                    crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
-                                } else {
-                                    crc = (crc << 1) & 0xFFFF;
-                                }
+        var btnCopyKhqrPayload = $("btnCopyKhqrPayload");
+        if (btnCopyKhqrPayload) {
+            btnCopyKhqrPayload.onclick = function (e) {
+                e.stopPropagation();
+                function formatKhqrTag(tag, val) {
+                    var str = String(val);
+                    var l = str.length;
+                    return tag + (l < 10 ? "0" + l : l) + str;
+                }
+                function calculateKhqrCRC16(str) {
+                    var crc = 0xFFFF;
+                    for (var i = 0; i < str.length; i++) {
+                        var c = str.charCodeAt(i) & 0xFF;
+                        crc ^= (c << 8);
+                        for (var j = 0; j < 8; j++) {
+                            if ((crc & 0x8000) !== 0) {
+                                crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+                            } else {
+                                crc = (crc << 1) & 0xFFFF;
                             }
                         }
-                        var hex = crc.toString(16).toUpperCase();
-                        while (hex.length < 4) hex = "0" + hex;
-                        return hex;
                     }
-                    var amtNum = parseFloat(amt);
-                    var isDyn = !isNaN(amtNum) && amtNum > 0;
-                    var curCode = cur === "KHR" ? "116" : "840";
-                    var bClean = (bId || "merchant@abab").replace(/\s+/g, "");
-                    var mInfo = formatKhqrTag("00", "bakong@cbrd") + formatKhqrTag("01", bClean);
-                    var p = "";
-                    p += formatKhqrTag("00", "01");
-                    p += formatKhqrTag("01", isDyn ? "12" : "11");
-                    p += formatKhqrTag("29", mInfo);
-                    p += formatKhqrTag("52", "5999");
-                    p += formatKhqrTag("53", curCode);
-                    if (isDyn) {
-                        p += formatKhqrTag("54", curCode === "KHR" ? String(Math.round(amtNum)) : amtNum.toFixed(2));
-                    }
-                    p += formatKhqrTag("58", "KH");
-                    p += formatKhqrTag("59", (mName || "OZO MERCHANT").substring(0, 25));
-                    p += formatKhqrTag("60", "Phnom Penh");
-                    var billNum = khqrBillInput ? khqrBillInput.value.trim() : state.billNumber;
-                    if (billNum) {
-                        p += formatKhqrTag("62", formatKhqrTag("01", String(billNum).substring(0, 25)));
-                    }
-                    var toChecksum = p + "6304";
-                    var rawPayload = toChecksum + calculateKhqrCRC16(toChecksum);
+                    var hex = crc.toString(16).toUpperCase();
+                    while (hex.length < 4) hex = "0" + hex;
+                    return hex;
+                }
+                var mName = (khqrNameInput ? khqrNameInput.value.trim() : state.merchantName) || "OZO MERCHANT";
+                var bId = (khqrIdInput ? khqrIdInput.value.trim() : state.bakongId) || "merchant@abab";
+                var cur = khqrCurSelect ? khqrCurSelect.value : state.currency;
+                var amt = khqrAmtInput ? khqrAmtInput.value.trim() : state.amount;
+                var amtNum = parseFloat(amt);
+                var isDyn = !isNaN(amtNum) && amtNum > 0;
+                var curCode = cur === "KHR" ? "116" : "840";
+                var bClean = (bId || "merchant@abab").replace(/\s+/g, "");
+                var mInfo = formatKhqrTag("00", "bakong@cbrd") + formatKhqrTag("01", bClean);
+                var p = "";
+                p += formatKhqrTag("00", "01");
+                p += formatKhqrTag("01", isDyn ? "12" : "11");
+                p += formatKhqrTag("29", mInfo);
+                p += formatKhqrTag("52", "5999");
+                p += formatKhqrTag("53", curCode);
+                if (isDyn) {
+                    p += formatKhqrTag("54", curCode === "KHR" ? String(Math.round(amtNum)) : amtNum.toFixed(2));
+                }
+                p += formatKhqrTag("58", "KH");
+                p += formatKhqrTag("59", (mName || "OZO MERCHANT").substring(0, 25));
+                p += formatKhqrTag("60", "Phnom Penh");
+                var billNum = khqrBillInput ? khqrBillInput.value.trim() : state.billNumber;
+                if (billNum) {
+                    p += formatKhqrTag("62", formatKhqrTag("01", String(billNum).substring(0, 25)));
+                }
+                var toChecksum = p + "6304";
+                var rawPayload = toChecksum + calculateKhqrCRC16(toChecksum);
 
-                    copyToClipboard(rawPayload, function () {
-                        btnCopyPayload.innerHTML = uiIcon("check", 11) + " <span>" + (isKhmer() ? "បានចម្លងរួចរាល់!" : "Copied Payload!") + "</span>";
-                        setStatus(isKhmer() ? "បានចម្លង KHQR String ទៅ Clipboard!" : "KHQR payload copied to clipboard!", "success", 2000);
-                        setTimeout(function () {
-                            btnCopyPayload.innerHTML = uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
-                        }, 1600);
-                    });
-                };
-            }
+                copyToClipboard(rawPayload, function () {
+                    btnCopyKhqrPayload.innerHTML = uiIcon("check", 11) + " <span>" + (isKhmer() ? "បានចម្លងរួចរាល់!" : "Copied Payload!") + "</span>";
+                    setStatus(isKhmer() ? "បានចម្លង KHQR String ទៅ Clipboard!" : "KHQR payload copied to clipboard!", "success", 2000);
+                    setTimeout(function () {
+                        btnCopyKhqrPayload.innerHTML = uiIcon("copy", 11) + ' <span>' + (isKhmer() ? "ចម្លងកូដ KHQR Payload String" : "Copy KHQR Payload String") + '</span>';
+                    }, 1600);
+                });
+            };
         }
 
         var khqrBadgeBtns = embeddedContent.querySelectorAll("#khqrBadgeSegmented .embed-seg-btn");
@@ -7095,7 +6556,6 @@
             state.billNumber = khqrBillInput.value.trim();
             if (khqrFitArtboardCheck) state.fitArtboard = !!khqrFitArtboardCheck.checked;
             store.setDebounced("ozo_khqr_settings", JSON.stringify(state), 250);
-            updateKhqrTicket();
         }
 
         for (var bIdx = 0; bIdx < khqrBadgeBtns.length; bIdx++) {
@@ -7769,24 +7229,6 @@
                 target.value = decimals > 0 ? parseFloat(next.toFixed(decimals)) : Math.round(next);
                 target.dispatchEvent(new Event("input", { bubbles: true }));
                 target.dispatchEvent(new Event("change", { bubbles: true }));
-            }
-        });
-
-        embeddedContent.addEventListener("click", function (e) {
-            var copyBtn = closest(e.target, ".btn-copy-ticket", embeddedContent);
-            if (copyBtn) {
-                var parentCard = closest(copyBtn, ".embed-card", embeddedContent);
-                var ticketCard = parentCard ? parentCard.querySelector(".print-job-ticket-card") : null;
-                if (ticketCard) {
-                    copyJobTicket(ticketCard, copyBtn);
-                }
-                return;
-            }
-            var ticketCardDirect = closest(e.target, ".print-job-ticket-card", embeddedContent);
-            if (ticketCardDirect) {
-                var parentCard2 = closest(ticketCardDirect, ".embed-card", embeddedContent);
-                var copyBtn2 = parentCard2 ? parentCard2.querySelector(".btn-copy-ticket") : null;
-                copyJobTicket(ticketCardDirect, copyBtn2);
             }
         });
     }
