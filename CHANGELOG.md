@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Dynamic Selection Guidance in Panel**: The embedded selection ribbon now contextually verifies artwork requirements before running tools (e.g. alerts when Pathfinder has < 2 items selected, or when CutContour, Smart Dimension, Object Repeat, or Nesting have 0 items selected).
+- **Single-line Enter Submission**: Pressing `Enter` inside any single-line input within an embedded tool immediately submits and executes the tool without requiring a mouse click.
+- **Automated Gatekeeper & Permissions Fix for macOS**: `setup.command` now automatically strips quarantine attributes (`xattr -dr com.apple.quarantine`) and sets proper permissions (`chmod -R 755`) for the CEP extension and installed menu scripts, resolving Gatekeeper launch issues on macOS Sonoma and Sequoia.
+- **Unit Test Coverage**: Added test suite verification for artboard range parsing, embedded tool reset keys, and macOS installer permissions.
+
+### Fixed
+- **Single-Object Selection Handling in ExtendScript**: Added `OZO.getNormalizedSelection` to `OzoShared.jsxinc` and updated `CutContour Generator.jsx`, `Smart Dimension.jsx`, `Nesting.jsx`, `Pathfinder.jsx`, and `Rich Black Optimizer.jsx`. When a single artwork object is selected in Illustrator, `doc.selection` returns a non-array `PageItem` (without `.length`), which previously caused scripts to falsely treat the selection as empty or throw `"Could not determine selection bounds."`.
+- **Khmer Localization Corrections**: Corrected corrupted and misspelled Khmer UI labels in `main.js` for tool preview titles, features, run, and navigation buttons.
+- **IME Composition Guard**: Guarded the single-line input `Enter` listener against CJK/Khmer IME composition confirm keystrokes (`e.isComposing` / `keyCode 229`).
+- **Settings Reset Key Mappings**: Fixed key mismatches in `main.js` where resetting Smart Dimension and New Guide Layout failed to clear their respective persisted settings (`ozo_dimension_settings` and `ozo_guidelayout_settings`).
+- **CutContour & Smart Dimension Preview Leak Guard**: Wrapped core generator routines in `try...catch` blocks to guarantee that preview artwork/layers are cleanly purged if an unexpected error occurs during generation.
+
+### Changed
+- **Adaptive Contrast for Selection Ribbon**: Refined warning badge contrast for the embedded selection ribbon across all 4 Illustrator UI brightness themes (Light, Medium Light, Medium Dark, Dark).
+
+---
+
 ## [2.6.49] - 2026-11-11
 
 ### Changed

@@ -193,6 +193,39 @@ test("OzoShared provides eval-free JSON parser and serializer in ExtendScript", 
     assert.strictEqual(JSON.stringify(deserialized), JSON.stringify(sample));
 });
 
+test("OzoShared.getNormalizedSelection normalizes single-item, array, and empty selections", function () {
+    var sharedCode = fs.readFileSync(SHARED_INC, "utf8");
+    var sandbox = {
+        app: { name: "Adobe Illustrator", documents: [] },
+        File: makeFile,
+        Folder: function () { return { fsName: "/tmp" }; },
+        JSON: undefined
+    };
+    var context = vm.createContext(sandbox);
+    new vm.Script(sharedCode, { filename: "OzoShared.jsxinc" }).runInContext(context);
+    var OZO = context.OZO;
+
+    // Single item selection (ExtendScript non-array PageItem)
+    var fakeDocSingle = { selection: { typename: "PathItem", name: "Star" } };
+    var selSingle = OZO.getNormalizedSelection(fakeDocSingle);
+    assert.strictEqual(Array.isArray(selSingle), true);
+    assert.strictEqual(selSingle.length, 1);
+    assert.strictEqual(selSingle[0].name, "Star");
+
+    // Array selection
+    var fakeDocArray = { selection: [{ typename: "PathItem" }, { typename: "GroupItem" }] };
+    var selArray = OZO.getNormalizedSelection(fakeDocArray);
+    assert.strictEqual(selArray.length, 2);
+
+    // Empty selection
+    var fakeDocEmpty = { selection: null };
+    assert.strictEqual(OZO.getNormalizedSelection(fakeDocEmpty).length, 0);
+
+    // TextRange selection
+    var fakeDocText = { selection: { typename: "TextRange" } };
+    assert.strictEqual(OZO.getNormalizedSelection(fakeDocText).length, 0);
+});
+
 // ------------------------------------------------------------------
 // Document status
 // ------------------------------------------------------------------
@@ -700,6 +733,48 @@ test("version.json matches all target files across the repository", function () 
         var code = fs.readFileSync(sharedFile, "utf8");
         assert.ok(new RegExp('version:\\s*"' + version + '"').test(code), "OzoShared version in " + path.relative(ROOT, sharedFile));
     });
+});
+
+test("parseArtboardRange handles ranges, reversed bounds, and whitespace correctly", function () {
+    var exporterCode = fs.readFileSync(EXPORTER_SCRIPT, "utf8");
+    var match = exporterCode.match(/function parseArtboardRange\s*\([\s\S]*?\n    \}/);
+    assert.ok(match, "parseArtboardRange function found in Exporter script");
+    var fnSandbox = {};
+    vm.runInNewContext(match[0] + "\nfn = parseArtboardRange;", fnSandbox);
+    var fn = function (str, max) {
+        return JSON.parse(JSON.stringify(fnSandbox.fn(str, max)));
+    };
+
+    // Standard cases
+    assert.deepStrictEqual(fn("1", 5), [0]);
+    assert.deepStrictEqual(fn("1, 3, 5", 5), [0, 2, 4]);
+    assert.deepStrictEqual(fn("1-3", 5), [0, 1, 2]);
+
+    // Reversed bounds
+    assert.deepStrictEqual(fn("4-2", 5), [1, 2, 3]);
+
+    // Whitespace and duplicates
+    assert.deepStrictEqual(fn("  1 - 3 , 2 , 5 ", 5), [0, 1, 2, 4]);
+
+    // Clamped to maxCount
+    assert.deepStrictEqual(fn("1-10", 3), [0, 1, 2]);
+
+    // Empty or invalid
+    assert.deepStrictEqual(fn("", 5), []);
+    assert.deepStrictEqual(fn("invalid", 5), []);
+});
+
+test("embeddedResetBtn keyMap handles dimension and guide setting keys", function () {
+    var mainJs = fs.readFileSync(MAIN_JS, "utf8");
+    assert.ok(mainJs.indexOf('"ozo_dimension_settings"') !== -1, "Contains ozo_dimension_settings in reset keyMap");
+    assert.ok(mainJs.indexOf('"ozo_guidelayout_settings"') !== -1, "Contains ozo_guidelayout_settings in reset keyMap");
+});
+
+test("setup.command strips quarantine attributes and sets permissions for macOS", function () {
+    var setupCmd = fs.readFileSync(path.join(ROOT, "setup.command"), "utf8");
+    assert.ok(setupCmd.indexOf("xattr -dr com.apple.quarantine \"$CEP_TARGET\"") !== -1, "Strips quarantine from CEP_TARGET");
+    assert.ok(setupCmd.indexOf("chmod -R 755 \"$CEP_TARGET\"") !== -1, "Sets chmod 755 for CEP_TARGET");
+    assert.ok(setupCmd.indexOf("xattr -dr com.apple.quarantine \"$SCRIPTS_DIR\"") !== -1, "Strips quarantine from SCRIPTS_DIR");
 });
 
 // ------------------------------------------------------------------

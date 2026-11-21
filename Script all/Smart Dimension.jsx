@@ -15,23 +15,26 @@
     }
 
     var doc = app.activeDocument;
-    var selectionValue = doc.selection;
-    if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
+    var sourceItems = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+        OZO.getNormalizedSelection(doc) : [];
+    if (sourceItems.length === 0) {
         if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
             doc.selectObjectsOnActiveArtboard();
-            selectionValue = doc.selection;
-            if (!selectionValue || selectionValue.length === 0) {
+            sourceItems = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+                OZO.getNormalizedSelection(doc) : [];
+            if (sourceItems.length === 0) {
                 try {
                     var actLayer = doc.activeLayer;
                     if (actLayer && actLayer.pageItems && actLayer.pageItems.length > 0) {
                         for (var pi = 0, piLen = actLayer.pageItems.length; pi < piLen; pi++) {
                             try { actLayer.pageItems[pi].selected = true; } catch (eSel) {}
                         }
-                        selectionValue = doc.selection;
+                        sourceItems = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+                            OZO.getNormalizedSelection(doc) : [];
                     }
                 } catch (eAct) {}
             }
-            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
+            if (sourceItems.length === 0) {
                 __ozoHeadlessResult = { status: "error", message: "Please select artwork in Illustrator to add dimensions." };
                 return;
             }
@@ -40,17 +43,13 @@
                 "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f Artwork \u1791\u17c1\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u179c\u17b6\u179f\u17cb\u1794\u17d2\u179a\u179c\u17c2\u1784\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
                 "No artwork is selected. Would you like to dimension all items on the active artboard automatically?")) {
                 doc.selectObjectsOnActiveArtboard();
-                selectionValue = doc.selection;
+                sourceItems = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+                    OZO.getNormalizedSelection(doc) : [];
             }
-            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length === 0) {
+            if (sourceItems.length === 0) {
                 return;
             }
         }
-    }
-
-    var sourceItems = [];
-    for (var sourceIndex = 0, sourceIndexLen = selectionValue.length; sourceIndex < sourceIndexLen; sourceIndex++) {
-        sourceItems.push(selectionValue[sourceIndex]);
     }
     var originalActiveLayer = doc.activeLayer;
     var previewLayer = null;
@@ -493,18 +492,23 @@
     }
 
     function executeDimensionCore(finalSettings) {
-        var dimensionCount = createDimensions(finalSettings, "Smart Dimensions");
-        if (previewLayer && previewLayer.name !== "Smart Dimensions") {
-            previewLayer.name = "Smart Dimensions";
+        try {
+            var dimensionCount = createDimensions(finalSettings, "Smart Dimensions");
+            if (previewLayer && previewLayer.name !== "Smart Dimensions") {
+                previewLayer.name = "Smart Dimensions";
+            }
+            if (previewGroup) {
+                previewGroup.name = "Smart Dimensions";
+                doc.selection = null;
+                try { previewGroup.selected = true; } catch (ignoreSel2) {}
+            }
+            previewLayer = null;
+            previewGroup = null;
+            return { count: dimensionCount, layer: "Smart Dimensions" };
+        } catch (eDimCore) {
+            cleanupPreview(true);
+            throw eDimCore;
         }
-        if (previewGroup) {
-            previewGroup.name = "Smart Dimensions";
-            doc.selection = null;
-            try { previewGroup.selected = true; } catch (ignoreSel2) {}
-        }
-        previewLayer = null;
-        previewGroup = null;
-        return { count: dimensionCount, layer: "Smart Dimensions" };
     }
 
     if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {

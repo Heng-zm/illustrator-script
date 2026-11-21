@@ -15,12 +15,14 @@
     }
 
     var doc = app.activeDocument;
-    var selectionValue = doc.selection;
-    if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 2) {
+    var rawSelection = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+        OZO.getNormalizedSelection(doc) : [];
+    if (rawSelection.length < 2) {
         if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
             doc.selectObjectsOnActiveArtboard();
-            selectionValue = doc.selection;
-            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 2) {
+            rawSelection = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+                OZO.getNormalizedSelection(doc) : [];
+            if (rawSelection.length < 2) {
                 __ozoHeadlessResult = { status: "error", message: "Pathfinder requires at least 2 selected vector objects in Illustrator." };
                 return;
             }
@@ -29,9 +31,10 @@
                 "Pathfinder \u178f\u17d2\u179a\u17bc\u179c\u1780\u17b6\u179a\u179c\u178f\u17d2\u1790\u1799\u17c9\u17b6\u1784\u17a0\u17c4\u1785\u178e\u17b6\u179f\u17cb \u17e2\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u1791\u17b6\u17c6\u1784\u17a2\u179f\u17cb\u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
                 "Pathfinder requires at least 2 objects. Would you like to select all items on the active artboard automatically?")) {
                 doc.selectObjectsOnActiveArtboard();
-                selectionValue = doc.selection;
+                rawSelection = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+                    OZO.getNormalizedSelection(doc) : [];
             }
-            if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 2) {
+            if (rawSelection.length < 2) {
                 return;
             }
         }
@@ -66,15 +69,15 @@
         return false;
     }
 
-    for (var i = 0, iLen = selectionValue.length; i < iLen; i++) {
+    for (var i = 0, iLen = rawSelection.length; i < iLen; i++) {
         try {
-            if (isEffectivelyUneditable(selectionValue[i])) {
+            if (isEffectivelyUneditable(rawSelection[i])) {
                 skippedUneditable++;
                 continue;
             }
-            sourceItems.push(selectionValue[i]);
-            sourceHidden.push(selectionValue[i].hidden);
-            sourceParents.push(selectionValue[i].parent);
+            sourceItems.push(rawSelection[i]);
+            sourceHidden.push(rawSelection[i].hidden);
+            sourceParents.push(rawSelection[i].parent);
         } catch (ignoreUnsupportedItem) {}
     }
 

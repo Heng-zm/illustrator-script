@@ -381,7 +381,7 @@
     grpScope.orientation = "row";
     var rbSelection = grpScope.add("radiobutton", undefined, OZO.tr("Selected Objects Only"));
     var rbDocument = grpScope.add("radiobutton", undefined, OZO.tr("Entire Document"));
-    rbSelection.value = (doc.selection && doc.selection.length > 0);
+    rbSelection.value = ((typeof OZO !== "undefined" && OZO.getNormalizedSelection ? OZO.getNormalizedSelection(doc).length : (doc.selection ? 1 : 0)) > 0);
     rbDocument.value = !rbSelection.value;
 
     var chkFills = pnlOpts.add("checkbox", undefined, OZO.tr("Convert Fill Colors"));

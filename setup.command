@@ -87,6 +87,8 @@ install_cep_panel() {
 
     if cp -R "$CEP_SOURCE/"* "$CEP_TARGET/" 2>/dev/null; then
         rm -rf "$BACKUP_DIR"
+        xattr -dr com.apple.quarantine "$CEP_TARGET" 2>/dev/null || true
+        chmod -R 755 "$CEP_TARGET" 2>/dev/null || true
         echo -e "${GREEN}    [OK] Dockable panel installed/updated at:${NC}"
         echo -e "${GRAY}         $CEP_TARGET${NC}"
         echo -e "${GREEN}         (Access in Illustrator: Window -> Extensions -> Ozo Tools)${NC}"
@@ -124,6 +126,8 @@ install_menu_scripts() {
                             if [ -f "$LAUNCHER_SOURCE" ]; then
                                 cp -f "$LAUNCHER_SOURCE" "$SCRIPTS_DIR/Script Launcher.jsx" 2>/dev/null || true
                             fi
+                            xattr -dr com.apple.quarantine "$SCRIPTS_DIR" 2>/dev/null || true
+                            chmod -R 755 "$SCRIPTS_DIR" 2>/dev/null || true
                             echo -e "${GREEN}    [OK] Installed menu scripts to: $SCRIPTS_DIR${NC}"
                             FOUND_ANY=1
                         else

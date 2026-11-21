@@ -16,8 +16,9 @@
     }
 
     var doc = app.activeDocument;
-    var selectionValue = doc.selection;
-    if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 1) {
+    var initialSelection = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+        OZO.getNormalizedSelection(doc) : [];
+    if (initialSelection.length < 1) {
         if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
             // "Last selected object" mode needs an explicit container. Falling
             // back to the whole artboard would silently use the topmost item
@@ -38,14 +39,16 @@
                 return;
             }
             doc.selectObjectsOnActiveArtboard();
-            selectionValue = doc.selection;
+            initialSelection = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+                OZO.getNormalizedSelection(doc) : [];
         } else if (confirm(OZO.isKhmer() ?
             "\u1798\u17b7\u1793\u1791\u17b6\u1793\u17cb\u1794\u17b6\u1793\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f Artwork \u1791\u17c1\u17d4 \u178f\u17be\u17a2\u17d2\u1793\u1780\u1785\u1784\u17cb\u1787\u17d2\u179a\u17be\u179f\u179a\u17be\u179f\u179c\u178f\u17d2\u1790\u1793\u17c4\u179b\u17be Artboard \u1793\u17c1\u17c7\u178a\u17be\u1798\u17d2\u1794\u17b8\u179a\u17c0\u1794\u1785\u17c6 (Nest) \u178a\u17c4\u1799\u179f\u17d2\u179c\u17d0\u1799\u1794\u17d2\u179a\u179c\u178f\u17d2\u178f\u17b7\u1791\u17c1?" :
             "No artwork is selected. Would you like to select all items on the active artboard to nest automatically?")) {
             doc.selectObjectsOnActiveArtboard();
-            selectionValue = doc.selection;
+            initialSelection = (typeof OZO !== "undefined" && OZO.getNormalizedSelection) ?
+                OZO.getNormalizedSelection(doc) : [];
         }
-        if (!selectionValue || selectionValue.typename === "TextRange" || selectionValue.length < 1) {
+        if (initialSelection.length < 1) {
             if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
                 __ozoHeadlessResult = { success: false, message: "No artwork found on active artboard to nest." };
             }
@@ -54,10 +57,6 @@
     }
     // Illustrator's selection is a live host collection. Keep a stable snapshot
     // because previews clear and rebuild the document selection.
-    var initialSelection = [];
-    for (var selectionIndex = 0, selectionIndexLen = selectionValue.length; selectionIndex < selectionIndexLen; selectionIndex++) {
-        initialSelection.push(selectionValue[selectionIndex]);
-    }
     var requestedContainerItem = initialSelection[initialSelection.length - 1];
 
     function errorMessage(error) {

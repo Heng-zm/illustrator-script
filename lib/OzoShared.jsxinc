@@ -817,6 +817,25 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             return btn;
         }
 
+        function getNormalizedSelection(targetDoc) {
+            try {
+                var d = targetDoc || (app.documents.length > 0 ? app.activeDocument : null);
+                if (!d) return [];
+                var sel = d.selection;
+                if (!sel || sel.typename === "TextRange") return [];
+                if (sel instanceof Array || sel.typename === "Array" || Object.prototype.toString.call(sel) === "[object Array]" || typeof sel.length === "number") {
+                    var arr = [];
+                    for (var si = 0, siLen = sel.length; si < siLen; si++) {
+                        if (sel[si]) arr.push(sel[si]);
+                    }
+                    return arr;
+                }
+                return [sel];
+            } catch (eNormSel) {
+                return [];
+            }
+        }
+
         var ozoMath = {
             PT_PER_INCH: 72,
             MM_PER_INCH: 25.4,
@@ -1236,6 +1255,8 @@ if (typeof OZO === "undefined" || !OZO || !OZO.version) {
             openURL: openURL,
             donateURL: DONATE_URL,
             math: ozoMath,
+            getNormalizedSelection: getNormalizedSelection,
+            getSelection: getNormalizedSelection,
             toPoints: ozoMath.toPoints,
             fromPoints: ozoMath.fromPoints,
             parseJson: ozoJsonParse,

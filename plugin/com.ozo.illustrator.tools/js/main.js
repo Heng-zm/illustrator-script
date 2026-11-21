@@ -184,12 +184,12 @@
             "sort.az": "ឈ្មោះ A–Z",
             "sort.za": "ឈ្មោះ Z–A",
             "sort.changed": "បានតម្រៀប៖ {mode}",
-            "preview.title": "ព័តឹម័នឡបករណ៍",
-            "preview.features": "លក្ខណែសំខាញ។",
-            "preview.open": "បើកឡបករណ៍",
-            "preview.run": "តំណើរការភ្លាម",
-            "preview.close": "ត្រជល័ប",
-            "preview.btn": "មើលព័តឹម័ន",
+            "preview.title": "ព័ត៌មានឧបករណ៍",
+            "preview.features": "លក្ខណៈពិសេស",
+            "preview.open": "បើកឧបករណ៍",
+            "preview.run": "ដំណើរការភ្លាម",
+            "preview.close": "ត្រឡប់ក្រោយ",
+            "preview.btn": "មើលព័ត៌មាន",
             "splash.subtitle": "កញ្ចប់ឧបករណ៍ជំនួយការងារ Illustrator",
             "splash.status": "រួចរាល់ \u2022 មាន {n} ឧបករណ៍",
         }
@@ -1089,21 +1089,47 @@
             return;
         }
 
+        var tId = activeEmbeddedTool.id;
+        var requiresArtwork = (tId === "cutcontour" || tId === "dimension" || tId === "repeat" || tId === "nesting" || tId === "pathfinder");
+
         if (inf.selectedCount > 0) {
-            embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-active";
-            if (embeddedSelIcon) embeddedSelIcon.textContent = "✓";
-            var typeParts = [];
-            if (inf.selPaths) typeParts.push(inf.selPaths + " " + (isKhmer() ? "Path" : "Paths"));
-            if (inf.selText) typeParts.push(inf.selText + " " + (isKhmer() ? "Text" : "Text"));
-            if (inf.selImages) typeParts.push(inf.selImages + " " + (isKhmer() ? "រូបភាព" : "Img"));
-            var typeStr = typeParts.length > 0 ? (' (' + typeParts.join(", ") + ')') : '';
-            var dimStr = (inf.selWidthMm && inf.selHeightMm) ? (' • ' + inf.selWidthMm + ' × ' + inf.selHeightMm + ' mm') : '';
-            embeddedSelText.textContent = inf.selectedCount + ' ' + (isKhmer() ? "វត្ថុបានជ្រើសរើស" : "selected") + typeStr + dimStr;
+            if (tId === "pathfinder" && inf.selectedCount < 2) {
+                embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-warn";
+                if (embeddedSelIcon) embeddedSelIcon.textContent = "⚠";
+                embeddedSelText.textContent = isKhmer() ?
+                    ("បានជ្រើស " + inf.selectedCount + " វត្ថុ • ត្រូវការយ៉ាងតិច ២ វត្ថុដើម្បីកាត់ត") :
+                    (inf.selectedCount + " item selected • Pathfinder requires at least 2 objects");
+            } else {
+                embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-active";
+                if (embeddedSelIcon) embeddedSelIcon.textContent = "✓";
+                var typeParts = [];
+                if (inf.selPaths) typeParts.push(inf.selPaths + " " + (isKhmer() ? "Path" : "Paths"));
+                if (inf.selText) typeParts.push(inf.selText + " " + (isKhmer() ? "Text" : "Text"));
+                if (inf.selImages) typeParts.push(inf.selImages + " " + (isKhmer() ? "រូបភាព" : "Img"));
+                var typeStr = typeParts.length > 0 ? (' (' + typeParts.join(", ") + ')') : '';
+                var dimStr = (inf.selWidthMm && inf.selHeightMm) ? (' • ' + inf.selWidthMm + ' × ' + inf.selHeightMm + ' mm') : '';
+                embeddedSelText.textContent = inf.selectedCount + ' ' + (isKhmer() ? "វត្ថុបានជ្រើសរើស" : "selected") + typeStr + dimStr;
+            }
         } else {
-            embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-idle";
-            if (embeddedSelIcon) embeddedSelIcon.textContent = "📄";
-            var abSize = (inf.artboardWidthMm && inf.artboardHeightMm) ? (' (' + inf.artboardWidthMm + ' × ' + inf.artboardHeightMm + ' mm)') : '';
-            embeddedSelText.textContent = (isKhmer() ? "គ្មានវត្ថុជ្រើស — ប្រើ Artboard៖ " : "No selection (Target: ") + (inf.activeArtboardName || "Artboard") + abSize + ')';
+            if (tId === "pathfinder") {
+                embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-warn";
+                if (embeddedSelIcon) embeddedSelIcon.textContent = "⚠";
+                embeddedSelText.textContent = isKhmer() ?
+                    "ត្រូវការជ្រើសរើសវត្ថុយ៉ាងតិច ២ ដើម្បីកាត់ត (គ្មានវត្ថុជ្រើស)" :
+                    "Pathfinder requires at least 2 selected vector objects";
+            } else if (requiresArtwork) {
+                embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-warn";
+                if (embeddedSelIcon) embeddedSelIcon.textContent = "⚠";
+                var abSizeWarn = (inf.artboardWidthMm && inf.artboardHeightMm) ? (' (' + inf.artboardWidthMm + ' × ' + inf.artboardHeightMm + ' mm)') : '';
+                embeddedSelText.textContent = (isKhmer() ?
+                    "គ្មានវត្ថុជ្រើស — នឹងប្រើវត្ថុលើ Artboard៖ " :
+                    "No selection — will auto-target items on: ") + (inf.activeArtboardName || "Artboard") + abSizeWarn;
+            } else {
+                embeddedSelRibbon.className = "embedded-sel-ribbon ribbon-sel-idle";
+                if (embeddedSelIcon) embeddedSelIcon.textContent = "📄";
+                var abSize = (inf.artboardWidthMm && inf.artboardHeightMm) ? (' (' + inf.artboardWidthMm + ' × ' + inf.artboardHeightMm + ' mm)') : '';
+                embeddedSelText.textContent = (isKhmer() ? "គ្មានវត្ថុជ្រើស — ប្រើ Artboard៖ " : "No selection (Target: ") + (inf.activeArtboardName || "Artboard") + abSize + ')';
+            }
         }
         embeddedSelRibbon.hidden = false;
     }
@@ -7496,21 +7522,26 @@
         embeddedResetBtn.addEventListener("click", function () {
             if (!activeEmbeddedTool) return;
             var keyMap = {
-                exporter: "ozo_exporter_settings",
-                qr: "ozo_qr_settings",
-                cutcontour: "ozo_cutcontour_settings",
-                dimension: "ozo_dim_settings",
-                printjob: "ozo_printjob_settings",
-                numbering: "ozo_numbering_settings",
-                pathfinder: "ozo_pathfinder_settings",
-                guide: "ozo_guide_settings",
-                repeat: "ozo_repeat_settings",
-                nesting: "ozo_nesting_settings",
-                richblack: "ozo_richblack_settings",
-                khqr: "ozo_khqr_settings"
+                exporter: ["ozo_exporter_settings"],
+                qr: ["ozo_qr_settings"],
+                cutcontour: ["ozo_cutcontour_settings"],
+                dimension: ["ozo_dimension_settings", "ozo_dim_settings"],
+                printjob: ["ozo_printjob_settings"],
+                numbering: ["ozo_numbering_settings"],
+                pathfinder: ["ozo_pathfinder_settings"],
+                guide: ["ozo_guidelayout_settings", "ozo_guide_settings"],
+                guides: ["ozo_guidelayout_settings", "ozo_guide_settings"],
+                repeat: ["ozo_repeat_settings"],
+                nesting: ["ozo_nesting_settings"],
+                richblack: ["ozo_richblack_settings"],
+                khqr: ["ozo_khqr_settings"]
             };
-            var sKey = keyMap[activeEmbeddedTool.id];
-            if (sKey) store.remove(sKey);
+            var sKeys = keyMap[activeEmbeddedTool.id];
+            if (sKeys) {
+                for (var sk = 0; sk < sKeys.length; sk++) {
+                    store.remove(sKeys[sk]);
+                }
+            }
             var tId = activeEmbeddedTool.id;
             openEmbeddedView(tId);
             setStatus(t("reset.done", { name: toolName(activeEmbeddedTool) }), "success", 2500);
@@ -7532,11 +7563,30 @@
     if (shortcutsCloseBtn) shortcutsCloseBtn.addEventListener("click", closeShortcutsModal);
 
     if (embeddedContent) {
-        // Fast numeric stepping with Shift (10x) and Alt (0.1x)
+        // Fast numeric stepping with Shift (10x) and Alt (0.1x), and Enter to submit single-line forms
         embeddedContent.addEventListener("keydown", function (e) {
             var target = e.target;
-            if (!target || target.tagName !== "INPUT" || target.type !== "number") return;
+            if (!target) return;
             var key = keyOf(e);
+
+            // Single-line inputs: Enter triggers primary tool action without mouse
+            if (key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+                if (e.isComposing || e.keyCode === 229) return; // Ignore IME composition confirm
+                if (target.tagName === "INPUT" && target.type !== "hidden" && target.type !== "checkbox" && target.type !== "radio") {
+                    if (target.id !== "iconSearchInput" && target.id !== "launcherSearchInput") {
+                        var primaryBtn = embeddedContent.querySelector(".btn-action-primary") ||
+                                         embeddedContent.querySelector("#btnGenericRun");
+                        if (primaryBtn && !primaryBtn.disabled && primaryBtn.offsetParent !== null) {
+                            e.preventDefault();
+                            target.blur();
+                            primaryBtn.click();
+                            return;
+                        }
+                    }
+                }
+            }
+
+            if (target.tagName !== "INPUT" || target.type !== "number") return;
             if (key === "ArrowUp" || key === "ArrowDown") {
                 if (!e.shiftKey && !e.altKey) return;
                 e.preventDefault();
