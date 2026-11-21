@@ -1371,6 +1371,76 @@ function ozoExecutePrintJob(paramsJsonStr) {
     }
 }
 
+function ozoPreviewPrintJob(paramsJsonStr) {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Print Job Info.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Print Job Info.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Print Job Info.jsx not found" });
+        }
+
+        var params = ozoJsonParse(paramsJsonStr) || {};
+        params.previewOnly = true;
+        __ozoHeadlessParams = params;
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "error", message: "Print Job Info preview completed with no output status" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
+function ozoClearPrintJobPreview() {
+    try {
+        var scriptsFolder = ozoResolveScriptsFolder();
+        var scriptFile = new File(scriptsFolder.fsName + "/Print Job Info.jsx");
+        if (!scriptFile.exists) {
+            var alt1 = new File(__ozoPluginFolder.fsName + "/scripts/Print Job Info.jsx");
+            if (alt1.exists) scriptFile = alt1;
+        }
+        if (!scriptFile.exists) {
+            return ozoJsonStringify({ status: "error", message: "Print Job Info.jsx not found" });
+        }
+
+        __ozoHeadlessParams = { clearPreviewOnly: true };
+        __ozoHeadlessResult = null;
+
+        var savedFolder = Folder.current;
+        try {
+            if (scriptFile.parent && scriptFile.parent.exists) Folder.current = scriptFile.parent;
+            $.evalFile(scriptFile);
+        } finally {
+            Folder.current = savedFolder;
+            __ozoHeadlessParams = null;
+        }
+
+        if (__ozoHeadlessResult) {
+            return ozoJsonStringify(__ozoHeadlessResult);
+        }
+        return ozoJsonStringify({ status: "success", action: "cleared" });
+    } catch (e) {
+        __ozoHeadlessParams = null;
+        return ozoJsonStringify({ status: "error", message: e && e.message ? e.message : String(e) });
+    }
+}
+
 // -------------------------------------------------------------
 // Object Count & Prepress Inspector Bridge
 // -------------------------------------------------------------

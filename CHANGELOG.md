@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Realtime Artboard Sync for Live Job Preview**: Print Job Info in the CEP panel now automatically tracks and updates the live ticket preview and dimensions in real time when switching or resizing artboards in Illustrator. Includes an auto-sync toggle badge with pulsing live status.
+- **Live On-Artboard Canvas Preview**: Added a real-time live preview toggle on the active artboard for Print Job Info that renders the banner directly onto the Illustrator canvas with debounced redraws, automatic artboard expansion, and safe artboard-height management to prevent runaway expansion across edits.
+- **Print Job Host Bridge Endpoints**: Added `ozoPreviewPrintJob` and `ozoClearPrintJobPreview` to `hostscript.jsx` and updated `Print Job Info.jsx` headless handling for instant non-destructive previews and automatic cleanup upon tool exit or submission.
 - **Dynamic Selection Guidance in Panel**: The embedded selection ribbon now contextually verifies artwork requirements before running tools (e.g. alerts when Pathfinder has < 2 items selected, or when CutContour, Smart Dimension, Object Repeat, or Nesting have 0 items selected).
 - **Single-line Enter Submission**: Pressing `Enter` inside any single-line input within an embedded tool immediately submits and executes the tool without requiring a mouse click.
 - **Automated Gatekeeper & Permissions Fix for macOS**: `setup.command` now automatically strips quarantine attributes (`xattr -dr com.apple.quarantine`) and sets proper permissions (`chmod -R 755`) for the CEP extension and installed menu scripts, resolving Gatekeeper launch issues on macOS Sonoma and Sequoia.

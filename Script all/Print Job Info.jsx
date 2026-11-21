@@ -32,9 +32,32 @@
     var previewGroup = null;
     var originalArtboardRect = null;
     var activeArtboardIndex = doc.artboards.getActiveArtboardIndex();
-    if (activeArtboardIndex >= 0 && activeArtboardIndex < doc.artboards.length) {
-        var ab = doc.artboards[activeArtboardIndex].artboardRect;
-        originalArtboardRect = [ab[0], ab[1], ab[2], ab[3]];
+    var artboardIsModified = false;
+
+    // Check if we are running with a persistent preview state (e.g. repeated CEP panel preview calls)
+    if (typeof $.global.__ozoPrintJobPreviewState !== "undefined" &&
+            $.global.__ozoPrintJobPreviewState &&
+            $.global.__ozoPrintJobPreviewState.docName === doc.name &&
+            $.global.__ozoPrintJobPreviewState.artboardIndex === activeArtboardIndex) {
+        originalArtboardRect = $.global.__ozoPrintJobPreviewState.rect;
+        artboardIsModified = $.global.__ozoPrintJobPreviewState.artboardIsModified || false;
+    } else {
+        // If a previous preview modified a different artboard, restore it first
+        if (typeof $.global.__ozoPrintJobPreviewState !== "undefined" &&
+                $.global.__ozoPrintJobPreviewState &&
+                $.global.__ozoPrintJobPreviewState.docName === doc.name &&
+                $.global.__ozoPrintJobPreviewState.artboardIsModified) {
+            try {
+                var prevAbIdx = $.global.__ozoPrintJobPreviewState.artboardIndex;
+                if (prevAbIdx >= 0 && prevAbIdx < doc.artboards.length && $.global.__ozoPrintJobPreviewState.rect) {
+                    doc.artboards[prevAbIdx].artboardRect = $.global.__ozoPrintJobPreviewState.rect;
+                }
+            } catch (eRestorePrevAb) {}
+        }
+        if (activeArtboardIndex >= 0 && activeArtboardIndex < doc.artboards.length) {
+            var ab = doc.artboards[activeArtboardIndex].artboardRect;
+            originalArtboardRect = [ab[0], ab[1], ab[2], ab[3]];
+        }
     }
 
     function getNormalizedSelection() {
@@ -944,8 +967,6 @@
         };
     }
 
-    var artboardIsModified = false;
-
     function getDesiredArtboardRect(target, geom, expandArtboard) {
         if (!expandArtboard || !originalArtboardRect || activeArtboardIndex < 0 || activeArtboardIndex >= doc.artboards.length) {
             return originalArtboardRect;
@@ -1005,6 +1026,17 @@
                 ];
             } catch (eAb) {}
             artboardIsModified = false;
+        }
+        if (typeof $.global.__ozoPrintJobPreviewState !== "undefined" && $.global.__ozoPrintJobPreviewState) {
+            if ($.global.__ozoPrintJobPreviewState.artboardIsModified &&
+                    $.global.__ozoPrintJobPreviewState.rect &&
+                    $.global.__ozoPrintJobPreviewState.artboardIndex >= 0 &&
+                    $.global.__ozoPrintJobPreviewState.artboardIndex < doc.artboards.length) {
+                try {
+                    doc.artboards[$.global.__ozoPrintJobPreviewState.artboardIndex].artboardRect = $.global.__ozoPrintJobPreviewState.rect;
+                } catch (eGlobalAb) {}
+            }
+            $.global.__ozoPrintJobPreviewState = null;
         }
         if (originalActiveLayer) {
             try { doc.activeLayer = originalActiveLayer; } catch (eL) {}
@@ -1184,6 +1216,9 @@
                 var ab = doc.artboards[activeArtboardIndex];
                 ab.artboardRect = getDesiredArtboardRect(target, geom, true);
                 artboardIsModified = true;
+                if (typeof $.global.__ozoPrintJobPreviewState !== "undefined" && $.global.__ozoPrintJobPreviewState) {
+                    $.global.__ozoPrintJobPreviewState.artboardIsModified = true;
+                }
             } catch (eAbExp) {}
         } else if (artboardIsModified && originalArtboardRect &&
                 activeArtboardIndex >= 0 && activeArtboardIndex < doc.artboards.length) {
@@ -1195,6 +1230,9 @@
                     originalArtboardRect[3]
                 ];
                 artboardIsModified = false;
+                if (typeof $.global.__ozoPrintJobPreviewState !== "undefined" && $.global.__ozoPrintJobPreviewState) {
+                    $.global.__ozoPrintJobPreviewState.artboardIsModified = false;
+                }
             } catch (eAbRest) {}
         }
 
@@ -1329,6 +1367,9 @@
                 var finalAb = doc.artboards[activeArtboardIndex];
                 finalAb.artboardRect = getDesiredArtboardRect(finalTarget, finalGeom, true);
                 artboardIsModified = false;
+                if (typeof $.global.__ozoPrintJobPreviewState !== "undefined" && $.global.__ozoPrintJobPreviewState) {
+                    $.global.__ozoPrintJobPreviewState = null;
+                }
             } catch (eFinalAb) {}
         }
 
@@ -1381,6 +1422,12 @@
     if (typeof __ozoHeadlessParams !== "undefined" && __ozoHeadlessParams) {
         try {
             var hp = __ozoHeadlessParams;
+            if (hp.clearPreviewOnly) {
+                cleanupPreview();
+                app.redraw();
+                __ozoHeadlessResult = { status: "success", action: "cleared" };
+                return;
+            }
             var rawW = hp.widthVal !== undefined ? hp.widthVal : (hp.width !== undefined ? hp.width : (hp.w !== undefined ? hp.w : initWidth));
             var rawH = hp.heightVal !== undefined ? hp.heightVal : (hp.height !== undefined ? hp.height : (hp.h !== undefined ? hp.h : initHeight));
             var w = parseFloat(String(rawW).replace(/,/g, "."));
@@ -1402,6 +1449,25 @@
                 fontSizeIndex: typeof hp.fontSizeIndex === "number" ? hp.fontSizeIndex : 0,
                 fontChoiceIndex: typeof hp.fontChoiceIndex === "number" ? hp.fontChoiceIndex : 0
             };
+            if (hp.previewOnly) {
+                if (!$.global.__ozoPrintJobPreviewState) {
+                    $.global.__ozoPrintJobPreviewState = {
+                        docName: doc.name,
+                        artboardIndex: activeArtboardIndex,
+                        rect: originalArtboardRect ? [originalArtboardRect[0], originalArtboardRect[1], originalArtboardRect[2], originalArtboardRect[3]] : null,
+                        artboardIsModified: false
+                    };
+                }
+                generatePreview(headlessSettings);
+                app.redraw();
+                __ozoHeadlessResult = {
+                    status: "success",
+                    preview: true,
+                    material: headlessSettings.material,
+                    dimensions: "w" + headlessSettings.widthVal + headlessSettings.unit + " x h" + headlessSettings.heightVal + headlessSettings.unit
+                };
+                return;
+            }
             __ozoHeadlessResult = executePrintJobCore(headlessSettings);
             return;
         } catch (eHeadless) {

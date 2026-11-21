@@ -676,6 +676,16 @@ test("host bridge exposes Nesting and reports a missing script", function () {
     assert.strictEqual(res.status, "error");
 });
 
+test("host bridge exposes live Print Job preview and clear endpoints", function () {
+    var ctx = makeContext();
+    assert.strictEqual(typeof ctx.ozoPreviewPrintJob, "function");
+    assert.strictEqual(typeof ctx.ozoClearPrintJobPreview, "function");
+    var resPrev = JSON.parse(ctx.ozoPreviewPrintJob("{}"));
+    assert.strictEqual(resPrev.status, "error");
+    var resClr = JSON.parse(ctx.ozoClearPrintJobPreview());
+    assert.strictEqual(resClr.status, "error");
+});
+
 test("ABA KHQR EMVCo string payload and CRC16 checksum", function () {
     var khqrScript = fs.readFileSync(path.join(ROOT, "Script all", "ABA KHQR Generator.jsx"), "utf8");
     var vmCtx = vm.createContext({});

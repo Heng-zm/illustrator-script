@@ -762,6 +762,8 @@
     var embeddedDialogBtn = $("embeddedDialogBtn");
     var embeddedContent = $("embeddedContent");
     var activeEmbeddedTool = null;
+    var cleanupActiveEmbeddedTool = null;
+    var onEmbeddedDocumentStatus = null;
 
     // ------------------------------------------------------------------
     // i18n
@@ -1160,6 +1162,9 @@
         updateEmbeddedSelRibbon(info);
         if (docPopover && !docPopover.hidden) {
             openDocPopover();
+        }
+        if (typeof onEmbeddedDocumentStatus === "function") {
+            try { onEmbeddedDocumentStatus(info); } catch (eStatus) {}
         }
 
         var sig = docSignature(info);
@@ -1982,6 +1987,11 @@
     function openEmbeddedView(toolId) {
         var tool = toolById[toolId];
         if (!tool) return;
+        if (typeof cleanupActiveEmbeddedTool === "function") {
+            try { cleanupActiveEmbeddedTool(); } catch (eCleanPrev) {}
+        }
+        cleanupActiveEmbeddedTool = null;
+        onEmbeddedDocumentStatus = null;
         lastOpenedToolId = tool.id;
         recordRecentTool(tool.id);
         activeEmbeddedTool = tool;
@@ -2165,6 +2175,11 @@
     }
 
     function closeEmbeddedView() {
+        if (typeof cleanupActiveEmbeddedTool === "function") {
+            try { cleanupActiveEmbeddedTool(); } catch (eCleanTool) {}
+        }
+        cleanupActiveEmbeddedTool = null;
+        onEmbeddedDocumentStatus = null;
         var prevId = lastOpenedToolId;
         activeEmbeddedTool = null;
         if (embeddedSelRibbon) embeddedSelRibbon.hidden = true;
@@ -3739,7 +3754,9 @@
             textColorIndex: saved.textColorIndex !== undefined ? saved.textColorIndex : 0,
             alignmentIndex: saved.alignmentIndex !== undefined ? saved.alignmentIndex : 0,
             fontSizeIndex: saved.fontSizeIndex !== undefined ? saved.fontSizeIndex : 0,
-            fontChoiceIndex: saved.fontChoiceIndex !== undefined ? saved.fontChoiceIndex : 0
+            fontChoiceIndex: saved.fontChoiceIndex !== undefined ? saved.fontChoiceIndex : 0,
+            autoSyncArtboard: saved.autoSyncArtboard !== false,
+            liveCanvas: saved.liveCanvas !== false
         };
 
         var materials = [
@@ -3770,8 +3787,11 @@
         // 1. Live Ticket Preview Card
         html.push('<div class="embed-card feature-ticket-card">');
         html.push('  <div class="embed-card-header" style="margin-bottom:6px;">');
-        html.push('    <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
-        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">');
+        html.push('      <span>' + (isKhmer() ? "ទម្រង់បដាព័ត៌មាន (Live Ticket)" : "Live Job Ticket Preview") + '</span>');
+        html.push('      <span id="pjArtboardBadge" style="font-size:9.5px;color:var(--text-muted);font-weight:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>');
+        html.push('    </div>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">');
         html.push('      <button type="button" class="btn-copy-ticket" title="' + (isKhmer() ? "ចម្លងព័ត៌មាន Ticket (Copy to Clipboard)" : "Copy Job Ticket to Clipboard") + '">📋 ' + (isKhmer() ? "ចម្លង" : "Copy") + '</button>');
         html.push('      <span class="live-badge"><span class="live-dot"></span>LIVE</span>');
         html.push('    </div>');
@@ -3827,7 +3847,14 @@
         html.push('<div class="embed-card">');
         html.push('  <div class="embed-card-header">');
         html.push('    <span>' + (isKhmer() ? "ទំហំបោះពុម្ព (Print Dimensions)" : "Print Dimensions") + '</span>');
-        html.push('    <button type="button" id="btnPjSyncAb" class="embed-preset-btn" style="padding:2px 8px;font-size:10.5px;">' + uiIcon("grid", 11) + (isKhmer() ? "យកទំហំ Artboard" : "Sync Artboard") + '</button>');
+        html.push('    <div style="display:flex;align-items:center;gap:6px;">');
+        html.push('      <label class="embed-mini-toggle" style="font-size:10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;color:var(--text-muted);font-weight:normal;" title="' + (isKhmer() ? "ធ្វើបច្ចុប្បន្នភាពទំហំស្វ័យប្រវត្តិតាម Artboard ដែលសកម្ម" : "Auto-update dimensions when switching artboards in Illustrator") + '">');
+        html.push('        <input type="checkbox" id="chkPjAutoSync" ' + (state.autoSyncArtboard ? "checked" : "") + ' style="margin:0;">');
+        html.push('        <span class="live-dot" style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#10b981;"></span>');
+        html.push('        <span>' + (isKhmer() ? "Artboard ផ្ទាល់" : "Realtime Artboard") + '</span>');
+        html.push('      </label>');
+        html.push('      <button type="button" id="btnPjSyncAb" class="embed-preset-btn" style="padding:2px 8px;font-size:10.5px;">' + uiIcon("grid", 11) + (isKhmer() ? "យកទំហំ Artboard" : "Sync Artboard") + '</button>');
+        html.push('    </div>');
         html.push('  </div>');
         html.push('  <div class="embed-row-3col">');
         html.push('    <div>');
@@ -3913,6 +3940,7 @@
         html.push('  </div>');
 
         html.push('  <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">');
+        html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPjLiveCanvas" ' + (state.liveCanvas ? "checked" : "") + '> ' + (isKhmer() ? "បង្ហាញ Live Preview លើ Artboard ផ្ទាល់ (Realtime)" : "Live preview on artboard (Realtime)") + '</label>');
         html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPjExpand" ' + (state.expandArtboard ? "checked" : "") + '> ' + (isKhmer() ? "ពង្រីកកម្ពស់ Artboard ស្វ័យប្រវត្តិ" : "Auto-expand artboard height for header") + '</label>');
         html.push('    <label class="embed-check-row"><input type="checkbox" id="chkPjDark" ' + (state.darkBox ? "checked" : "") + '> ' + (isKhmer() ? "ដាក់ប្រអប់ផ្ទៃក្រោយពណ៌ខ្មៅ (Dark Box)" : "Add solid dark background box") + '</label>');
         html.push('  </div>');
@@ -3938,6 +3966,9 @@
         var pjFontSelect = $("pjFontSelect");
         var chkPjExpand = $("chkPjExpand");
         var chkPjDark = $("chkPjDark");
+        var chkPjAutoSync = $("chkPjAutoSync");
+        var chkPjLiveCanvas = $("chkPjLiveCanvas");
+        var pjArtboardBadge = $("pjArtboardBadge");
         var btnPjSyncAb = $("btnPjSyncAb");
         var btnPjSubmit = $("btnPjSubmit");
         var alignBtns = embeddedContent.querySelectorAll("#pjAlignSegmented .embed-seg-btn");
@@ -4045,9 +4076,138 @@
             state.fontChoiceIndex = parseInt(pjFontSelect.value, 10) || 0;
             state.expandArtboard = chkPjExpand.checked;
             state.darkBox = chkPjDark.checked;
+            state.autoSyncArtboard = chkPjAutoSync ? chkPjAutoSync.checked : true;
+            state.liveCanvas = chkPjLiveCanvas ? chkPjLiveCanvas.checked : true;
             store.setDebounced("ozo_printjob_settings", JSON.stringify(state), 250);
             updateTicketPreview();
+            debouncedCanvasPreview(250);
         }
+
+        var canvasPreviewTimer = null;
+        var canvasPreviewInFlight = false;
+        var pendingPreviewParams = null;
+
+        function debouncedCanvasPreview(delay) {
+            if (!chkPjLiveCanvas || !chkPjLiveCanvas.checked || !csInterface) return;
+            if (canvasPreviewTimer) clearTimeout(canvasPreviewTimer);
+            canvasPreviewTimer = setTimeout(function () {
+                triggerCanvasPreview();
+            }, delay || 250);
+        }
+
+        function triggerCanvasPreview() {
+            if (!chkPjLiveCanvas || !chkPjLiveCanvas.checked || !csInterface) return;
+            var w = parseFloat(String(pjWidthInput.value).replace(/,/g, "."));
+            var h = parseFloat(String(pjHeightInput.value).replace(/,/g, "."));
+            if (!w || w <= 0 || !h || h <= 0) return;
+
+            var params = {
+                material: getEffectiveMaterial(),
+                dateStr: pjDateInput.value.trim() || dStr,
+                widthVal: w,
+                heightVal: h,
+                unit: pjUnitSelect.value,
+                qty: parseInt(pjQtyInput.value, 10) || 1,
+                note: pjNoteInput.value.trim(),
+                expandArtboard: chkPjExpand.checked,
+                darkBox: chkPjDark.checked,
+                textColorIndex: parseInt(pjColorSelect.value, 10) || 0,
+                alignmentIndex: state.alignmentIndex,
+                fontSizeIndex: parseInt(pjFontSizeSelect.value, 10) || 0,
+                fontChoiceIndex: parseInt(pjFontSelect.value, 10) || 0
+            };
+
+            if (canvasPreviewInFlight) {
+                pendingPreviewParams = params;
+                return;
+            }
+            canvasPreviewInFlight = true;
+            csInterface.evalScript("ozoPreviewPrintJob(" + JSON.stringify(JSON.stringify(params)) + ")", function () {
+                canvasPreviewInFlight = false;
+                if (pendingPreviewParams) {
+                    var next = pendingPreviewParams;
+                    pendingPreviewParams = null;
+                    if (chkPjLiveCanvas && chkPjLiveCanvas.checked) {
+                        triggerCanvasPreviewWithParams(next);
+                    }
+                }
+            });
+        }
+
+        function triggerCanvasPreviewWithParams(params) {
+            canvasPreviewInFlight = true;
+            csInterface.evalScript("ozoPreviewPrintJob(" + JSON.stringify(JSON.stringify(params)) + ")", function () {
+                canvasPreviewInFlight = false;
+                if (pendingPreviewParams) {
+                    var next = pendingPreviewParams;
+                    pendingPreviewParams = null;
+                    if (chkPjLiveCanvas && chkPjLiveCanvas.checked) {
+                        triggerCanvasPreviewWithParams(next);
+                    }
+                }
+            });
+        }
+
+        function clearCanvasPreview() {
+            if (canvasPreviewTimer) clearTimeout(canvasPreviewTimer);
+            pendingPreviewParams = null;
+            if (!csInterface) return;
+            csInterface.evalScript("ozoClearPrintJobPreview()");
+        }
+
+        cleanupActiveEmbeddedTool = function () {
+            clearCanvasPreview();
+        };
+
+        chkPjLiveCanvas.addEventListener("change", function () {
+            if (this.checked) {
+                saveState();
+            } else {
+                clearCanvasPreview();
+                saveState();
+            }
+        });
+
+        chkPjAutoSync.addEventListener("change", saveState);
+
+        var lastObservedAbIndex = -1;
+        var lastObservedDocName = "";
+        var lastObservedAbW = 0;
+        var lastObservedAbH = 0;
+
+        onEmbeddedDocumentStatus = function (info) {
+            if (!info || !info.hasDoc) {
+                if (pjArtboardBadge) pjArtboardBadge.textContent = "";
+                return;
+            }
+
+            var abIdx = (info.activeArtboardIndex !== undefined) ? info.activeArtboardIndex : 0;
+            var docName = info.name || "";
+            var abName = info.activeArtboardName || ("Artboard " + (abIdx + 1));
+            var abSizeStr = (info.artboardWidthMm && info.artboardHeightMm)
+                ? (" (" + info.artboardWidthMm + " × " + info.artboardHeightMm + " mm)")
+                : "";
+
+            if (pjArtboardBadge) {
+                pjArtboardBadge.textContent = "• " + abName + abSizeStr;
+            }
+
+            var changed = (lastObservedAbIndex !== abIdx ||
+                           lastObservedDocName !== docName ||
+                           lastObservedAbW !== info.artboardWidthMm ||
+                           lastObservedAbH !== info.artboardHeightMm);
+            lastObservedAbIndex = abIdx;
+            lastObservedDocName = docName;
+            lastObservedAbW = info.artboardWidthMm;
+            lastObservedAbH = info.artboardHeightMm;
+
+            if (changed && chkPjAutoSync && chkPjAutoSync.checked) {
+                if (document.activeElement === pjWidthInput || document.activeElement === pjHeightInput) {
+                    return;
+                }
+                fetchArtboardDefaults(true);
+            }
+        };
 
         pjMatSelect.addEventListener("change", function() {
             if (this.value === "Custom") {
@@ -4106,7 +4266,7 @@
                 var res = null;
                 try { res = JSON.parse(String(raw || "").replace(/^\uFEFF/, "").replace(/^\s+|\s+$/g, "")); } catch (e) {}
                 if (res && res.status === "success") {
-                    if (force || !pjWidthInput.value || !pjHeightInput.value) {
+                    if (force || !pjWidthInput.value || !pjHeightInput.value || (chkPjAutoSync && chkPjAutoSync.checked)) {
                         pjWidthInput.value = res.width;
                         pjHeightInput.value = res.height;
                         pjUnitSelect.value = res.unit;
@@ -4114,6 +4274,9 @@
                         state.unit = res.unit;
                     }
                     if (!pjDateInput.value && res.dateStr) pjDateInput.value = res.dateStr;
+                    if (res.artboardName && pjArtboardBadge && !pjArtboardBadge.textContent) {
+                        pjArtboardBadge.textContent = "• " + res.artboardName;
+                    }
                     saveState();
                     updateTicketPreview();
                 } else {
@@ -4133,6 +4296,9 @@
                     pjUnitSelect.value = res.unit;
                     pjPreviousUnit = res.unit;
                     if (res.dateStr) pjDateInput.value = res.dateStr;
+                    if (res.artboardName && pjArtboardBadge) {
+                        pjArtboardBadge.textContent = "• " + res.artboardName;
+                    }
                     saveState();
                     setStatus(isKhmer() ? "បានទាញយកទំហំ " + res.width + " x " + res.height + " " + res.unit : "Synced " + res.width + " x " + res.height + " " + res.unit + " from " + res.artboardName, "success", 3000);
                 } else {
@@ -4143,6 +4309,7 @@
 
         btnPjSubmit.addEventListener("click", function() {
             hideError();
+            clearCanvasPreview();
             var w = parseFloat(String(pjWidthInput.value).replace(/,/g, "."));
             var h = parseFloat(String(pjHeightInput.value).replace(/,/g, "."));
             if (!w || w <= 0 || !h || h <= 0) {
@@ -8240,6 +8407,11 @@
     }
     window.addEventListener("resize", debouncedMoveTabIndicator, { passive: true });
     window.addEventListener("load", moveTabIndicator);
+    window.addEventListener("beforeunload", function () {
+        if (typeof cleanupActiveEmbeddedTool === "function") {
+            try { cleanupActiveEmbeddedTool(); } catch (e) {}
+        }
+    });
     refreshDocumentStatus();
     startDocumentMonitor();
     checkForUpdates(false);
