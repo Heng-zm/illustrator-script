@@ -677,11 +677,25 @@
     var donateAmountLabel = $("donateAmountLabel");
     var donateTimerWrap = $("donateTimerWrap");
     var donateTimerText = $("donateTimerText");
+    var donateProgressBar = $("donateProgressBar");
     var donateSuccessWrap = $("donateSuccessWrap");
     var donateErrorWrap = $("donateErrorWrap");
     var donateErrorMsg = $("donateErrorMsg");
     var donateRetryBtn = $("donateRetryBtn");
     var donateOpenBrowserBtn = $("donateOpenBrowserBtn");
+    var donateCurrUsd = $("donateCurrUsd");
+    var donateCurrKhr = $("donateCurrKhr");
+    var donateAmountGroup = $("donateAmountGroup");
+    var donateCustomBtn = $("donateCustomBtn");
+    var donateCustomWrap = $("donateCustomWrap");
+    var donateInputPrefix = $("donateInputPrefix");
+    var donateCustomInput = $("donateCustomInput");
+    var donateCustomApplyBtn = $("donateCustomApplyBtn");
+    var receiptAmount = $("receiptAmount");
+    var receiptRef = $("receiptRef");
+    var donateDoneBtn = $("donateDoneBtn");
+    var donateCopyBtn = $("donateCopyBtn");
+    var donateCopyText = $("donateCopyText");
     var searchTagsWrap = $("searchTagsWrap");
     var embeddedHeader = $("embeddedHeader") || (embeddedBackBtn ? embeddedBackBtn.parentNode : null);
     var embeddedSelRibbon = $("embeddedSelRibbon");
@@ -7432,9 +7446,11 @@
     }
 
     // ------------------------------------------------------------------
-    // In-Plugin KHQR Donation Modal
+    // In-Plugin KHQR Donation Modal - Enhanced UI/UX
     // ------------------------------------------------------------------
+    var currentCurrency = "USD";
     var currentDonateAmount = "1.00";
+    var currentQrString = "";
     var currentCheckoutUrl = DONATE_URL;
     var currentPaymentId = null;
     var donateTimerInterval = null;
@@ -7530,18 +7546,42 @@
     function openDonateModal() {
         if (!donateModal) return;
         donateModal.hidden = false;
-        loadDonationQR(currentDonateAmount);
+        if (donateSuccessWrap) donateSuccessWrap.hidden = true;
+        loadDonationQR(currentDonateAmount, currentCurrency);
     }
 
-    function loadDonationQR(amount) {
+    function updateCurrencyUI(currency) {
+        currentCurrency = currency || "USD";
+        if (donateCurrUsd) donateCurrUsd.classList.toggle("active", currentCurrency === "USD");
+        if (donateCurrKhr) donateCurrKhr.classList.toggle("active", currentCurrency === "KHR");
+        if (donateInputPrefix) donateInputPrefix.textContent = currentCurrency === "USD" ? "$" : "៛";
+
+        var btns = donateAmountGroup ? donateAmountGroup.querySelectorAll(".donate-amt-btn:not(.donate-custom-tab)") : [];
+        for (var i = 0; i < btns.length; i++) {
+            var b = btns[i];
+            if (currentCurrency === "USD") {
+                b.textContent = "$" + parseInt(b.getAttribute("data-amount"), 10);
+            } else {
+                var khrVal = parseInt(b.getAttribute("data-khr") || "4000", 10);
+                b.textContent = (khrVal >= 1000 ? (khrVal / 1000) + "K" : khrVal) + "៛";
+            }
+        }
+    }
+
+    function loadDonationQR(amount, currency) {
         clearDonateIntervals();
         var reqId = ++activeDonateReqId;
-        currentDonateAmount = amount || "1.00";
+        currentDonateAmount = String(amount || (currentCurrency === "USD" ? "1.00" : "4000"));
+        currentCurrency = currency || currentCurrency;
 
         if (donateLoading) donateLoading.hidden = false;
         if (donateCardWrap) donateCardWrap.hidden = true;
         if (donateSuccessWrap) donateSuccessWrap.hidden = true;
         if (donateErrorWrap) donateErrorWrap.hidden = true;
+        if (donateProgressBar) {
+            donateProgressBar.style.width = "100%";
+            donateProgressBar.className = "donate-progress-bar";
+        }
 
         var km = isKhmer();
 
@@ -7563,6 +7603,7 @@
             var payment = data.payment || data;
             currentPaymentId = payment.id;
             currentCheckoutUrl = payment.checkout_url || DONATE_URL;
+            currentQrString = payment.qr_string || "";
 
             if (donateAmountLabel) {
                 var rielFormatted = payment.amount ? Number(payment.amount).toLocaleString() : "4,000";
@@ -7580,7 +7621,7 @@
                 donateQrImg.onerror = function () {
                     if (reqId !== activeDonateReqId) return;
                     if (donateLoading) donateLoading.hidden = true;
-                    if (donateCardWrap) donateCardWrap.hidden = false; // still show whatever rendered
+                    if (donateCardWrap) donateCardWrap.hidden = false;
                 };
                 donateQrImg.src = KHQRPAY_BASE_URL + "/api/render/khqr/" + encodeURIComponent(payment.qr_string) + ".svg";
             } else {
@@ -7588,8 +7629,10 @@
                 if (donateCardWrap) donateCardWrap.hidden = false;
             }
 
-            // Countdown timer
+            // Countdown timer & smooth progress bar
             var expiresAt = payment.expires_at ? new Date(payment.expires_at).getTime() : (Date.now() + 180000);
+            var totalDuration = Math.max(1, Math.floor((expiresAt - Date.now()) / 1000));
+
             function updateTimer() {
                 var diff = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
                 var mins = Math.floor(diff / 60);
@@ -7597,6 +7640,20 @@
                 var timeStr = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
 
                 if (donateTimerText) donateTimerText.textContent = timeStr;
+
+                // Animate progress bar
+                if (donateProgressBar) {
+                    var pct = Math.max(0, Math.min(100, Math.round((diff / totalDuration) * 100)));
+                    donateProgressBar.style.width = pct + "%";
+                    if (diff <= 30) {
+                        donateProgressBar.className = "donate-progress-bar danger";
+                    } else if (diff <= 60) {
+                        donateProgressBar.className = "donate-progress-bar warning";
+                    } else {
+                        donateProgressBar.className = "donate-progress-bar";
+                    }
+                }
+
                 if (donateTimerWrap) {
                     if (diff <= 30) donateTimerWrap.classList.add("warning");
                     else donateTimerWrap.classList.remove("warning");
@@ -7630,7 +7687,19 @@
                         if (pollPayment.status === "paid") {
                             clearDonateIntervals();
                             if (donateCardWrap) donateCardWrap.hidden = true;
+                            if (donateLoading) donateLoading.hidden = true;
                             if (donateSuccessWrap) donateSuccessWrap.hidden = false;
+
+                            // Fill receipt info
+                            if (receiptAmount) {
+                                var paidUsd = pollPayment.requested_amount || currentDonateAmount;
+                                var paidRiel = pollPayment.amount ? Number(pollPayment.amount).toLocaleString() : "4,000";
+                                receiptAmount.textContent = "$" + paidUsd + " (" + paidRiel + " KHR)";
+                            }
+                            if (receiptRef) {
+                                receiptRef.textContent = pollPayment.reference_id || pollPayment.id || "-";
+                            }
+
                             showToast(km ? "ការបង់ប្រាក់បានជោគជ័យ! សូមអរគុណ 🎉" : "Payment received! Thank you for your support! 🎉", "success");
                         } else if (pollPayment.status === "scanned") {
                             if (donateTimerText) {
@@ -7646,7 +7715,7 @@
         if (DONATE_API_ENDPOINT) {
             executeKhqrRequest(DONATE_API_ENDPOINT, "POST", null, {
                 amount: currentDonateAmount,
-                currency: "USD",
+                currency: currentCurrency,
                 reference_id: "DONATE-" + Date.now()
             }, handleResponse);
             return;
@@ -7659,7 +7728,7 @@
             "Idempotency-Key": idempotencyKey
         }, {
             amount: currentDonateAmount,
-            currency: "USD",
+            currency: currentCurrency,
             reference_id: "DONATE-" + Date.now(),
             metadata: { app: "ozo-illustrator-plugin" }
         }, handleResponse);
@@ -7668,21 +7737,108 @@
     if (donateBtn) donateBtn.addEventListener("click", openDonateModal);
     if (donateModalCloseBtn) donateModalCloseBtn.addEventListener("click", closeDonateModal);
     if (donateModalBackdrop) donateModalBackdrop.addEventListener("click", closeDonateModal);
-    if (donateRetryBtn) donateRetryBtn.addEventListener("click", function () { loadDonationQR(currentDonateAmount); });
+    if (donateRetryBtn) donateRetryBtn.addEventListener("click", function () { loadDonationQR(currentDonateAmount, currentCurrency); });
+    if (donateDoneBtn) donateDoneBtn.addEventListener("click", closeDonateModal);
     if (donateOpenBrowserBtn) donateOpenBrowserBtn.addEventListener("click", function () { openExternalURL(currentCheckoutUrl || DONATE_URL); });
     window.addEventListener("beforeunload", clearDonateIntervals);
 
-    // Amount selector buttons
-    var donateAmtBtns = document.querySelectorAll(".donate-amt-btn");
+    // Copy QR Data button
+    if (donateCopyBtn) {
+        donateCopyBtn.addEventListener("click", function () {
+            if (!currentQrString) return;
+            var textToCopy = currentQrString;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textToCopy);
+                } else {
+                    var tArea = document.createElement("textarea");
+                    tArea.value = textToCopy;
+                    document.body.appendChild(tArea);
+                    tArea.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(tArea);
+                }
+                if (donateCopyText) {
+                    var oldText = donateCopyText.textContent;
+                    donateCopyText.textContent = "Copied! ✓";
+                    setTimeout(function () { donateCopyText.textContent = oldText; }, 2000);
+                }
+            } catch (e) {
+                showToast("Could not copy to clipboard", "error");
+            }
+        });
+    }
+
+    // Currency Switcher
+    if (donateCurrUsd) {
+        donateCurrUsd.addEventListener("click", function () {
+            if (currentCurrency === "USD") return;
+            updateCurrencyUI("USD");
+            var activePreset = donateAmountGroup ? donateAmountGroup.querySelector(".donate-amt-btn.active") : null;
+            var newAmt = activePreset && !activePreset.classList.contains("donate-custom-tab")
+                ? activePreset.getAttribute("data-amount")
+                : "1.00";
+            loadDonationQR(newAmt, "USD");
+        });
+    }
+
+    if (donateCurrKhr) {
+        donateCurrKhr.addEventListener("click", function () {
+            if (currentCurrency === "KHR") return;
+            updateCurrencyUI("KHR");
+            var activePreset = donateAmountGroup ? donateAmountGroup.querySelector(".donate-amt-btn.active") : null;
+            var newAmt = activePreset && !activePreset.classList.contains("donate-custom-tab")
+                ? activePreset.getAttribute("data-khr")
+                : "4000";
+            loadDonationQR(newAmt, "KHR");
+        });
+    }
+
+    // Amount preset buttons
+    var donateAmtBtns = donateAmountGroup ? donateAmountGroup.querySelectorAll(".donate-amt-btn") : [];
     for (var dIdx = 0; dIdx < donateAmtBtns.length; dIdx++) {
         (function (btn) {
             btn.addEventListener("click", function () {
                 for (var j = 0; j < donateAmtBtns.length; j++) donateAmtBtns[j].classList.remove("active");
                 btn.classList.add("active");
-                var amt = btn.getAttribute("data-amount");
-                loadDonationQR(amt);
+
+                if (btn.classList.contains("donate-custom-tab")) {
+                    if (donateCustomWrap) {
+                        donateCustomWrap.hidden = false;
+                        if (donateCustomInput) {
+                            donateCustomInput.value = currentCurrency === "USD" ? "3.00" : "12000";
+                            donateCustomInput.focus();
+                        }
+                    }
+                } else {
+                    if (donateCustomWrap) donateCustomWrap.hidden = true;
+                    var amt = currentCurrency === "USD" ? btn.getAttribute("data-amount") : (btn.getAttribute("data-khr") || "4000");
+                    loadDonationQR(amt, currentCurrency);
+                }
             });
         })(donateAmtBtns[dIdx]);
+    }
+
+    // Custom Amount Apply
+    function applyCustomAmount() {
+        if (!donateCustomInput) return;
+        var val = parseFloat(donateCustomInput.value);
+        if (isNaN(val) || val <= 0) {
+            showToast("Please enter a valid amount", "error");
+            return;
+        }
+        var formatted = currentCurrency === "USD" ? val.toFixed(2) : String(Math.round(val));
+        loadDonationQR(formatted, currentCurrency);
+    }
+
+    if (donateCustomApplyBtn) donateCustomApplyBtn.addEventListener("click", applyCustomAmount);
+    if (donateCustomInput) {
+        donateCustomInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                applyCustomAmount();
+            }
+        });
     }
 
     refreshBtn.addEventListener("click", function () {

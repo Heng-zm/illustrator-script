@@ -344,47 +344,120 @@
     <div id="donateModal" class="shortcuts-modal donate-modal" hidden>
         <div class="shortcuts-backdrop" id="donateModalBackdrop"></div>
         <div class="shortcuts-dialog donate-dialog" role="dialog" aria-modal="true" aria-labelledby="donateModalTitle">
+            <!-- Modal Header -->
             <div class="shortcuts-header donate-header">
                 <div class="donate-title-wrap">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#e0245e" stroke="none" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    <span class="donate-heart-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e0245e" stroke="none" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </span>
                     <span id="donateModalTitle" class="shortcuts-title" data-i18n="donate.modalTitle">Support Ozo Tools</span>
                 </div>
                 <button type="button" id="donateModalCloseBtn" class="shortcuts-close" aria-label="Close">&times;</button>
             </div>
+
             <div class="donate-body" id="donateModalBody">
-                <!-- Amount buttons -->
-                <div class="donate-amount-group" role="group" aria-label="Donation Amount">
-                    <button type="button" class="donate-amt-btn active" data-amount="1.00">$1</button>
-                    <button type="button" class="donate-amt-btn" data-amount="2.00">$2</button>
-                    <button type="button" class="donate-amt-btn" data-amount="5.00">$5</button>
-                    <button type="button" class="donate-amt-btn" data-amount="10.00">$10</button>
+                <!-- Merchant Banner & Currency Switcher -->
+                <div class="donate-merchant-card">
+                    <div class="donate-merchant-info">
+                        <div class="donate-aba-badge">ABA</div>
+                        <div class="donate-merchant-meta">
+                            <div class="donate-merchant-name">
+                                <span>CHUO KIMHENG</span>
+                                <svg class="donate-verified-badge" width="12" height="12" viewBox="0 0 24 24" fill="#10b981" title="Verified ABA PayWay Merchant"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                            </div>
+                            <span class="donate-merchant-sub">ABA Bank &bull; KHQR Pay</span>
+                        </div>
+                    </div>
+                    <!-- Currency Toggle -->
+                    <div class="donate-curr-toggle" role="group" aria-label="Currency">
+                        <button type="button" id="donateCurrUsd" class="donate-curr-btn active" data-currency="USD">USD ($)</button>
+                        <button type="button" id="donateCurrKhr" class="donate-curr-btn" data-currency="KHR">KHR (៛)</button>
+                    </div>
+                </div>
+
+                <!-- Amount preset buttons -->
+                <div class="donate-amount-group" id="donateAmountGroup" role="group" aria-label="Donation Amount">
+                    <button type="button" class="donate-amt-btn active" data-amount="1.00" data-khr="4000">$1</button>
+                    <button type="button" class="donate-amt-btn" data-amount="2.00" data-khr="8000">$2</button>
+                    <button type="button" class="donate-amt-btn" data-amount="5.00" data-khr="20000">$5</button>
+                    <button type="button" class="donate-amt-btn" data-amount="10.00" data-khr="40000">$10</button>
+                    <button type="button" class="donate-amt-btn donate-custom-tab" id="donateCustomBtn">Custom</button>
+                </div>
+
+                <!-- Custom Amount Input (expandable) -->
+                <div id="donateCustomWrap" class="donate-custom-wrap" hidden>
+                    <div class="donate-input-box">
+                        <span id="donateInputPrefix" class="donate-input-prefix">$</span>
+                        <input type="number" id="donateCustomInput" class="donate-custom-input" min="0.01" step="1" placeholder="Amount..." />
+                        <button type="button" id="donateCustomApplyBtn" class="donate-apply-btn">Apply</button>
+                    </div>
                 </div>
 
                 <!-- QR container -->
                 <div class="donate-qr-wrapper">
-                    <!-- Loading state -->
+                    <!-- Shimmer / Loading state -->
                     <div id="donateLoading" class="donate-status-wrap">
-                        <div class="donate-spinner"></div>
-                        <div class="donate-status-text">Generating KHQR...</div>
+                        <div class="donate-skeleton-card">
+                            <div class="donate-skeleton-header shimmer"></div>
+                            <div class="donate-skeleton-qr shimmer"></div>
+                            <div class="donate-skeleton-line shimmer"></div>
+                        </div>
+                        <div class="donate-status-text">
+                            <span class="donate-mini-spin"></span>
+                            <span>Generating secure KHQR code...</span>
+                        </div>
                     </div>
 
                     <!-- QR Card display -->
                     <div id="donateCardWrap" class="donate-card-wrap" hidden>
-                        <img id="donateQrImg" class="donate-qr-img" src="" alt="KHQR Payment Code" />
-                        <div class="donate-card-meta">
-                            <span id="donateAmountLabel" class="donate-amount-label">$1.00 (4,000 KHR)</span>
-                            <div class="donate-timer-wrap" id="donateTimerWrap">
-                                <span class="donate-timer-icon">⏱</span>
-                                <span id="donateTimerText">03:00</span>
+                        <div class="donate-card-frame">
+                            <img id="donateQrImg" class="donate-qr-img" src="" alt="KHQR Payment Code" draggable="false" />
+                        </div>
+
+                        <!-- Progress Bar & Expiry Timer -->
+                        <div class="donate-progress-section">
+                            <div class="donate-progress-track">
+                                <div id="donateProgressBar" class="donate-progress-bar"></div>
+                            </div>
+                            <div class="donate-card-meta">
+                                <span id="donateAmountLabel" class="donate-amount-label">$1.00 (4,000 KHR)</span>
+                                <div class="donate-timer-wrap" id="donateTimerWrap">
+                                    <span class="donate-timer-icon">⏱</span>
+                                    <span id="donateTimerText">03:00</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Paid / Success state -->
+                    <!-- Paid / Success receipt state -->
                     <div id="donateSuccessWrap" class="donate-status-wrap donate-success" hidden>
+                        <div class="donate-confetti-wrap" aria-hidden="true">
+                            <span class="confetti c1"></span><span class="confetti c2"></span>
+                            <span class="confetti c3"></span><span class="confetti c4"></span>
+                            <span class="confetti c5"></span><span class="confetti c6"></span>
+                        </div>
                         <div class="donate-success-icon">✓</div>
-                        <div class="donate-success-title">Thank You! 🎉</div>
-                        <div class="donate-success-desc">Payment received! Thank you for supporting Ozo Tools.</div>
+                        <div class="donate-success-title">Payment Successful! 🎉</div>
+                        <div class="donate-receipt-box">
+                            <div class="receipt-row">
+                                <span class="receipt-lbl">Amount:</span>
+                                <span id="receiptAmount" class="receipt-val">$1.00 (4,000 KHR)</span>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-lbl">Recipient:</span>
+                                <span class="receipt-val">CHUO KIMHENG (ABA)</span>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-lbl">Status:</span>
+                                <span class="receipt-val receipt-paid">Verified Paid ✓</span>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-lbl">Ref ID:</span>
+                                <span id="receiptRef" class="receipt-val receipt-ref">-</span>
+                            </div>
+                        </div>
+                        <p class="donate-success-desc">Thank you for your generosity and supporting Ozo Tools!</p>
+                        <button type="button" id="donateDoneBtn" class="donate-action-btn donate-btn-full">Done</button>
                     </div>
 
                     <!-- Expired / Error state -->
@@ -395,16 +468,27 @@
                     </div>
                 </div>
 
-                <div class="donate-instructions" data-i18n="donate.instructions">
-                    Scan with <strong>ABA Mobile</strong> or any <strong>Bakong</strong> bank app in Cambodia.
+                <!-- Supported Bank Badges -->
+                <div class="donate-bank-badges" title="Supported Cambodian Banking Apps">
+                    <span class="bank-pill bank-aba">ABA Mobile</span>
+                    <span class="bank-pill bank-bakong">Bakong</span>
+                    <span class="bank-pill bank-wing">Wing</span>
+                    <span class="bank-pill bank-acleda">Acleda</span>
+                    <span class="bank-pill bank-canadia">Canadia</span>
                 </div>
 
                 <!-- Footer actions -->
                 <div class="donate-footer-actions">
-                    <button type="button" id="donateOpenBrowserBtn" class="donate-link-btn" title="Open payment link in external browser">
-                        <span>Open ABA Pay in Browser</span>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                    </button>
+                    <div class="donate-action-row">
+                        <button type="button" id="donateCopyBtn" class="donate-secondary-btn" title="Copy KHQR Code String">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span id="donateCopyText">Copy QR Data</span>
+                        </button>
+                        <button type="button" id="donateOpenBrowserBtn" class="donate-link-btn" title="Open payment link in external browser">
+                            <span>Open in Browser</span>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
